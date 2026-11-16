@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- The product name is a brand, not UI copy, so it is never translated. -->
-    <string name="app_name" translatable="false">AndroidHarness</string>
+    <string name="app_name" translatable="false">VEXORA</string>
 
     <!-- ================================================================
          Settings · page titles, descriptions and groups.
@@ -960,7 +960,7 @@
     <string name="chat_handoff_picker_note">Choose where to build. Your Chat plan comes along.</string>
     <string name="chat_handoff_close">Close workspace picker</string>
     <string name="chat_handoff_no_workspace">Add a workspace in Code to continue.</string>
-    <string name="chat_share_target">AndroidHarness Chat</string>
+    <string name="chat_share_target">VEXORA Chat</string>
     <string name="chat_share_title">Share to Chat</string>
     <string name="chat_share_review">Review your shared items, choose a Chat, and add a question. Nothing is sent until you tap Send in Chat.</string>
     <string name="chat_share_new">New Chat</string>
@@ -1038,7 +1038,7 @@
     <string name="glass_unsupported">Glass effects need Android 12 or later.</string>
     <string name="glass_liquid_unsupported">Liquid Glass needs Android 13 or later. Frosted glass is available on this device.</string>
     <string name="glass_preview_label">Glass preview</string>
-    <string name="glass_preview_title">AndroidHarness</string>
+    <string name="glass_preview_title">VEXORA</string>
     <string name="glass_preview_text">Clear text. A softer background.</string>
     <string name="glass_transparency">Transparency</string>
     <string name="glass_transparency_percent">%1$d%%</string>
