@@ -384,6 +384,8 @@ class AppContainer(val appContext: Context) {
                 com.agent.mhamed.tools.GitHubWorkflowRunsTool({ github }),
                 com.agent.mhamed.tools.GitHubArtifactDownloadTool({ github }, appContext),
                 com.agent.mhamed.tools.InstallApkTool(appContext),
+            com.agent.mhamed.tools.CodeReviewTool(shellRouter, linuxEnv, { settings.settings.first() }),
+            *com.agent.mhamed.tools.DeviceControlTools(shellRouter, linuxEnv, { settings.settings.first() }, images).tools().toTypedArray(),
             )
         )
     }

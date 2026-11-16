@@ -939,3 +939,8 @@
 
 - Thinking level selection removed from the model picker — it lives only in the header badge menus, which offer the full ladder for every model without fallback captions.
 - README credits inspirations: Hermes Agent (Nous Research), pi by Mario Zechner, and OpenCode.
+
+### Added (feature branch feature/review-and-device-control)
+
+- **Code review before commit (Feature B)**: deterministic secret scan (regex + entropy), redacted diff for AI review, Blocker/Warning/Note card, Off/Secrets only/Full setting (default Full), minimum diff size, `/review` slash command, and mandatory review step in `self-dev-agent` skill.
+- **Device control agent (Feature A)**: `device_screenshot`, `device_ui_tree`, `device_tap`, `device_swipe`, `device_type_text`, `device_key`, `device_open_app`, `device_wait` tools via existing shell tiers; disabled by default; blocked-package list; step/duration limits; secret/OTP refusal; `device-control` and `app-ui-test` skills.

@@ -246,3 +246,21 @@ The app-tier shell and the terminal run bundled Bash directly on Android 8 and 9
 - `/clear`, `/compact`, `/autocompact`, `/cost`, `/doctor`, `/init`, `/plan`, `/skills`, `/btw`, plus any skill or snippet by name. `/plan` flips the agent into Plan mode and loads the planning skill automatically. `/autocompact 350K` sets a compaction threshold for one chat and `/autocompact default` follows Settings → Coding → Agent behavior.
 - `/btw` asks a quick side question while the agent keeps working. It keeps one side thread per chat: questions and answers stack, follow-ups replay the earlier side turns plus the live task context, Clear side thread forgets it, and nothing joins the conversation. It can use read-only tools, its usage counts toward the chat's cost, and hiding the sheet lets a streaming answer continue. While a task runs, typing a message also shows a /btw button next to queue.
 - Messages you send while the agent works steer it. With **AH Auto** (the default), the agent reads them after its current step, once the running tools finish, and keeps going in the same turn; a message sent during the final answer keeps the task going, and one sent after it ends starts the next turn. Nothing running is interrupted, and the earlier context stays cached. Switch to **After task** in Settings > Agent to make them wait for the whole task instead. Send now on a queued message still stops the agent and sends it right away.
+
+## Code review before commit (Feature B)
+
+- **Review before commit** setting with three levels: Off, Secrets only, Full (default Full).
+- Deterministic secret scan (regex + entropy) detects API keys, GitHub tokens, passwords, JWTs, keystores and `.env` files; always runs when enabled.
+- Blockers stop commit/push until fixed or explicitly overridden by the user.
+- Redacted diff is emitted for an AI review via a read-only subagent; secret values are never sent to the model.
+- `/review` slash command runs the review on current changes.
+- `self-dev-agent` skill now requires review before push.
+- Minimum changed-line threshold avoids reviewing trivial diffs.
+
+## Device control agent (Feature A)
+
+- New tools: `device_screenshot`, `device_ui_tree`, `device_tap`, `device_swipe`, `device_type_text`, `device_key`, `device_open_app`, `device_wait`.
+- Executed through existing shell tiers (Shizuku / Wireless ADB / Root); no new dangerous permissions.
+- Disabled by default; requires explicit enable in Settings.
+- Blocked-package list for sensitive apps; step/duration limits; secret/OTP refusal; blocked actions (uninstall/wipe/reset) not available.
+- Skills `device-control` and `app-ui-test` document the observe→decide→act→verify loop.

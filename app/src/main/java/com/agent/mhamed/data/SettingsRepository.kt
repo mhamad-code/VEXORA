@@ -241,6 +241,18 @@ data class AppSettings(
     val cavemanInstalled: Boolean = false,
     val cavemanIntensity: com.agent.mhamed.caveman.CavemanIntensity = com.agent.mhamed.caveman.CavemanIntensity.OFF,
     val cavemanWenyan: Boolean = false,
+    /** Code review before commit/push: OFF, SECRETS_ONLY, FULL (default FULL). */
+    val codeReviewBeforeCommit: com.agent.mhamed.data.CodeReviewLevel = com.agent.mhamed.data.CodeReviewLevel.FULL,
+    /** Minimum changed lines before the AI review runs (avoids trivial diffs). */
+    val codeReviewMinDiffLines: Int = 10,
+    /** Master switch for Android device-control tools (disabled by default). */
+    val deviceControlEnabled: Boolean = false,
+    /** Package names the agent may not control without a separate explicit approval. */
+    val deviceControlBlockedPackages: Set<String> = DEFAULT_DEVICE_CONTROL_BLOCKED,
+    /** Maximum steps per device-control task. */
+    val deviceControlMaxSteps: Int = 50,
+    /** Maximum duration (seconds) per device-control task. */
+    val deviceControlMaxDurationSeconds: Int = 300,
 ) {
     /** Backwards-compat accessor: timeout in seconds (for old callers / backups). */
     val voiceAutoSendTimeoutSeconds: Int get() = voiceAutoSendTimeoutMs / 1000
@@ -270,6 +282,13 @@ data class VoiceSelection(
     val sttModel: String = "",
     val ttsModel: String = "",
     val ttsVoice: String = "",
+)
+
+val DEFAULT_DEVICE_CONTROL_BLOCKED: Set<String> = setOf(
+    "com.android.settings", "com.google.android.gms", "com.android.vending",
+    "com.keepersecurity.passwordmanager", "com.agilebits.onepassword", "com.bitwarden.desktop",
+    "com.paypal.android.p2pmobile", "com.venmo", "com.zellepay.zelle",
+    "com.chase.sig.android", "com.bankofamerica.mobilebanking",
 )
 
 class SettingsRepository(private val context: Context) {
@@ -454,6 +473,12 @@ class SettingsRepository(private val context: Context) {
         val CAVEMAN_INSTALLED = booleanPreferencesKey("caveman_installed")
         val CAVEMAN_INTENSITY = stringPreferencesKey("caveman_intensity")
         val CAVEMAN_WENYAN = booleanPreferencesKey("caveman_wenyan")
+        val CODE_REVIEW_BEFORE_COMMIT = stringPreferencesKey("code_review_before_commit")
+        val CODE_REVIEW_MIN_DIFF_LINES = intPreferencesKey("code_review_min_diff_lines")
+        val DEVICE_CONTROL_ENABLED = booleanPreferencesKey("device_control_enabled")
+        val DEVICE_CONTROL_BLOCKED_PACKAGES = stringSetPreferencesKey("device_control_blocked_packages")
+        val DEVICE_CONTROL_MAX_STEPS = intPreferencesKey("device_control_max_steps")
+        val DEVICE_CONTROL_MAX_DURATION_SECONDS = intPreferencesKey("device_control_max_duration_seconds")
     }
 
     /** Device-local dismissal shared by the empty Chat and Code screens. */
@@ -609,6 +634,14 @@ class SettingsRepository(private val context: Context) {
                 runCatching { com.agent.mhamed.caveman.CavemanIntensity.valueOf(it) }.getOrNull()
             } ?: com.agent.mhamed.caveman.CavemanIntensity.OFF,
             cavemanWenyan = prefs[Keys.CAVEMAN_WENYAN] ?: false,
+            codeReviewBeforeCommit = prefs[Keys.CODE_REVIEW_BEFORE_COMMIT]
+                ?.let { runCatching { com.agent.mhamed.data.CodeReviewLevel.valueOf(it) }.getOrNull() }
+                ?: com.agent.mhamed.data.CodeReviewLevel.FULL,
+            codeReviewMinDiffLines = prefs[Keys.CODE_REVIEW_MIN_DIFF_LINES] ?: 10,
+            deviceControlEnabled = prefs[Keys.DEVICE_CONTROL_ENABLED] ?: false,
+            deviceControlBlockedPackages = prefs[Keys.DEVICE_CONTROL_BLOCKED_PACKAGES] ?: DEFAULT_DEVICE_CONTROL_BLOCKED,
+            deviceControlMaxSteps = prefs[Keys.DEVICE_CONTROL_MAX_STEPS] ?: 50,
+            deviceControlMaxDurationSeconds = prefs[Keys.DEVICE_CONTROL_MAX_DURATION_SECONDS] ?: 300,
             debugConsoleEnabled = prefs[Keys.DEBUG_CONSOLE_ENABLED] ?: false,
             debugConsoleBodies = prefs[Keys.DEBUG_CONSOLE_BODIES] ?: false,
             debugConsolePersist = prefs[Keys.DEBUG_CONSOLE_PERSIST] ?: false,
@@ -1483,6 +1516,30 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setRunTipCursor(cursor: Int) {
         context.settingsStore.edit { it[Keys.RUN_TIP_CURSOR] = cursor }
+    }
+
+    suspend fun setCodeReviewBeforeCommit(level: com.agent.mhamed.data.CodeReviewLevel) {
+        context.settingsStore.edit { it[Keys.CODE_REVIEW_BEFORE_COMMIT] = level.name }
+    }
+
+    suspend fun setCodeReviewMinDiffLines(lines: Int) {
+        context.settingsStore.edit { it[Keys.CODE_REVIEW_MIN_DIFF_LINES] = lines }
+    }
+
+    suspend fun setDeviceControlEnabled(enabled: Boolean) {
+        context.settingsStore.edit { it[Keys.DEVICE_CONTROL_ENABLED] = enabled }
+    }
+
+    suspend fun setDeviceControlBlockedPackages(packages: Set<String>) {
+        context.settingsStore.edit { it[Keys.DEVICE_CONTROL_BLOCKED_PACKAGES] = packages }
+    }
+
+    suspend fun setDeviceControlMaxSteps(steps: Int) {
+        context.settingsStore.edit { it[Keys.DEVICE_CONTROL_MAX_STEPS] = steps }
+    }
+
+    suspend fun setDeviceControlMaxDurationSeconds(seconds: Int) {
+        context.settingsStore.edit { it[Keys.DEVICE_CONTROL_MAX_DURATION_SECONDS] = seconds }
     }
 
     suspend fun setLastConversationKind(value: ConversationKind) {

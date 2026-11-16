@@ -291,6 +291,11 @@
     <string name="settings_caveman_install_desc">Installs from the app. Reply mode starts Off; coding skills can be switched off individually.</string>
     <string name="settings_caveman_mode_desc">Automatically applied from the next model request, across chats. Off removes style instructions; skills stay independent.</string>
     <string name="settings_caveman_classical_chinese">Classical Chinese</string>
+    <string name="settings_code_review_before_commit">Review code before commit</string>
+    <string name="settings_code_review_min_diff_lines">Minimum changed lines for AI review</string>
+    <string name="settings_device_control_enabled">Device control (Android apps)</string>
+    <string name="settings_device_control_max_steps">Device control max steps per task</string>
+    <string name="settings_device_control_max_duration">Device control max duration (seconds)</string>
     <string name="settings_caveman_classical_chinese_desc">Wenyan variant of the selected intensity</string>
     <string name="settings_caveman_classical_chinese_note">Code, paths and exact errors stay intact. Warnings and unclear instructions use full sentences.</string>
     <string name="settings_caveman_skills_desc">Loaded only when relevant. Available in the Skills picker after installation.</string>
