@@ -19,12 +19,12 @@
     <string name="theme_custom_delete">パレットを削除</string>
     <string name="theme_custom_delete_message">保存したパレットを削除しますか？このパレットが有効な場合、アプリは選択済みのプリセットに戻ります。</string>
     <string name="theme_custom_preview">パレットのプレビュー</string>
-    <string name="theme_canvas_title">Harness Canvas</string>
+    <string name="theme_canvas_title">VEXORA Canvas</string>
     <string name="theme_canvas_description">チャットとコード用の独自の背景。</string>
     <string name="theme_canvas_add">画像を追加</string>
     <string name="theme_canvas_change">画像を変更</string>
     <string name="theme_canvas_remove">画像を削除</string>
-    <string name="theme_canvas_enabled">Harness Canvas を表示</string>
+    <string name="theme_canvas_enabled">VEXORA Canvas を表示</string>
     <string name="theme_canvas_chat">チャット</string>
     <string name="theme_canvas_code">コード</string>
     <string name="theme_canvas_dim">画像の暗さ</string>

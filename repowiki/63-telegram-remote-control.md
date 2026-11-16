@@ -1,6 +1,6 @@
 # Telegram Remote Control
 
-> Pairs a private Telegram bot with one account so the agent, its chats and its tool approvals can be driven from a phone chat while AndroidHarness runs in the background.
+> Pairs a private Telegram bot with one account so the agent, its chats and its tool approvals can be driven from a phone chat while VEXORA runs in the background.
 
 `TelegramSetupRepository` stores the bot token and owner identity, `TelegramManager` starts and pauses the runtime, and `TelegramGateway` owns four loops: polling, command processing, agent work and reply delivery. `TelegramGatewayStore` makes requests and replies durable in one JSON file, and `AndroidTelegramAgentBridge` connects the gateway to the same `RunManager`, Room history, model settings and approval prompts as the app UI. The service is single-owner: only the paired private chat can issue commands, and the bot token is never sent to a model or shown in a log.
 

@@ -89,7 +89,7 @@ Console logs, the action trail and the DOM state are in memory only. Screenshots
 - JavaScript dialogs are auto-handled and reported as browser notices: `alert` confirms, `confirm` returns false, `prompt` returns null, `beforeunload` confirms. Popups are blocked and reported, so a target that opens a new window must be loaded in place (`browser/BrowserController.kt:118` to `143`).
 - `browser_screenshot` requires an attached, visible, focused preview. A hidden or detached surface throws rather than returning a blank image. `captureReadPage` for `browser_read` additionally samples a 64 by 64 downscale and rejects a uniform frame.
 - Full-page capture is capped at 8192 px of height and 8 megapixels, and reports `truncated` when the page exceeds it.
-- The visible preview allows mixed content (`MIXED_CONTENT_ALWAYS_ALLOW`) and enables zoom, while file and content access are disabled. The headless view also disables file and content access and appends `AndroidHarnessAgent/1.0` to the user agent.
+- The visible preview allows mixed content (`MIXED_CONTENT_ALWAYS_ALLOW`) and enables zoom, while file and content access are disabled. The headless view also disables file and content access and appends `VEXORAAgent/1.0` to the user agent.
 - Console messages are deduplicated when the same level, text, source and line arrive within 150 ms, because both clients can dispatch one message. The buffer drops the oldest entry past 200.
 - The sheet keeps its own console list, capped at 200, separate from the controller's buffer. The error badge reads the sheet list, while `browser_get_logs` reads the controller list.
 - The agent stop button is enabled only while `agentRunning` is true and calls `viewModel.stop()`; it does not close the sheet.

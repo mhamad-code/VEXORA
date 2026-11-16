@@ -100,7 +100,7 @@ class InteractiveTerminalManager(
         val rc = File(linuxEnv.prefix, "etc/harness-terminal.bashrc")
         val shims = linuxEnv.shimFile
         val text = buildString {
-            appendLine("# Written by AndroidHarness for the interactive terminal. Changes here are replaced.")
+            appendLine("# Written by VEXORA for the interactive terminal. Changes here are replaced.")
             appendLine("# Put your own settings in ~/.bashrc instead.")
             appendLine("[ -r ${quote(shims.absolutePath)} ] && . ${quote(shims.absolutePath)} 2>/dev/null")
             appendLine("HISTFILE=\"\$HOME/.bash_history\"")

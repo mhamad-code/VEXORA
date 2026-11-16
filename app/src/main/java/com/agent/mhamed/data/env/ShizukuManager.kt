@@ -56,7 +56,7 @@ data class PrivilegedResult(
 )
 
 /**
- * Bridges AndroidHarness to Shizuku. Once Shizuku is running AND the user has
+ * Bridges VEXORA to Shizuku. Once Shizuku is running AND the user has
  * granted access, we bind an in-server "user service" ([HarnessUserService])
  * that executes shell commands as the shell (or root) uid, the only reliable
  * way to reach system paths, pm/am, and any folder on the device on modern
@@ -300,7 +300,7 @@ class ShizukuManager(
 
     /** Explicitly copied connection report, separate from the general report that excludes raw errors. */
     fun connectionReport(): String = buildString {
-        appendLine("AndroidHarness privileged connection")
+        appendLine("VEXORA privileged connection")
         appendLine("Manager detected: $providerLabel")
         appendLine("Transport: $transportLabel")
         appendLine("App: ${com.agent.mhamed.BuildConfig.VERSION_NAME} (${com.agent.mhamed.BuildConfig.VERSION_CODE})")

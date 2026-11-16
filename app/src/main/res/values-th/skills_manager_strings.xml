@@ -27,7 +27,7 @@
     <string name="sk_copy">"คัดลอก"</string>
     <string name="sk_copied">"คัดลอกทักษะแล้ว"</string>
     <string name="sk_copy_note">"การบันทึกจะเก็บสำเนาของคุณไว้ ซึ่งแทนที่ทักษะที่มาพร้อมระบบ ลบสำเนาของคุณภายหลังเพื่อกลับไปใช้ต้นฉบับ"</string>
-    <string name="sk_workspace_note">"ทักษะนี้อยู่ในโฟลเดอร์ .harness/skills ของพื้นที่ทำงาน แก้ไขที่นั่น"</string>
+    <string name="sk_workspace_note">"ทักษะนี้อยู่ในโฟลเดอร์ .VEXORA/skills ของพื้นที่ทำงาน แก้ไขที่นั่น"</string>
     <string name="sk_preview">"ตัวอย่าง"</string>
     <string name="sk_markdown">"Markdown"</string>
     <string name="sk_files">"ไฟล์ (%1$d)"</string>

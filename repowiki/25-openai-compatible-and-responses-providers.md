@@ -148,7 +148,7 @@ The repair is request-scoped. Stored history, the chat transcript, and the datab
 
 - Custom headers are limited to 20, cannot override managed authentication or connection headers, must be unique and single-line, and are excluded for managed provider ids. When any header is enabled, redirects are disabled so credentials cannot follow a redirect.
 - `LOCAL_KEY` is a sentinel, not a credential. `buildRequest` omits `Authorization` when the key is blank or equals `LOCAL_KEY`, because some local servers reject an empty bearer.
-- OpenRouter requests add `HTTP-Referer: https://github.com/Sanuu7/AndroidHarness` and `X-Title: Android Harness`.
+- OpenRouter requests add `HTTP-Referer: https://github.com/Sanuu7/VEXORA` and `X-Title: VEXORA`.
 - A `Failure` clears accumulated tool calls, so partial arguments never execute even if `[DONE]` follows.
 - Object-shaped tool arguments replace earlier fragments rather than appending, which supports gateways that send one complete JSON snapshot.
 - Responses usage is held until completion and emitted once, so a usage-only event cannot inflate totals.

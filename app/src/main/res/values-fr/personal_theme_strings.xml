@@ -20,12 +20,12 @@
     <string name="theme_custom_delete">"Supprimer la palette"</string>
     <string name="theme_custom_delete_message">"Supprimer cette palette enregistrée ? L\'application reviendra à son préréglage sélectionné si cette palette est active."</string>
     <string name="theme_custom_preview">"Aperçu de la palette"</string>
-    <string name="theme_canvas_title">"Toile Harness"</string>
+    <string name="theme_canvas_title">"Toile VEXORA"</string>
     <string name="theme_canvas_description">"Votre propre toile de fond pour Chat et Code."</string>
     <string name="theme_canvas_add">"Ajouter une image"</string>
     <string name="theme_canvas_change">"Changer l\'image"</string>
     <string name="theme_canvas_remove">"Supprimer l\'image"</string>
-    <string name="theme_canvas_enabled">"Afficher le canevas Harness"</string>
+    <string name="theme_canvas_enabled">"Afficher le canevas VEXORA"</string>
     <string name="theme_canvas_chat">"Chat"</string>
     <string name="theme_canvas_code">"Code"</string>
     <string name="theme_canvas_dim">"Assombrissement de l\'image"</string>

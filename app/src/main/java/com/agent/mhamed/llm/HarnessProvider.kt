@@ -28,7 +28,7 @@ object HarnessProvider {
     const val DEFAULT_MODEL = "kilo-auto/free"
     const val KEYLESS = "harness-keyless"
     const val SESSION_HEADER = "x-opencode-session"
-    const val USER_AGENT = "AndroidHarness"
+    const val USER_AGENT = "VEXORA"
     val config = ProviderConfig(ID, "Harness", ProviderType.OPENAI_COMPAT, BASE_URL, DEFAULT_MODEL)
 
     /** Routing for the last successful free catalog, restored from disk on startup. */

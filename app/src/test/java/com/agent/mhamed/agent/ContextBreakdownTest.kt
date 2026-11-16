@@ -30,7 +30,7 @@ class ContextBreakdownTest {
             "## Skills (mandatory)\n" + filler(800) + "\n" +
             "# AGENTS.md (project instructions)\n" + filler(1200) + "\n" +
             "# Repository Map (codebase index)\n" + filler(2000) + "\n" +
-            "## Live AndroidHarness environment\n" + filler(400) + "\n"
+            "## Live VEXORA environment\n" + filler(400) + "\n"
         val slices = ContextBreakdown.splitSystem(prompt)
         assertEquals(listOf(Part.CORE, Part.SKILLS, Part.INSTRUCTIONS, Part.REPO_MAP, Part.ENVIRONMENT), slices.map { it.part })
         assertTrue(tokens(slices, Part.REPO_MAP)!! > tokens(slices, Part.SKILLS)!!)

@@ -27,7 +27,7 @@
     <string name="sk_copy">"Salin"</string>
     <string name="sk_copied">"Kemahiran disalin"</string>
     <string name="sk_copy_note">"Menyimpan mengekalkan salinan anda sendiri, yang menggantikan kemahiran terbina dalam. Padam salinan anda kemudian untuk kembali kepada asal."</string>
-    <string name="sk_workspace_note">"Kemahiran ini berada dalam folder .harness/skills ruang kerja. Edit di sana."</string>
+    <string name="sk_workspace_note">"Kemahiran ini berada dalam folder .VEXORA/skills ruang kerja. Edit di sana."</string>
     <string name="sk_preview">"Pratonton"</string>
     <string name="sk_markdown">"Markdown"</string>
     <string name="sk_files">"Fail (%1$d)"</string>

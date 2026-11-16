@@ -4,7 +4,7 @@
     <string name="theme_wallpaper_colors">Hintergrundfarben</string>
     <string name="theme_wallpaper_hint">Folgt den Material-You-Farben deines Smartphones.</string>
     <string name="theme_wallpaper_unavailable">Hintergrundfarben benötigen Android 12 oder neuer. Wähle unten eine Palette.</string>
-    <string name="theme_palette_blue">Harness-Blau</string>
+    <string name="theme_palette_blue">VEXORA-Blau</string>
     <string name="theme_palette_ocean">Ozean</string>
     <string name="theme_palette_indigo">Indigo</string>
     <string name="theme_palette_lavender">Lavendel</string>

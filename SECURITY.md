@@ -1,6 +1,6 @@
 # Security Policy
 
-AndroidHarness can read and change files, execute programs, connect to external
+VEXORA can read and change files, execute programs, connect to external
 services, and use privileged device access when enabled. Use it only with
 projects, tools, models, and services you trust. This policy describes the
 security boundaries and how to report problems; it is not a security guarantee.
@@ -18,12 +18,12 @@ they have the same signing identity or hardening as a production release.
 ## Reporting a Vulnerability
 
 Use **Report a vulnerability** from the repository's
-[security advisories page](https://github.com/Sanuu7/AndroidHarness/security/advisories)
+[security advisories page](https://github.com/Sanuu7/VEXORA/security/advisories)
 when GitHub private vulnerability reporting is available. Adding this policy
 file does not itself enable private reporting.
 
 If that option is unavailable, open an
-[issue requesting a private security contact](https://github.com/Sanuu7/AndroidHarness/issues/new?title=Private%20security%20reporting%20contact).
+[issue requesting a private security contact](https://github.com/Sanuu7/VEXORA/issues/new?title=Private%20security%20reporting%20contact).
 Include no vulnerability details, credentials, sensitive logs, or working
 exploit in that public issue. GitHub documents this fallback in its
 [private reporting guidance](https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/report-privately).

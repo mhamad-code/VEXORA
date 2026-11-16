@@ -1,9 +1,7 @@
 name: VEXORA build
 
 # Builds VEXORA on every push, and on demand from the Actions tab:
-#   * debug APK            (installable, debug-signed)
-#   * release APK          (signed with the VEXORA release key)
-#   * release AAB          (signed, for stores)
+#   * release APK          (signed with the VEXORA release key, single output: VEXORA.apk)
 # The release key is never in the repository; the four signing secrets below
 # are read at build time and the decoded keystore lives only in $RUNNER_TEMP.
 
@@ -79,14 +77,14 @@ jobs:
         run: |
           echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/vexora-release.jks"
 
-      - name: Build debug APK, signed release APK and signed AAB
+      - name: Build signed release APK
         env:
           VEXORA_KEYSTORE_FILE: ${{ runner.temp }}/vexora-release.jks
           VEXORA_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           VEXORA_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           VEXORA_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          ./gradlew :app:assembleDebug :app:assembleRelease :app:bundleRelease --stacktrace
+          ./gradlew :app:assembleRelease --stacktrace
 
       - name: Verify release signing
         run: |
@@ -100,18 +98,16 @@ jobs:
           STAMP=$(date -u +%Y%m%d-%H%M)
           SHA=$(git rev-parse --short HEAD)
           mkdir -p dist
-          cp app/build/outputs/apk/debug/app-debug.apk "dist/VEXORA-${STAMP}-${SHA}-debug.apk"
-          cp app/build/outputs/apk/release/app-release.apk "dist/VEXORA-${STAMP}-${SHA}-release.apk"
-          cp app/build/outputs/bundle/release/app-release.aab "dist/VEXORA-${STAMP}-${SHA}-release.aab"
+          cp app/build/outputs/apk/release/app-release.apk "dist/VEXORA.apk"
           ls -l dist
           echo "stamp=${STAMP}" >> "$GITHUB_OUTPUT"
           echo "sha=${SHA}" >> "$GITHUB_OUTPUT"
 
-      - name: Upload APK and AAB artifacts
+      - name: Upload VEXORA APK
         uses: actions/upload-artifact@v4
         with:
-          name: VEXORA-${{ steps.artifacts.outputs.stamp }}-${{ steps.artifacts.outputs.sha }}
-          path: dist/*
+          name: VEXORA
+          path: dist/VEXORA.apk
           retention-days: 30
 
       - name: Build summary
@@ -122,6 +118,6 @@ jobs:
             echo ""
             echo "- Result: **${{ job.status }}**"
             echo "- Application ID: \`com.agent.mhamed\`"
-            echo "- Debug APK, signed release APK and signed release AAB were produced in \`dist/\`."
+            echo "- A single signed release APK was produced: \`VEXORA.apk\`."
             echo "- Signing certificate: CN=VEXORA (verified with apksigner)."
           } >> "$GITHUB_STEP_SUMMARY"

@@ -19,12 +19,12 @@
     <string name="theme_custom_delete">Excluir paleta</string>
     <string name="theme_custom_delete_message">Remover esta paleta salva? O aplicativo volta para a predefinição escolhida se esta paleta estiver ativa.</string>
     <string name="theme_custom_preview">Pré-visualização da paleta</string>
-    <string name="theme_canvas_title">Harness Canvas</string>
+    <string name="theme_canvas_title">VEXORA Canvas</string>
     <string name="theme_canvas_description">Seu próprio plano de fundo para o Chat e o Código.</string>
     <string name="theme_canvas_add">Adicionar imagem</string>
     <string name="theme_canvas_change">Trocar imagem</string>
     <string name="theme_canvas_remove">Remover imagem</string>
-    <string name="theme_canvas_enabled">Mostrar Harness Canvas</string>
+    <string name="theme_canvas_enabled">Mostrar VEXORA Canvas</string>
     <string name="theme_canvas_chat">Chat</string>
     <string name="theme_canvas_code">Código</string>
     <string name="theme_canvas_dim">Escurecer imagem</string>

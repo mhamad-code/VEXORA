@@ -84,14 +84,14 @@ internal class TelegramManager(
         errorMutable.value = null
         try { startService() } catch (e: Exception) {
             setup.setEnabled(false)
-            errorMutable.value = "Could not start Telegram. Keep AndroidHarness open and try enabling it again."
+            errorMutable.value = "Could not start Telegram. Keep VEXORA open and try enabling it again."
             throw IllegalStateException(errorMutable.value)
         }
     }
     fun restoreIfEnabled() {
         scope.launch {
             if (setup.state.value.enabled && c.runtimePolicy.canRun()) try { startService() } catch (_: Exception) {
-                errorMutable.value = "Open AndroidHarness and enable Telegram to reconnect."
+                errorMutable.value = "Open VEXORA and enable Telegram to reconnect."
             }
         }
     }

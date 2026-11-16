@@ -139,9 +139,9 @@
     <string name="settings_search_license_title">"Lisans"</string>
     <string name="settings_search_license_desc">"Hakkında · MIT lisansı ve bunun çatallar için anlamı"</string>
     <string name="settings_search_credits_title">"Kredi"</string>
-    <string name="settings_search_credits_desc">"Hakkında · AndroidHarness\'nin arkasındaki açık kaynaklı projeler"</string>
+    <string name="settings_search_credits_desc">"Hakkında · VEXORA\'nin arkasındaki açık kaynaklı projeler"</string>
     <string name="settings_search_author_title">"Yazar"</string>
-    <string name="settings_search_author_desc">"Hakkında · AndroidHarness\'yi kim oluşturur ve nerede bulunur?"</string>
+    <string name="settings_search_author_desc">"Hakkında · VEXORA\'yi kim oluşturur ve nerede bulunur?"</string>
     <string name="settings_anchor_progress_bar_style">"İlerleme çubuğu stili"</string>
     <string name="settings_anchor_fallbacks">"Geri dönüşler"</string>
     <string name="settings_anchor_continue_chatgpt">"ChatGPT ile devam edin"</string>
@@ -287,10 +287,10 @@
     <string name="settings_restore_reconnect_title">"Geri yüklenen sohbetleri yeniden bağlayın"</string>
     <string name="settings_restore_reconnect_note">"Salt okunur erişim salt okunur olarak kalır. Birden fazla çalışma alanı kullanan sohbetlerin her biri için ayrı klasörlere ihtiyacı vardır."</string>
     <string name="settings_accounts_using_plan">"ChatGPT planınızı kullanıyorsunuz"</string>
-    <string name="settings_accounts_using_plan_desc">"AndroidHarness\'deki uygun istekler ChatGPT planınızı veya kredilerinizi kullanır. ChatGPT ayarlarında kullanımı inceleyin ve bu uygulamanın erişimini yönetin."</string>
+    <string name="settings_accounts_using_plan_desc">"VEXORA\'deki uygun istekler ChatGPT planınızı veya kredilerinizi kullanır. ChatGPT ayarlarında kullanımı inceleyin ve bu uygulamanın erişimini yönetin."</string>
     <string name="settings_action_got_it">"Anladım"</string>
     <string name="settings_accounts_signout_title">"Bu hesaptaki oturum kapatılsın mı?"</string>
-    <string name="settings_accounts_signout_message">"Bu, hesabın AndroidHarness ile bağlantısını keser ve otomatik geçişten kaldırır. Daha sonra tekrar oturum açabilirsiniz."</string>
+    <string name="settings_accounts_signout_message">"Bu, hesabın VEXORA ile bağlantısını keser ve otomatik geçişten kaldırır. Daha sonra tekrar oturum açabilirsiniz."</string>
     <string name="settings_action_continue">"Devam et"</string>
     <string name="settings_progress_bar_subtitle">"İlerleme çubuklarının nasıl görüneceğini seçin. Hemen uygulanır."</string>
     <string name="settings_provider_select">"Seç"</string>
@@ -335,7 +335,7 @@
     <string name="settings_action_disconnect">"Bağlantıyı kes"</string>
     <string name="settings_local_models_on_device">"Bu telefonda"</string>
     <string name="settings_local_models_system_tools">"Sistem talimatları ve araçları"</string>
-    <string name="settings_local_models_system_tools_desc">"Varsayılan olarak kapalıdır. Yerel modeller yalnızca sohbet mesajlarınızı alır. Projeniz üzerinde çalışırken Harness talimatlarını ve araçlarını kullanmalarına izin vermek için açın."</string>
+    <string name="settings_local_models_system_tools_desc">"Varsayılan olarak kapalıdır. Yerel modeller yalnızca sohbet mesajlarınızı alır. Projeniz üzerinde çalışırken VEXORA talimatlarını ve araçlarını kullanmalarına izin vermek için açın."</string>
     <string name="settings_local_models_system_tools_warning">"Bunun etkinleştirilmesi çok fazla girdi ekler, daha fazla bellek ve işlem gücü kullanır ve yanıtın başlaması birkaç dakika sürebilir. Değişiklikler bir sonraki yanıta uygulanır."</string>
     <string name="settings_local_models_yours">"Modelleriniz"</string>
     <string name="settings_local_models_empty_title">"Henüz model eklenmedi"</string>
@@ -484,7 +484,7 @@
     <string name="settings_storage_no_manifest">"Bu eski yüklemede dosya bildirimi yok. Sahiplik, boyut ve çalışma alanı kullanımı bilinmiyor; kaldırma işlemi korunur."</string>
     <string name="settings_storage_unverified">"Sahip olunan bazı dosyalar doğrulanamadı. Bu paket korunmaya devam eder."</string>
     <string name="settings_storage_release_confirm">"Sürüm gereksinimi"</string>
-    <string name="settings_storage_release_note">"Kaydedilen kullanımlar Harness dışında başlatılan komutları içermeyebilir. Bu aracı hâlâ kullanan tüm çalışma alanları için bir gereksinim bulundurun."</string>
+    <string name="settings_storage_release_note">"Kaydedilen kullanımlar VEXORA dışında başlatılan komutları içermeyebilir. Bu aracı hâlâ kullanan tüm çalışma alanları için bir gereksinim bulundurun."</string>
     <string name="settings_storage_cleanup_skip_note">"Değiştirilen veya bağlanan dosyalar atlanır. Kaynak klasörler, modeller ve kurtarma verileri korunur."</string>
     <string name="settings_subagent_choose_model">"Alt ajan modelini seçin"</string>
     <string name="settings_subagent_use_main">"Ana ajan modelini kullan"</string>
@@ -905,7 +905,7 @@
     <string name="chat_handoff_picker_note">"Nerede inşa edileceğini seçin. Chat planınız geliyor."</string>
     <string name="chat_handoff_close">"Çalışma alanı seçiciyi kapat"</string>
     <string name="chat_handoff_no_workspace">"Devam etmek için Code\'ye bir çalışma alanı ekleyin."</string>
-    <string name="chat_share_target">"AndroidHarness Chat"</string>
+    <string name="chat_share_target">"VEXORA Chat"</string>
     <string name="chat_share_title">"Chat\'de paylaş"</string>
     <string name="chat_share_review">"Paylaşılan öğelerinizi inceleyin, bir Chat seçin ve bir soru ekleyin. Siz Chat\'de Gönder\'e dokunana kadar hiçbir şey gönderilmez."</string>
     <string name="chat_share_new">"Yeni Chat"</string>
@@ -974,7 +974,7 @@
     <string name="dhizuku_denied">"Erişim reddedildi · Dhizuku\'da erişim izni ver"</string>
     <string name="dhizuku_error">"Bağlantı başarısız oldu · Dhizuku\'yu kontrol edip tekrar deneyin"</string>
     <string name="settings_language_sinhala">"සිංහල"</string>
-    <string name="glass_title">"AHarness Camı (Deneysel)"</string>
+    <string name="glass_title">"VEXORA Camı (Deneysel)"</string>
     <string name="glass_description">"Gezinme, kontroller ve kartlar için cam efektleri."</string>
     <string name="glass_enable">"Buzlu cam"</string>
     <string name="glass_enable_hint">"Hafifçe bulanıklaştırılmış arka planlara sahip yarı saydam yüzeyler kullanın."</string>
@@ -983,7 +983,7 @@
     <string name="glass_unsupported">"Cam efektleri için Android 12 veya üzeri gerekir."</string>
     <string name="glass_liquid_unsupported">"Liquid Glass\'ın Android 13 veya üzeri bir sürüme ihtiyacı vardır. Bu cihazda buzlu cam mevcuttur."</string>
     <string name="glass_preview_label">"Cam önizlemesi"</string>
-    <string name="glass_preview_title">"AndroidHarness"</string>
+    <string name="glass_preview_title">"VEXORA"</string>
     <string name="glass_preview_text">"Metni temizle. Daha yumuşak bir arka plan."</string>
     <string name="glass_transparency">"Şeffaflık"</string>
     <string name="glass_transparency_percent">"%1$d%%"</string>
@@ -1010,9 +1010,9 @@
     <string name="auto_compact_saved">Bu sohbet yaklaşık %1$s bağlam jetonunda otomatik sıkıştırıp devam eder. Yanıt için yer ayrılır.</string>
     <string name="auto_compact_reset">Varsayılan izleniyor: yaklaşık %1$s bağlam jetonunda otomatik sıkıştır.</string>
     <string name="tip_auto_compact">Bağlamı 350.000 jetonunda otomatik özetleyip bu sohbete devam etmek için /autocompact 350K kullanın. 258K veya 1M de kabul edilir. /autocompact default Ayarlar → Kodlama → Ajan davranışı yolunu izler.</string>
-    <string name="harness_free_quota_title">"Harness ücretsiz kota sınırı tükendi"</string>
+    <string name="harness_free_quota_title">"VEXORA ücretsiz kota sınırı tükendi"</string>
     <string name="harness_free_quota_body">"Ücretsiz hak ağınızla paylaşılır ve saatlik bir pencerede yenilenir. Sıfırlanmasını bekleyin veya devam etmek için sağlayıcıyı değiştirin."</string>
-    <string name="harness_free_rate_title">"Harness ücretsiz modelleri geçici olarak sınırlı"</string>
+    <string name="harness_free_rate_title">"VEXORA ücretsiz modelleri geçici olarak sınırlı"</string>
     <string name="harness_free_rate_body">"Bu model geçici olarak meşgul veya hız sınırlı. Kısa süre sonra tekrar deneyin ya da devam etmek için sağlayıcıyı değiştirin."</string>
     <string name="harness_switch_provider">"Sağlayıcıyı değiştir"</string>
     <string name="harness_free_wait">"Bekleyeceğim"</string>

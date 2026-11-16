@@ -495,7 +495,7 @@
     <string name="ui_reasoning_and_thinking_tokens_are_billed_as">"Los tokens de razonamiento y pensamiento se facturan como salida y no se reenvían como entrada."</string>
     <string name="ui_scheduled_messages">"Mensajes programados"</string>
     <string name="ui_allow_workspace_mcp_servers">"¿Permitir servidores MCP del espacio de trabajo?"</string>
-    <string name="ui_this_workspace_ships_a_harness_mcp_json">"Este espacio de trabajo incluye un .harness/mcp.json que quiere conectarse: %1$s. "</string>
+    <string name="ui_this_workspace_ships_a_harness_mcp_json">"Este espacio de trabajo incluye un .VEXORA/mcp.json que quiere conectarse: %1$s. "</string>
     <string name="ui_its_servers_can_run_local_commands_and">"Sus servidores pueden ejecutar comandos locales y acceder a la red. "</string>
     <string name="ui_only_approve_configs_you_trust">"Solo aprueba configuraciones en las que confíes."</string>
     <string name="ui_approve">"Aprobar"</string>
@@ -637,7 +637,7 @@
     <string name="ui_shizuku_is_disabled">"Shizuku está deshabilitado"</string>
     <string name="ui_shizuku_is_no_longer_available_its_server">"Shizuku ya no está disponible. Su servidor puede haber detenido o sido terminado "</string>
     <string name="ui_in_the_background_or_this_app_s">"en segundo plano, o el acceso de esta aplicación puede haber sido revocado. "</string>
-    <string name="ui_start_shizuku_and_allow_androidharness_access_to">"Inicia Shizuku y permite que AndroidHarness acceda para usarlo de nuevo."</string>
+    <string name="ui_start_shizuku_and_allow_androidharness_access_to">"Inicia Shizuku y permite que VEXORA acceda para usarlo de nuevo."</string>
     <string name="ui_never_show_this_message_again">"Nunca mostrar este mensaje de nuevo"</string>
     <string name="ui_limits_resets">"Límites y reinicios"</string>
     <string name="ui_view_live_limits_in_chatgpt">"Ver límites en vivo en ChatGPT"</string>
@@ -1053,14 +1053,14 @@
     <string name="ui_ready">"Listo"</string>
     <string name="ui_local_semantic_code_graph_for_symbols_callers">"Gráfico de código semántico local para símbolos, llamadores, impacto y pruebas afectadas"</string>
     <string name="ui_working">"Trabajando…"</string>
-    <string name="ui_harness_installs_codegraph_into_its_private_linux">"Harness instala CodeGraph en su entorno Linux privado, unos 170 MB con el runtime de Node que necesita. No hay app Termux, no hay Shizuku y no hay configuración separada de CodeGraph para tus agentes."</string>
+    <string name="ui_harness_installs_codegraph_into_its_private_linux">"VEXORA instala CodeGraph en su entorno Linux privado, unos 170 MB con el runtime de Node que necesita. No hay app Termux, no hay Shizuku y no hay configuración separada de CodeGraph para tus agentes."</string>
     <string name="ui_no_workspace">"Sin espacio de trabajo"</string>
     <string name="ui_this_workspace_does_not_expose_a_real">"Este espacio de trabajo no expone una ruta de sistema de archivos real"</string>
     <string name="ui_indexed">"Indexado"</string>
     <string name="ui_not_indexed">"No indexado"</string>
     <string name="ui_codegraph_needs_a_shell_capable_workspace_with">"CodeGraph necesita un espacio de trabajo con shell y una ruta de dispositivo real."</string>
     <string name="ui_install_codegraph_first_then_enable_it_for">"Instala CodeGraph primero, luego habilítalo para este espacio de trabajo."</string>
-    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"Cuando este espacio de trabajo esté indexado, Harness expone CodeGraph explorar, nodo, impacto, pruebas-afectadas y herramientas de sincronización al agente de codificación. Las consultas sincronizan archivos cambiados antes de leer el grafo."</string>
+    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"Cuando este espacio de trabajo esté indexado, VEXORA expone CodeGraph explorar, nodo, impacto, pruebas-afectadas y herramientas de sincronización al agente de codificación. Las consultas sincronizan archivos cambiados antes de leer el grafo."</string>
     <string name="ui_keyless">"Sin clave"</string>
     <string name="ui_public_search_engines_no_setup">"Motores de búsqueda públicos, sin configuración"</string>
     <string name="ui_key_saved">"%1$s · clave guardada"</string>
@@ -1110,7 +1110,7 @@
     <string name="ui_the_app_needs_node_python_from_the">"la app. Necesita node/python del entorno Linux."</string>
     <string name="ui_not_installed_optional">"No instalado: opcional."</string>
     <string name="ui_installed_not_running">"Instalado, no ejecutándose."</string>
-    <string name="ui_running_grant_androidharness_access">"En ejecución: concede acceso a AndroidHarness."</string>
+    <string name="ui_running_grant_androidharness_access">"En ejecución: concede acceso a VEXORA."</string>
     <string name="ui_connected_shell_privileges_ready">"Conectado: privilegios de shell listos."</string>
     <string name="ui_connected_in_compatibility_mode_shell_privileges_ready">"Conectado en modo de compatibilidad: privilegios de shell listos."</string>
     <string name="ui_access_granted_connecting_to_the_shell_runner">"Acceso concedido. Conectando al ejecutor de shell…"</string>
@@ -1157,10 +1157,10 @@
     <string name="ui_open_source">"Código abierto"</string>
     <string name="ui_use_it_change_it_ship_it_even">"Úsalo, cámbialo, distribúyelo, incluso dentro de una app comercial. La única condición es que el "</string>
     <string name="ui_copyright_notice_and_the_license_text_travel">"aviso de copyright y el texto de la licencia viajen con el código. No viene con garantía."</string>
-    <string name="ui_androidharness_is_built_on_open_source_work">"AndroidHarness está construido sobre trabajo de código abierto y toma ideas de los agentes que lo precedieron."</string>
+    <string name="ui_androidharness_is_built_on_open_source_work">"VEXORA está construido sobre trabajo de código abierto y toma ideas de los agentes que lo precedieron."</string>
     <string name="ui_built_with">"Construido con"</string>
     <string name="ui_inspired_by">"Inspirado en"</string>
-    <string name="ui_every_project_keeps_its_own_license_androidharness">"Cada proyecto mantiene su propia licencia. AndroidHarness no está afiliado a ellos."</string>
+    <string name="ui_every_project_keeps_its_own_license_androidharness">"Cada proyecto mantiene su propia licencia. VEXORA no está afiliado a ellos."</string>
     <string name="ui_exported_chats_messages">"Exportados %1$s chats (%2$s mensajes, %3$s recuerdos)."</string>
     <string name="ui_export_failed">"Exportación fallida."</string>
     <string name="ui_export_failed_1230">"Exportación fallida: %1$s"</string>
@@ -1249,7 +1249,7 @@
     <string name="ui_status">"Estado"</string>
     <string name="ui_retry_resume">"Reintentar / reanudar"</string>
     <string name="ui_pause_telegram">"Pausar Telegram"</string>
-    <string name="ui_welcome_to_androidharness">"Bienvenido a AndroidHarness"</string>
+    <string name="ui_welcome_to_androidharness">"Bienvenido a VEXORA"</string>
     <string name="ui_grant_storage_access_to_start_coding_notifications">"Concede acceso a almacenamiento para comenzar a programar. Las notificaciones y otras herramientas son opcionales."</string>
     <string name="ui_device_storage_access_granted">"Acceso a almacenamiento del dispositivo concedido"</string>
     <string name="ui_required_allow_access_to_device_files_and">"Requerido: permitir acceso a archivos y carpetas del dispositivo"</string>
@@ -1267,7 +1267,7 @@
     <string name="ui_optional_keeps_long_runs_alive_on_aggressive">"Opcional: mantiene ejecuciones largas vivas en OEMs agresivos"</string>
     <string name="ui_ready_to_begin">"Listo para comenzar"</string>
     <string name="ui_allow_storage_access_to_begin">"Permite acceso a almacenamiento para comenzar"</string>
-    <string name="ui_start_harness">"Iniciar harness"</string>
+    <string name="ui_start_harness">"Iniciar VEXORA"</string>
     <string name="ui_optional">"Opcional"</string>
     <string name="ui_model_activity_and_ai_code_changes">"Actividad del modelo y cambios de código AI"</string>
     <string name="ui_model_activity">"ACTIVIDAD DEL MODELO"</string>
@@ -1587,7 +1587,7 @@
     <string name="ui_access_mode">"Modo de acceso: %1$s"</string>
     <string name="ui_scheduled_tasks">"Tareas programadas"</string>
     <string name="ui_project_and_chat_sidebar">"Barra lateral de proyectos y chats"</string>
-    <string name="ui_androidharness_icon">"Icono de AndroidHarness"</string>
+    <string name="ui_androidharness_icon">"Icono de VEXORA"</string>
     <string name="ui_collapse_sidebar">"Contraer barra lateral"</string>
     <string name="ui_search_chats_and_messages">"Buscar chats y mensajes"</string>
     <string name="ui_search_chats">"Buscar chats"</string>
@@ -1636,7 +1636,7 @@
         <item quantity="other">"%1$d filas"</item>
     </plurals>
     <string name="voice_transcribing">"Transcribiendo…"</string>
-    <string name="donate_funding_message">"Nos faltan fondos para seguir desarrollando AndroidHarness. Tu apoyo nos ayuda a continuar."</string>
+    <string name="donate_funding_message">"Nos faltan fondos para seguir desarrollando VEXORA. Tu apoyo nos ayuda a continuar."</string>
     <string name="donate_dismiss_message">"Descartar mensaje de donación"</string>
     <string name="background_settings_title">Segundo plano y notificaciones</string>
     <string name="background_settings_description">Gestiona el trabajo en segundo plano y los avisos.</string>
@@ -1646,7 +1646,7 @@
     <string name="background_notifications_description">Permitir avisos. Android gestiona los de servicios.</string>
     <string name="background_android_title">Ajustes de notificaciones de Android</string>
     <string name="background_android_description">Gestiona todas las notificaciones de Android.</string>
-    <string name="background_run_blocked">La ejecución en segundo plano está desactivada. Abre AndroidHarness para iniciar o continuar una tarea.</string>
+    <string name="background_run_blocked">La ejecución en segundo plano está desactivada. Abre VEXORA para iniciar o continuar una tarea.</string>
     <string name="background_service_notice">Servicio en segundo plano activo</string>
     <string name="local_gpu_download_title">Compatibilidad con GPU</string>
     <string name="local_gpu_runtime_repository">Fuente: Sanuu7/AH-GPU-Runtime</string>

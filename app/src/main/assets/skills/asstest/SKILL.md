@@ -4,7 +4,7 @@ description: Deep self-test battery, 25 checks across 9 phases. Superset of doct
 category: software-development
 ---
 
-# Harness Deep Test (asstest)
+# VEXORA Deep Test (asstest)
 
 25 checks in 9 phases. Superset of /doctor: byte-exact round-trips, patch atomicity,
 grep semantics, uid-split ownership, git branch ops, HTTP edge cases, and parallel

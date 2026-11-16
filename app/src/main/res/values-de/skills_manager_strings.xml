@@ -27,7 +27,7 @@
     <string name="sk_copy">Kopieren</string>
     <string name="sk_copied">Skill kopiert</string>
     <string name="sk_copy_note">Beim Speichern bleibt deine eigene Kopie, die den mitgelieferten Skill ersetzt. Lösche deine Kopie später, um zum Original zurückzukehren.</string>
-    <string name="sk_workspace_note">Dieser Skill liegt im Ordner .harness/skills des Arbeitsbereichs. Bearbeite ihn dort.</string>
+    <string name="sk_workspace_note">Dieser Skill liegt im Ordner .VEXORA/skills des Arbeitsbereichs. Bearbeite ihn dort.</string>
     <string name="sk_preview">Vorschau</string>
     <string name="sk_markdown">Markdown</string>
     <string name="sk_files">Dateien (%1$d)</string>

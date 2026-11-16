@@ -27,7 +27,7 @@
     <string name="sk_copy">"Kopyala"</string>
     <string name="sk_copied">"Beceri kopyalandı"</string>
     <string name="sk_copy_note">"Kaydetmek kendi kopyanızı korur ve paketlenmiş becerinin yerini alır. Orijinale dönmek için kopyanızı daha sonra silin."</string>
-    <string name="sk_workspace_note">"Bu beceri çalışma alanının .harness/skills klasöründe bulunur. Burada düzenleyin."</string>
+    <string name="sk_workspace_note">"Bu beceri çalışma alanının .VEXORA/skills klasöründe bulunur. Burada düzenleyin."</string>
     <string name="sk_preview">"Önizleme"</string>
     <string name="sk_markdown">"Markdown"</string>
     <string name="sk_files">"Dosyalar (%1$d)"</string>

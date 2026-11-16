@@ -70,9 +70,9 @@ data class ContextBreakdown(
          */
         private val SECTION_HEADINGS: List<Pair<String, Part>> = listOf(
             "## Skills (mandatory)" to Part.SKILLS,
-            "## AndroidHarness operating guide" to Part.SKILLS,
+            "## VEXORA operating guide" to Part.SKILLS,
             "# Auto-loaded skill:" to Part.SKILLS,
-            "## Live AndroidHarness environment" to Part.ENVIRONMENT,
+            "## Live VEXORA environment" to Part.ENVIRONMENT,
             "## Tools available for this request" to Part.ENVIRONMENT,
             "# AGENTS.md (project instructions)" to Part.INSTRUCTIONS,
             "# Project instructions:" to Part.INSTRUCTIONS,

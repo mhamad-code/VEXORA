@@ -27,7 +27,7 @@
     <string name="sk_copy">"Kopyahin"</string>
     <string name="sk_copied">"Nakopya ang kasanayan"</string>
     <string name="sk_copy_note">"Pananatilihin ng pag-save ang sarili mong kopya, na pumapalit sa built-in na kasanayan. Burahin ang kopya mo mamaya para bumalik sa orihinal."</string>
-    <string name="sk_workspace_note">"Nasa folder na .harness/skills ng workspace ang kasanayang ito. I-edit ito doon."</string>
+    <string name="sk_workspace_note">"Nasa folder na .VEXORA/skills ng workspace ang kasanayang ito. I-edit ito doon."</string>
     <string name="sk_preview">"Preview"</string>
     <string name="sk_markdown">"Markdown"</string>
     <string name="sk_files">"Mga file (%1$d)"</string>

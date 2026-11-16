@@ -20,12 +20,12 @@
     <string name="theme_custom_delete">"தட்டுகளை நீக்கு"</string>
     <string name="theme_custom_delete_message">"இந்த சேமித்த தட்டுகளை அகற்றவா? இந்தத் தட்டு செயலில் இருந்தால், ஆப்ஸ் தேர்ந்தெடுத்த முன்னமைவுக்குத் திரும்பும்."</string>
     <string name="theme_custom_preview">"தட்டு மாதிரிக்காட்சி"</string>
-    <string name="theme_canvas_title">"Harness கேன்வாஸ்"</string>
+    <string name="theme_canvas_title">"VEXORA கேன்வாஸ்"</string>
     <string name="theme_canvas_description">"Chat மற்றும் Code க்கான உங்கள் சொந்த பின்னணி."</string>
     <string name="theme_canvas_add">"படத்தைச் சேர்க்கவும்"</string>
     <string name="theme_canvas_change">"படத்தை மாற்றவும்"</string>
     <string name="theme_canvas_remove">"படத்தை அகற்று"</string>
-    <string name="theme_canvas_enabled">"Harness கேன்வாஸைக் காட்டு"</string>
+    <string name="theme_canvas_enabled">"VEXORA கேன்வாஸைக் காட்டு"</string>
     <string name="theme_canvas_chat">"Chat"</string>
     <string name="theme_canvas_code">"Code"</string>
     <string name="theme_canvas_dim">"படம் மங்குகிறது"</string>

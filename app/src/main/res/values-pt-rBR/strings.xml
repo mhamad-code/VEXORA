@@ -149,9 +149,9 @@
     <string name="settings_search_license_title">"Licença"</string>
     <string name="settings_search_license_desc">"Sobre · A licença MIT e o que ela significa para forks"</string>
     <string name="settings_search_credits_title">"Créditos"</string>
-    <string name="settings_search_credits_desc">"Sobre · Projetos de código aberto por trás do AndroidHarness"</string>
+    <string name="settings_search_credits_desc">"Sobre · Projetos de código aberto por trás do VEXORA"</string>
     <string name="settings_search_author_title">"Autor"</string>
-    <string name="settings_search_author_desc">"Sobre · Quem cria o AndroidHarness e onde encontrá-lo"</string>
+    <string name="settings_search_author_desc">"Sobre · Quem cria o VEXORA e onde encontrá-lo"</string>
     <string name="settings_anchor_progress_bar_style">"Estilo da barra de progresso"</string>
     <string name="settings_anchor_fallbacks">"Alternativas"</string>
     <string name="settings_anchor_continue_chatgpt">"Continuar com ChatGPT"</string>
@@ -297,10 +297,10 @@
     <string name="settings_restore_reconnect_title">"Reconectar chats restaurados"</string>
     <string name="settings_restore_reconnect_note">"O acesso somente leitura continua somente leitura. Chats que usaram várias áreas de trabalho precisam de pastas separadas para cada uma."</string>
     <string name="settings_accounts_using_plan">"Você está usando seu plano do ChatGPT"</string>
-    <string name="settings_accounts_using_plan_desc">"Requisições elegíveis no AndroidHarness usam seu plano do ChatGPT ou créditos. Revise o uso e gerencie o acesso deste app nas Configurações do ChatGPT."</string>
+    <string name="settings_accounts_using_plan_desc">"Requisições elegíveis no VEXORA usam seu plano do ChatGPT ou créditos. Revise o uso e gerencie o acesso deste app nas Configurações do ChatGPT."</string>
     <string name="settings_action_got_it">"Entendi"</string>
     <string name="settings_accounts_signout_title">"Sair desta conta?"</string>
-    <string name="settings_accounts_signout_message">"Isso desconecta a conta do AndroidHarness e a remove da troca automática. Você pode entrar novamente depois."</string>
+    <string name="settings_accounts_signout_message">"Isso desconecta a conta do VEXORA e a remove da troca automática. Você pode entrar novamente depois."</string>
     <string name="settings_action_continue">"Continuar"</string>
     <string name="settings_progress_bar_subtitle">"Escolha como as barras de progresso aparecem. Aplica-se imediatamente."</string>
     <string name="settings_provider_select">"Selecionar"</string>
@@ -345,7 +345,7 @@
     <string name="settings_action_disconnect">"Desconectar"</string>
     <string name="settings_local_models_on_device">"Neste celular"</string>
     <string name="settings_local_models_system_tools">"Instruções do sistema e ferramentas"</string>
-    <string name="settings_local_models_system_tools_desc">"Desativado por padrão. Modelos locais recebem apenas suas mensagens de chat. Ative para permitir que usem instruções e ferramentas do Harness para trabalhar no seu projeto."</string>
+    <string name="settings_local_models_system_tools_desc">"Desativado por padrão. Modelos locais recebem apenas suas mensagens de chat. Ative para permitir que usem instruções e ferramentas do VEXORA para trabalhar no seu projeto."</string>
     <string name="settings_local_models_system_tools_warning">"Ativar isso adiciona muita entrada, usa mais memória e processamento, e pode levar vários minutos antes de uma resposta começar. As alterações se aplicam à próxima resposta."</string>
     <string name="settings_local_models_yours">"Seus modelos"</string>
     <string name="settings_local_models_empty_title">"Nenhum modelo adicionado ainda"</string>
@@ -494,7 +494,7 @@
     <string name="settings_storage_no_manifest">"Esta instalação mais antiga não tem manifesto de arquivos. Propriedade, tamanho e uso da área de trabalho são desconhecidos; a remoção permanece protegida."</string>
     <string name="settings_storage_unverified">"Alguns arquivos próprios não puderam ser verificados. Este pacote permanece protegido."</string>
     <string name="settings_storage_release_confirm">"Liberar requisito"</string>
-    <string name="settings_storage_release_note">"Usos registrados podem não incluir comandos iniciados fora do Harness. Mantenha um requisito para qualquer área de trabalho que ainda use esta ferramenta."</string>
+    <string name="settings_storage_release_note">"Usos registrados podem não incluir comandos iniciados fora do VEXORA. Mantenha um requisito para qualquer área de trabalho que ainda use esta ferramenta."</string>
     <string name="settings_storage_cleanup_skip_note">"Arquivos alterados ou vinculados são ignorados. Pastas de origem, modelos e dados de recuperação permanecem mantidos."</string>
     <string name="settings_subagent_choose_model">"Escolher modelo do subagente"</string>
     <string name="settings_subagent_use_main">"Usar modelo do agente principal"</string>
@@ -915,7 +915,7 @@
     <string name="chat_handoff_picker_note">"Escolha onde construir. Seu plano do Chat acompanha."</string>
     <string name="chat_handoff_close">"Fechar seletor de área de trabalho"</string>
     <string name="chat_handoff_no_workspace">"Adicione uma área de trabalho em Code para continuar."</string>
-    <string name="chat_share_target">"AndroidHarness Chat"</string>
+    <string name="chat_share_target">"VEXORA Chat"</string>
     <string name="chat_share_title">"Compartilhar no Chat"</string>
     <string name="chat_share_review">"Revise seus itens compartilhados, escolha um Chat e adicione uma pergunta. Nada é enviado até você tocar em Enviar no Chat."</string>
     <string name="chat_share_new">"Novo Chat"</string>
@@ -975,7 +975,7 @@
     <string name="dhizuku_denied">Acesso negado · permita o acesso no Dhizuku</string>
     <string name="dhizuku_error">Falha na conexão · verifique o Dhizuku e tente novamente</string>
     <string name="settings_language_sinhala">සිංහල</string>
-    <string name="glass_title">AHarness Glass (experimental)</string>
+    <string name="glass_title">VEXORA Glass (experimental)</string>
     <string name="glass_description">Efeitos de vidro para navegação, controles e cartões.</string>
     <string name="glass_enable">Vidro fosco</string>
     <string name="glass_enable_hint">Use superfícies translúcidas com fundos suavemente desfocados.</string>
@@ -984,7 +984,7 @@
     <string name="glass_unsupported">Os efeitos de vidro precisam do Android 12 ou mais recente.</string>
     <string name="glass_liquid_unsupported">O Liquid Glass precisa do Android 13 ou mais recente. O vidro fosco está disponível neste aparelho.</string>
     <string name="glass_preview_label">Prévia do vidro</string>
-    <string name="glass_preview_title">AndroidHarness</string>
+    <string name="glass_preview_title">VEXORA</string>
     <string name="glass_preview_text">Texto nítido. Um fundo mais suave.</string>
     <string name="glass_transparency">Transparência</string>
     <string name="glass_transparency_percent">%1$d%%</string>
@@ -1020,9 +1020,9 @@
     <string name="auto_compact_saved">Esta conversa vai compactar automaticamente com cerca de %1$s tokens de contexto e continuar. O espaço para a resposta é reservado.</string>
     <string name="auto_compact_reset">Seguindo o padrão: compactar automaticamente com cerca de %1$s tokens de contexto.</string>
     <string name="tip_auto_compact">Use /autocompact 350K para resumir o contexto automaticamente em 350.000 tokens e continuar esta conversa. Também aceita 258K ou 1M. /autocompact default segue Configurações → Programação → Comportamento do agente.</string>
-    <string name="harness_free_quota_title">A cota gratuita do Harness foi esgotada</string>
+    <string name="harness_free_quota_title">A cota gratuita do VEXORA foi esgotada</string>
     <string name="harness_free_quota_body">A cota gratuita é compartilhada pela sua rede e é renovada a cada hora. Aguarde a redefinição ou troque de provedor para continuar.</string>
-    <string name="harness_free_rate_title">Os modelos gratuitos do Harness estão temporariamente limitados</string>
+    <string name="harness_free_rate_title">Os modelos gratuitos do VEXORA estão temporariamente limitados</string>
     <string name="harness_free_rate_body">Este modelo está temporariamente ocupado ou limitado. Tente novamente em breve ou troque de provedor para continuar.</string>
     <string name="harness_switch_provider">Trocar provedor</string>
     <string name="harness_free_wait">Vou esperar</string>

@@ -27,7 +27,7 @@
     <string name="sk_copy">"복사"</string>
     <string name="sk_copied">"스킬을 복사했습니다"</string>
     <string name="sk_copy_note">"저장하면 내 복사본이 유지되며 기본 제공 스킬을 대체합니다. 원래대로 돌아가려면 나중에 내 복사본을 삭제하세요."</string>
-    <string name="sk_workspace_note">"이 스킬은 작업 공간의 .harness/skills 폴더에 있습니다. 거기서 편집하세요."</string>
+    <string name="sk_workspace_note">"이 스킬은 작업 공간의 .VEXORA/skills 폴더에 있습니다. 거기서 편집하세요."</string>
     <string name="sk_preview">"미리보기"</string>
     <string name="sk_markdown">"Markdown"</string>
     <string name="sk_files">"파일 (%1$d)"</string>

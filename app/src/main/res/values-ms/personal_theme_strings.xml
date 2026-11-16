@@ -20,12 +20,12 @@
     <string name="theme_custom_delete">"Padamkan palet"</string>
     <string name="theme_custom_delete_message">"Alih keluar palet yang disimpan ini? Apl akan kembali ke pratetap yang dipilih jika palet ini aktif."</string>
     <string name="theme_custom_preview">"Pratonton palet"</string>
-    <string name="theme_canvas_title">"Harness Kanvas"</string>
+    <string name="theme_canvas_title">"VEXORA Kanvas"</string>
     <string name="theme_canvas_description">"Latar belakang anda sendiri untuk Chat dan Code."</string>
     <string name="theme_canvas_add">"Tambah imej"</string>
     <string name="theme_canvas_change">"Tukar imej"</string>
     <string name="theme_canvas_remove">"Alih keluar imej"</string>
-    <string name="theme_canvas_enabled">"Tunjukkan Kanvas Harness"</string>
+    <string name="theme_canvas_enabled">"Tunjukkan Kanvas VEXORA"</string>
     <string name="theme_canvas_chat">"Chat"</string>
     <string name="theme_canvas_code">"Code"</string>
     <string name="theme_canvas_dim">"Peredupan imej"</string>

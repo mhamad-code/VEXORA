@@ -20,12 +20,12 @@
     <string name="theme_custom_delete">"Tanggalin ang palette"</string>
     <string name="theme_custom_delete_message">"Alisin ang naka-save na palette na ito? Babalik ang app sa napili nitong preset kung aktibo ang palette na ito."</string>
     <string name="theme_custom_preview">"Preview ng palette"</string>
-    <string name="theme_canvas_title">"Harness Canvas"</string>
+    <string name="theme_canvas_title">"VEXORA Canvas"</string>
     <string name="theme_canvas_description">"Ang iyong sariling backdrop para sa Chat at Code."</string>
     <string name="theme_canvas_add">"Magdagdag ng larawan"</string>
     <string name="theme_canvas_change">"Baguhin ang larawan"</string>
     <string name="theme_canvas_remove">"Alisin ang larawan"</string>
-    <string name="theme_canvas_enabled">"Ipakita ang Harness Canvas"</string>
+    <string name="theme_canvas_enabled">"Ipakita ang VEXORA Canvas"</string>
     <string name="theme_canvas_chat">"Chat"</string>
     <string name="theme_canvas_code">"Code"</string>
     <string name="theme_canvas_dim">"Pagdilim ng imahe"</string>

@@ -3021,7 +3021,7 @@ private fun appVersionLabel(context: Context): String = runCatching {
     context.packageManager.getPackageInfo(context.packageName, 0).versionName
 }.getOrNull().orEmpty().ifBlank { "?" }
 
-/** A project AndroidHarness leans on, listed on the About page. */
+/** A project VEXORA leans on, listed on the About page. */
 private data class Credit(val name: String, val role: String, val url: String)
 
 private val BUILT_WITH = listOf(

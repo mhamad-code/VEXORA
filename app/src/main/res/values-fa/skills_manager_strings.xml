@@ -27,7 +27,7 @@
     <string name="sk_copy">کپی</string>
     <string name="sk_copied">مهارت کپی شد</string>
     <string name="sk_copy_note">ذخیره کردن نسخهٔ خودتان را نگه می‌دارد که جایگزین مهارت همراه می‌شود. بعداً نسخهٔ خود را حذف کنید تا به نسخهٔ اصلی برگردید.</string>
-    <string name="sk_workspace_note">این مهارت در پوشهٔ .harness/skills فضای کاری قرار دارد. آن را همان‌جا ویرایش کنید.</string>
+    <string name="sk_workspace_note">این مهارت در پوشهٔ .VEXORA/skills فضای کاری قرار دارد. آن را همان‌جا ویرایش کنید.</string>
     <string name="sk_preview">پیش‌نمایش</string>
     <string name="sk_markdown">Markdown</string>
     <string name="sk_files">فایل‌ها (%1$d)</string>

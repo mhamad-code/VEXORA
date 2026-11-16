@@ -96,16 +96,16 @@ class ProjectSidebarDeviceTest {
                     }
                 }
             } }
-            await { find("AndroidHarness icon") != null }
-            assertWithin("AndroidHarness icon")
+            await { find("VEXORA icon") != null }
+            assertWithin("VEXORA icon")
             screenshot("chats-view")
-            assertNull(find("Collapse AndroidHarness"))
+            assertNull(find("Collapse VEXORA"))
             scrollTo("Working"); assertNotNull(find("Working"))
             scrollTo("Needs you"); assertNotNull(find("Needs you"))
             tap("Projects")
-            scrollTo("Expand AndroidHarness")
+            scrollTo("Expand VEXORA")
             screenshot("projects-view")
-            tap("Expand AndroidHarness")
+            tap("Expand VEXORA")
             screenshot("projects-expanded")
             scrollTo("Expand Frame"); tap("Expand Frame")
             scrollTo("Actions for Fix the mobile menu"); tap("Actions for Fix the mobile menu"); tap("Chat details")
@@ -162,7 +162,7 @@ class ProjectSidebarDeviceTest {
             await { find("Open navigation") != null }
             assertNull("A closed drawer must not expose its search field", find("Search chats and messages"))
             tap("Open navigation")
-            await { find("AndroidHarness icon") != null }
+            await { find("VEXORA icon") != null }
             assertSearchInactive(activity)
             tap("Search chats and messages")
             await { searchHasFocus() }
@@ -171,7 +171,7 @@ class ProjectSidebarDeviceTest {
             tap("Collapse sidebar")
             await { find("Open navigation") != null }
             tap("Open navigation")
-            await { find("AndroidHarness icon") != null }
+            await { find("VEXORA icon") != null }
             assertSearchInactive(activity)
             assertEquals("", nodes().first { it.isEditable && it.isVisibleToUser }.text?.toString().orEmpty())
             search("")

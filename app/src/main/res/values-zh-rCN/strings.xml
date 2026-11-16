@@ -151,9 +151,9 @@
     <string name="settings_search_license_title">许可证</string>
     <string name="settings_search_license_desc">关于 · MIT 许可证及其对分支的意义</string>
     <string name="settings_search_credits_title">致谢</string>
-    <string name="settings_search_credits_desc">关于 · AndroidHarness 背后的开源项目</string>
+    <string name="settings_search_credits_desc">关于 · VEXORA 背后的开源项目</string>
     <string name="settings_search_author_title">作者</string>
-    <string name="settings_search_author_desc">关于 · 谁在开发 AndroidHarness 以及在哪里找到它</string>
+    <string name="settings_search_author_desc">关于 · 谁在开发 VEXORA 以及在哪里找到它</string>
 
     <!-- Settings · anchors. -->
     <string name="settings_anchor_progress_bar_style">进度条样式</string>
@@ -307,10 +307,10 @@
     <string name="settings_restore_reconnect_title">重新连接已恢复的对话</string>
     <string name="settings_restore_reconnect_note">只读访问仍保持只读。使用过多个工作区的对话需要为每个工作区分别指定文件夹。</string>
     <string name="settings_accounts_using_plan">你正在使用 ChatGPT 订阅</string>
-    <string name="settings_accounts_using_plan_desc">AndroidHarness 中符合条件的请求会使用你的 ChatGPT 订阅或额度。可在 ChatGPT 设置中查看用量并管理本应用的访问权限。</string>
+    <string name="settings_accounts_using_plan_desc">VEXORA 中符合条件的请求会使用你的 ChatGPT 订阅或额度。可在 ChatGPT 设置中查看用量并管理本应用的访问权限。</string>
     <string name="settings_action_got_it">知道了</string>
     <string name="settings_accounts_signout_title">退出此账户？</string>
-    <string name="settings_accounts_signout_message">这会将账户从 AndroidHarness 断开，并将其从自动切换中移除。你之后可以重新登录。</string>
+    <string name="settings_accounts_signout_message">这会将账户从 VEXORA 断开，并将其从自动切换中移除。你之后可以重新登录。</string>
     <string name="settings_action_continue">继续</string>
     <string name="settings_progress_bar_subtitle">选择进度条的显示样式。立即生效。</string>
     <string name="settings_provider_select">选择</string>
@@ -355,7 +355,7 @@
     <string name="settings_action_disconnect">断开连接</string>
     <string name="settings_local_models_on_device">本机</string>
     <string name="settings_local_models_system_tools">系统指令与工具</string>
-    <string name="settings_local_models_system_tools_desc">默认关闭。本地模型只接收你的对话消息。开启后它们可以使用 Harness 的指令和工具来处理你的项目。</string>
+    <string name="settings_local_models_system_tools_desc">默认关闭。本地模型只接收你的对话消息。开启后它们可以使用 VEXORA 的指令和工具来处理你的项目。</string>
     <string name="settings_local_models_system_tools_warning">开启后会大幅增加输入量，占用更多内存和算力，并且可能需要数分钟才开始回复。更改在下一次回复时生效。</string>
     <string name="settings_local_models_yours">你的模型</string>
     <string name="settings_local_models_empty_title">尚未添加模型</string>
@@ -504,7 +504,7 @@
     <string name="settings_storage_no_manifest">这个较早的安装没有文件清单。归属、大小和工作区占用情况未知；因此保持删除保护。</string>
     <string name="settings_storage_unverified">部分归属文件无法校验。此软件包保持保护状态。</string>
     <string name="settings_storage_release_confirm">释放需求</string>
-    <string name="settings_storage_release_note">记录的用途可能不包含在 Harness 之外启动的命令。仍在使用此工具的工作区请保留需求。</string>
+    <string name="settings_storage_release_note">记录的用途可能不包含在 VEXORA 之外启动的命令。仍在使用此工具的工作区请保留需求。</string>
     <string name="settings_storage_cleanup_skip_note">已更改或链接的文件会被跳过。源码目录、模型和恢复数据会保留。</string>
     <string name="settings_subagent_choose_model">选择子代理模型</string>
     <string name="settings_subagent_use_main">使用主代理模型</string>
@@ -924,7 +924,7 @@
     <string name="chat_handoff_picker_note">选择要使用的工作区。聊天中的计划会一并带入。</string>
     <string name="chat_handoff_close">关闭工作区选择器</string>
     <string name="chat_handoff_no_workspace">请先在代码中添加工作区。</string>
-    <string name="chat_share_target">AndroidHarness 聊天</string>
+    <string name="chat_share_target">VEXORA 聊天</string>
     <string name="chat_share_title">分享到聊天</string>
     <string name="chat_share_review">检查分享的内容，选择聊天并添加问题。只有在聊天中点击发送后才会发送。</string>
     <string name="chat_share_new">新聊天</string>
@@ -995,7 +995,7 @@
     <string name="dhizuku_denied">访问被拒绝 · 请在 Dhizuku 中授权</string>
     <string name="dhizuku_error">连接失败 · 请检查 Dhizuku 后重试</string>
     <string name="settings_language_sinhala">සිංහල</string>
-    <string name="glass_title">AHarness Glass(实验性)</string>
+    <string name="glass_title">VEXORA Glass(实验性)</string>
     <string name="glass_description">为导航、控件和卡片添加玻璃效果。</string>
     <string name="glass_enable">毛玻璃</string>
     <string name="glass_enable_hint">使用半透明表面和柔和的模糊背景。</string>
@@ -1004,7 +1004,7 @@
     <string name="glass_unsupported">玻璃效果需要 Android 12 或更高版本。</string>
     <string name="glass_liquid_unsupported">Liquid Glass 需要 Android 13 或更高版本。此设备可以使用毛玻璃。</string>
     <string name="glass_preview_label">玻璃预览</string>
-    <string name="glass_preview_title">AndroidHarness</string>
+    <string name="glass_preview_title">VEXORA</string>
     <string name="glass_preview_text">清晰的文字。更柔和的背景。</string>
     <string name="glass_transparency">透明度</string>
     <string name="glass_transparency_percent">%1$d%%</string>
@@ -1040,9 +1040,9 @@
     <string name="auto_compact_saved">此对话将在约 %1$s 个上下文 Token 时自动压缩后继续。已预留回复空间。</string>
     <string name="auto_compact_reset">跟随默认值：在约 %1$s 个上下文 Token 时自动压缩。</string>
     <string name="tip_auto_compact">使用 /autocompact 350K 可在 350,000 个 Token 时自动总结上下文并继续此对话。也接受 258K 或 1M。/autocompact default 跟随设置 → 编程 → 代理行为。</string>
-    <string name="harness_free_quota_title">Harness 免费额度已用完</string>
+    <string name="harness_free_quota_title">VEXORA 免费额度已用完</string>
     <string name="harness_free_quota_body">免费额度由你的网络共享，并按小时重置。请等待重置，或切换提供商以继续。</string>
-    <string name="harness_free_rate_title">Harness 免费模型暂时受限</string>
+    <string name="harness_free_rate_title">VEXORA 免费模型暂时受限</string>
     <string name="harness_free_rate_body">该模型暂时繁忙或受到速率限制。请稍后重试，或切换提供商以继续。</string>
     <string name="harness_switch_provider">切换提供商</string>
     <string name="harness_free_wait">我会等待</string>

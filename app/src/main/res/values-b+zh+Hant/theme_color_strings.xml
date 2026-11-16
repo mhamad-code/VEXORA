@@ -5,7 +5,7 @@
     <string name="theme_wallpaper_colors">"桌布顏色"</string>
     <string name="theme_wallpaper_hint">"跟隨手機的 Material You 配色。"</string>
     <string name="theme_wallpaper_unavailable">"桌布配色需要 Android 12 或更高版本。請在下方選擇調色盤。"</string>
-    <string name="theme_palette_blue">"Harness 藍"</string>
+    <string name="theme_palette_blue">"VEXORA 藍"</string>
     <string name="theme_palette_ocean">"海洋"</string>
     <string name="theme_palette_indigo">"靛藍"</string>
     <string name="theme_palette_lavender">"薰衣草"</string>

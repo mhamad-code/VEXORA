@@ -30,7 +30,7 @@ class SearchChatsTool(
     var canAccess: suspend (String?, String) -> Boolean = { _, _ -> true }
     override val name = "search_chats"
     override val description =
-        "Search the user's other AndroidHarness chats for relevant messages. Use it when the user " +
+        "Search the user's other VEXORA chats for relevant messages. Use it when the user " +
             "refers to an earlier conversation, a previous decision, or something discussed before. " +
             "Searches message text and chat titles across projects. Results appear as tappable chat cards. Returns compact excerpts with chat titles and dates, not full chats. Use read_chat_snippet " +
             "only when an excerpt is not enough."
@@ -99,7 +99,7 @@ class RecentChatsTool(
     var canAccess: suspend (String?, String) -> Boolean = { _, _ -> true }
     override val name = "recent_chats"
     override val description =
-        "List the user's most recent AndroidHarness chats and Code sessions with titles, dates, and session IDs. " +
+        "List the user's most recent VEXORA chats and Code sessions with titles, dates, and session IDs. " +
             "Use it when the user asks what they were working on or refers to a chat without enough keywords. " +
             "Follow with read_chat_snippet for details."
     override val parametersSchema = Schema.obj(

@@ -27,7 +27,7 @@
     <string name="sk_copy">"प्रतिलिपि"</string>
     <string name="sk_copied">"कौशल की प्रतिलिपि बनी"</string>
     <string name="sk_copy_note">"सहेजने पर आपकी अपनी प्रतिलिपि रहती है, जो बंडल किए गए कौशल की जगह लेती है। मूल पर लौटने के लिए बाद में अपनी प्रतिलिपि हटाएँ।"</string>
-    <string name="sk_workspace_note">"यह कौशल कार्यक्षेत्र के .harness/skills फ़ोल्डर में है। इसे वहीं संपादित करें।"</string>
+    <string name="sk_workspace_note">"यह कौशल कार्यक्षेत्र के .VEXORA/skills फ़ोल्डर में है। इसे वहीं संपादित करें।"</string>
     <string name="sk_preview">"पूर्वावलोकन"</string>
     <string name="sk_markdown">"Markdown"</string>
     <string name="sk_files">"फ़ाइलें (%1$d)"</string>

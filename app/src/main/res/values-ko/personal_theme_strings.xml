@@ -20,12 +20,12 @@
     <string name="theme_custom_delete">"팔레트 삭제"</string>
     <string name="theme_custom_delete_message">"저장된 팔레트를 삭제하시겠습니까? 이 팔레트가 활성화된 경우 앱은 선택한 사전 설정으로 돌아갑니다."</string>
     <string name="theme_custom_preview">"팔레트 미리보기"</string>
-    <string name="theme_canvas_title">"Harness 캔버스"</string>
+    <string name="theme_canvas_title">"VEXORA 캔버스"</string>
     <string name="theme_canvas_description">"Chat 및 Code를 위한 나만의 배경화면입니다."</string>
     <string name="theme_canvas_add">"이미지 추가"</string>
     <string name="theme_canvas_change">"이미지 변경"</string>
     <string name="theme_canvas_remove">"이미지 삭제"</string>
-    <string name="theme_canvas_enabled">"Harness 캔버스 표시"</string>
+    <string name="theme_canvas_enabled">"VEXORA 캔버스 표시"</string>
     <string name="theme_canvas_chat">"Chat"</string>
     <string name="theme_canvas_code">"Code"</string>
     <string name="theme_canvas_dim">"이미지 디밍"</string>

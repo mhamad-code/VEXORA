@@ -27,7 +27,7 @@
     <string name="sk_copy">"Copier"</string>
     <string name="sk_copied">"Compétence copiée"</string>
     <string name="sk_copy_note">"L\'enregistrement conserve votre propre copie, qui remplace la compétence fournie. Supprimez votre copie plus tard pour revenir à l\'original."</string>
-    <string name="sk_workspace_note">"Cette compétence se trouve dans le dossier .harness/skills de l\'espace de travail. Modifiez-la là."</string>
+    <string name="sk_workspace_note">"Cette compétence se trouve dans le dossier .VEXORA/skills de l\'espace de travail. Modifiez-la là."</string>
     <string name="sk_preview">"Aperçu"</string>
     <string name="sk_markdown">"Markdown"</string>
     <string name="sk_files">"Fichiers (%1$d)"</string>

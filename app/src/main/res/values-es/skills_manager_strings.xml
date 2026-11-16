@@ -27,7 +27,7 @@
     <string name="sk_copy">Copiar</string>
     <string name="sk_copied">Habilidad copiada</string>
     <string name="sk_copy_note">Al guardar se conserva tu propia copia, que sustituye a la habilidad incluida. Elimina tu copia más tarde para volver a la original.</string>
-    <string name="sk_workspace_note">Esta habilidad está en la carpeta .harness/skills del espacio de trabajo. Edítala allí.</string>
+    <string name="sk_workspace_note">Esta habilidad está en la carpeta .VEXORA/skills del espacio de trabajo. Edítala allí.</string>
     <string name="sk_preview">Vista previa</string>
     <string name="sk_markdown">Markdown</string>
     <string name="sk_files">Archivos (%1$d)</string>

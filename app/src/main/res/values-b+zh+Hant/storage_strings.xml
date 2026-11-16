@@ -88,7 +88,7 @@
     <string name="storage_role_canvas">Canvas</string>
     <string name="storage_role_canvas_note">Canvas 看板及其圖片</string>
     <string name="storage_role_settings">設定與組態</string>
-    <string name="storage_role_settings_note">偏好設定與 harness 組態</string>
+    <string name="storage_role_settings_note">偏好設定與 VEXORA 組態</string>
     <string name="storage_role_scratch">Shell 暫存空間</string>
     <string name="storage_role_scratch_note">Shell 命令的暫存工作資料夾</string>
     <string name="storage_role_router">9router</string>

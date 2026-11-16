@@ -88,7 +88,7 @@
     <string name="storage_role_canvas">Canvas</string>
     <string name="storage_role_canvas_note">Papan Canvas dan gambarnya</string>
     <string name="storage_role_settings">Pengaturan dan konfigurasi</string>
-    <string name="storage_role_settings_note">Preferensi dan konfigurasi harness</string>
+    <string name="storage_role_settings_note">Preferensi dan konfigurasi VEXORA</string>
     <string name="storage_role_scratch">Ruang coret shell</string>
     <string name="storage_role_scratch_note">Folder kerja sementara untuk perintah shell</string>
     <string name="storage_role_router">9router</string>

@@ -139,9 +139,9 @@
     <string name="settings_search_license_title">"Lesen"</string>
     <string name="settings_search_license_desc">"Mengenai · Lesen MIT dan maksudnya untuk garpu"</string>
     <string name="settings_search_credits_title">"Kredit"</string>
-    <string name="settings_search_credits_desc">"Mengenai · Projek sumber terbuka di belakang AndroidHarness"</string>
+    <string name="settings_search_credits_desc">"Mengenai · Projek sumber terbuka di belakang VEXORA"</string>
     <string name="settings_search_author_title">"Pengarang"</string>
-    <string name="settings_search_author_desc">"Mengenai · Siapa yang membina AndroidHarness dan di mana untuk mencarinya"</string>
+    <string name="settings_search_author_desc">"Mengenai · Siapa yang membina VEXORA dan di mana untuk mencarinya"</string>
     <string name="settings_anchor_progress_bar_style">"Gaya bar kemajuan"</string>
     <string name="settings_anchor_fallbacks">"Fallbacks"</string>
     <string name="settings_anchor_continue_chatgpt">"Teruskan dengan ChatGPT"</string>
@@ -287,10 +287,10 @@
     <string name="settings_restore_reconnect_title">"Sambung semula sembang yang dipulihkan"</string>
     <string name="settings_restore_reconnect_note">"Akses baca sahaja kekal baca sahaja. Sembang yang menggunakan berbilang ruang kerja memerlukan folder berasingan untuk setiap satu."</string>
     <string name="settings_accounts_using_plan">"Anda menggunakan pelan ChatGPT anda"</string>
-    <string name="settings_accounts_using_plan_desc">"Permintaan yang layak dalam AndroidHarness menggunakan pelan atau kredit ChatGPT anda. Semak penggunaan dan urus akses apl ini dalam tetapan ChatGPT."</string>
+    <string name="settings_accounts_using_plan_desc">"Permintaan yang layak dalam VEXORA menggunakan pelan atau kredit ChatGPT anda. Semak penggunaan dan urus akses apl ini dalam tetapan ChatGPT."</string>
     <string name="settings_action_got_it">"Faham"</string>
     <string name="settings_accounts_signout_title">"Log keluar daripada akaun ini?"</string>
-    <string name="settings_accounts_signout_message">"Ini memutuskan sambungan akaun daripada AndroidHarness dan mengeluarkannya daripada penukaran automatik. Anda boleh log masuk semula kemudian."</string>
+    <string name="settings_accounts_signout_message">"Ini memutuskan sambungan akaun daripada VEXORA dan mengeluarkannya daripada penukaran automatik. Anda boleh log masuk semula kemudian."</string>
     <string name="settings_action_continue">"Teruskan"</string>
     <string name="settings_progress_bar_subtitle">"Pilih bagaimana bar kemajuan kelihatan. Berlaku serta merta."</string>
     <string name="settings_provider_select">"Pilih"</string>
@@ -335,7 +335,7 @@
     <string name="settings_action_disconnect">"Putuskan sambungan"</string>
     <string name="settings_local_models_on_device">"Pada telefon ini"</string>
     <string name="settings_local_models_system_tools">"Arahan dan alatan sistem"</string>
-    <string name="settings_local_models_system_tools_desc">"Mati secara lalai. Model tempatan hanya menerima mesej sembang anda. Hidupkan untuk membenarkan mereka menggunakan arahan dan alatan Harness untuk mengerjakan projek anda."</string>
+    <string name="settings_local_models_system_tools_desc">"Mati secara lalai. Model tempatan hanya menerima mesej sembang anda. Hidupkan untuk membenarkan mereka menggunakan arahan dan alatan VEXORA untuk mengerjakan projek anda."</string>
     <string name="settings_local_models_system_tools_warning">"Mendayakan ini menambahkan banyak input, menggunakan lebih banyak memori dan kuasa pemprosesan, dan boleh mengambil masa beberapa minit sebelum balasan bermula. Perubahan dikenakan pada balasan seterusnya."</string>
     <string name="settings_local_models_yours">"Model anda"</string>
     <string name="settings_local_models_empty_title">"Tiada model ditambah lagi"</string>
@@ -484,7 +484,7 @@
     <string name="settings_storage_no_manifest">"Pemasangan yang lebih lama ini tidak mempunyai manifes fail. Pemilikan, saiz dan penggunaan ruang kerja tidak diketahui; penyingkiran kekal dilindungi."</string>
     <string name="settings_storage_unverified">"Beberapa fail yang dimiliki tidak dapat disahkan. Pakej ini kekal dilindungi."</string>
     <string name="settings_storage_release_confirm">"Keperluan pelepasan"</string>
-    <string name="settings_storage_release_note">"Penggunaan yang direkodkan mungkin tidak termasuk arahan yang dimulakan di luar Harness. Kekalkan keperluan untuk mana-mana ruang kerja yang masih menggunakan alat ini."</string>
+    <string name="settings_storage_release_note">"Penggunaan yang direkodkan mungkin tidak termasuk arahan yang dimulakan di luar VEXORA. Kekalkan keperluan untuk mana-mana ruang kerja yang masih menggunakan alat ini."</string>
     <string name="settings_storage_cleanup_skip_note">"Fail yang diubah atau dipautkan dilangkau. Folder sumber, model dan data pemulihan kekal disimpan."</string>
     <string name="settings_subagent_choose_model">"Pilih model subagen"</string>
     <string name="settings_subagent_use_main">"Gunakan model ejen utama"</string>
@@ -904,7 +904,7 @@
     <string name="chat_handoff_picker_note">"Pilih tempat untuk dibina. Pelan Chat anda disertakan."</string>
     <string name="chat_handoff_close">"Tutup pemilih ruang kerja"</string>
     <string name="chat_handoff_no_workspace">"Tambahkan ruang kerja dalam Code untuk meneruskan."</string>
-    <string name="chat_share_target">"AndroidHarness Chat"</string>
+    <string name="chat_share_target">"VEXORA Chat"</string>
     <string name="chat_share_title">"Kongsi kepada Chat"</string>
     <string name="chat_share_review">"Semak item kongsi anda, pilih Chat dan tambahkan soalan. Tiada apa-apa dihantar sehingga anda mengetik Hantar dalam Chat."</string>
     <string name="chat_share_new">"Chat baharu"</string>
@@ -973,7 +973,7 @@
     <string name="dhizuku_denied">"Akses ditolak · berikan akses dalam Dhizuku"</string>
     <string name="dhizuku_error">"Sambungan gagal · semak Dhizuku dan cuba lagi"</string>
     <string name="settings_language_sinhala">"සිංහල"</string>
-    <string name="glass_title">"Kaca Aharness (Percubaan)"</string>
+    <string name="glass_title">"Kaca VEXORA (Percubaan)"</string>
     <string name="glass_description">"Kesan kaca untuk navigasi, kawalan dan kad."</string>
     <string name="glass_enable">"Kaca berbuih"</string>
     <string name="glass_enable_hint">"Gunakan permukaan lut sinar dengan latar belakang kabur lembut."</string>
@@ -982,7 +982,7 @@
     <string name="glass_unsupported">"Kesan kaca memerlukan Android 12 atau lebih baru."</string>
     <string name="glass_liquid_unsupported">"Kaca Cecair memerlukan Android 13 atau lebih baru. Kaca beku tersedia pada peranti ini."</string>
     <string name="glass_preview_label">"Pratonton kaca"</string>
-    <string name="glass_preview_title">"AndroidHarness"</string>
+    <string name="glass_preview_title">"VEXORA"</string>
     <string name="glass_preview_text">"Kosongkan teks. Latar belakang yang lebih lembut."</string>
     <string name="glass_transparency">"Ketelusan"</string>
     <string name="glass_transparency_percent">"%1$d%%"</string>
@@ -1009,9 +1009,9 @@
     <string name="auto_compact_saved">Perbualan ini akan memadatkan secara automatik pada kira-kira %1$s token konteks kemudian meneruskan. Ruang untuk balasan dikekalkan.</string>
     <string name="auto_compact_reset">Mengikut lalai: padatkan secara automatik pada kira-kira %1$s token konteks.</string>
     <string name="tip_auto_compact">Gunakan /autocompact 350K untuk meringkaskan konteks secara automatik pada 350,000 token dan meneruskan perbualan ini. Turut menerima 258K atau 1M. /autocompact default mengikut Tetapan → Pengekodan → Tingkah laku ejen.</string>
-    <string name="harness_free_quota_title">"Kuota percuma Harness telah habis"</string>
+    <string name="harness_free_quota_title">"Kuota percuma VEXORA telah habis"</string>
     <string name="harness_free_quota_body">"Elaun percuma dikongsi oleh rangkaian anda dan diperbaharui setiap jam. Tunggu sehingga ditetapkan semula, atau tukar penyedia untuk meneruskan."</string>
-    <string name="harness_free_rate_title">"Model percuma Harness terhad buat sementara"</string>
+    <string name="harness_free_rate_title">"Model percuma VEXORA terhad buat sementara"</string>
     <string name="harness_free_rate_body">"Model ini sibuk atau terhad kadar buat sementara. Cuba lagi sebentar lagi, atau tukar penyedia untuk meneruskan."</string>
     <string name="harness_switch_provider">"Tukar penyedia"</string>
     <string name="harness_free_wait">"Saya akan tunggu"</string>

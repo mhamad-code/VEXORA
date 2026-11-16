@@ -91,7 +91,7 @@
     <string name="storage_role_canvas">Canvas</string>
     <string name="storage_role_canvas_note">Quadros do Canvas e suas imagens</string>
     <string name="storage_role_settings">Configurações e ajustes</string>
-    <string name="storage_role_settings_note">Preferências e configuração do harness</string>
+    <string name="storage_role_settings_note">Preferências e configuração do VEXORA</string>
     <string name="storage_role_scratch">Espaço temporário do shell</string>
     <string name="storage_role_scratch_note">Pastas de trabalho temporárias para comandos de shell</string>
     <string name="storage_role_router">9router</string>

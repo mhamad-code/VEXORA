@@ -493,7 +493,7 @@
     <string name="ui_reasoning_and_thinking_tokens_are_billed_as">"推理和思考 Token 按輸出計費，不會作為輸入再次傳送。"</string>
     <string name="ui_scheduled_messages">"定時訊息"</string>
     <string name="ui_allow_workspace_mcp_servers">"允許工作區 MCP 伺服器？"</string>
-    <string name="ui_this_workspace_ships_a_harness_mcp_json">"此工作區包含 .harness/mcp.json，希望連線：%1$s。"</string>
+    <string name="ui_this_workspace_ships_a_harness_mcp_json">"此工作區包含 .VEXORA/mcp.json，希望連線：%1$s。"</string>
     <string name="ui_its_servers_can_run_local_commands_and">"這些伺服器可執行本地命令並訪問網路。"</string>
     <string name="ui_only_approve_configs_you_trust">"請僅批准你信任的配置。"</string>
     <string name="ui_approve">"批准"</string>
@@ -635,7 +635,7 @@
     <string name="ui_shizuku_is_disabled">"Shizuku 已停用"</string>
     <string name="ui_shizuku_is_no_longer_available_its_server">"Shizuku 已不可用。伺服器可能已停止、被後臺終止，"</string>
     <string name="ui_in_the_background_or_this_app_s">"或此應用的訪問許可權已被撤銷。"</string>
-    <string name="ui_start_shizuku_and_allow_androidharness_access_to">"啟動 Shizuku 並允許 AndroidHarness 訪問，以再次使用。"</string>
+    <string name="ui_start_shizuku_and_allow_androidharness_access_to">"啟動 Shizuku 並允許 VEXORA 訪問，以再次使用。"</string>
     <string name="ui_never_show_this_message_again">"不再顯示此訊息"</string>
     <string name="ui_limits_resets">"限制與重置"</string>
     <string name="ui_view_live_limits_in_chatgpt">"在 ChatGPT 中檢視實時限制"</string>
@@ -1051,14 +1051,14 @@
     <string name="ui_ready">"就緒"</string>
     <string name="ui_local_semantic_code_graph_for_symbols_callers">"用於符號、呼叫關係、影響範圍和受影響測試的本地語義程式碼圖"</string>
     <string name="ui_working">"正在處理…"</string>
-    <string name="ui_harness_installs_codegraph_into_its_private_linux">"Harness 將 CodeGraph 安裝到私有 Linux 環境中，包含所需的 Node 執行時，約佔 170 MB。無需 Termux 應用、Shizuku，也無需為智慧體單獨配置 CodeGraph。"</string>
+    <string name="ui_harness_installs_codegraph_into_its_private_linux">"VEXORA 將 CodeGraph 安裝到私有 Linux 環境中，包含所需的 Node 執行時，約佔 170 MB。無需 Termux 應用、Shizuku，也無需為智慧體單獨配置 CodeGraph。"</string>
     <string name="ui_no_workspace">"無工作區"</string>
     <string name="ui_this_workspace_does_not_expose_a_real">"此工作區未提供真實檔案系統路徑"</string>
     <string name="ui_indexed">"已建立索引"</string>
     <string name="ui_not_indexed">"未建立索引"</string>
     <string name="ui_codegraph_needs_a_shell_capable_workspace_with">"CodeGraph 需要支援 Shell 且有真實裝置路徑的工作區。"</string>
     <string name="ui_install_codegraph_first_then_enable_it_for">"請先安裝 CodeGraph，再為此工作區啟用。"</string>
-    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"此工作區建立索引後，Harness 會向程式設計智慧體提供 CodeGraph 的 explore、node、impact、affected-tests 和 sync 工具。查詢會先同步已更改的檔案。"</string>
+    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"此工作區建立索引後，VEXORA 會向程式設計智慧體提供 CodeGraph 的 explore、node、impact、affected-tests 和 sync 工具。查詢會先同步已更改的檔案。"</string>
     <string name="ui_keyless">"無需金鑰"</string>
     <string name="ui_public_search_engines_no_setup">"公共搜尋引擎，無需配置"</string>
     <string name="ui_key_saved">"%1$s · 已儲存金鑰"</string>
@@ -1108,7 +1108,7 @@
     <string name="ui_the_app_needs_node_python_from_the">"需要 Linux 環境提供 node/python。"</string>
     <string name="ui_not_installed_optional">"未安裝：可選。"</string>
     <string name="ui_installed_not_running">"已安裝，未執行。"</string>
-    <string name="ui_running_grant_androidharness_access">"正在執行：請授予 AndroidHarness 訪問許可權。"</string>
+    <string name="ui_running_grant_androidharness_access">"正在執行：請授予 VEXORA 訪問許可權。"</string>
     <string name="ui_connected_shell_privileges_ready">"已連線：Shell 許可權就緒。"</string>
     <string name="ui_connected_in_compatibility_mode_shell_privileges_ready">"已透過相容模式連線：Shell 許可權就緒。"</string>
     <string name="ui_access_granted_connecting_to_the_shell_runner">"已授權。正在連線 Shell 執行器…"</string>
@@ -1155,10 +1155,10 @@
     <string name="ui_open_source">"開源"</string>
     <string name="ui_use_it_change_it_ship_it_even">"你可以使用、修改和釋出它，包括用於商業應用。唯一要求是"</string>
     <string name="ui_copyright_notice_and_the_license_text_travel">"版權宣告和許可證文字隨程式碼保留。本軟體不提供任何擔保。"</string>
-    <string name="ui_androidharness_is_built_on_open_source_work">"AndroidHarness 基於開源成果構建，並借鑑了先前智慧體的設計。"</string>
+    <string name="ui_androidharness_is_built_on_open_source_work">"VEXORA 基於開源成果構建，並借鑑了先前智慧體的設計。"</string>
     <string name="ui_built_with">"使用的專案"</string>
     <string name="ui_inspired_by">"靈感來源"</string>
-    <string name="ui_every_project_keeps_its_own_license_androidharness">"各專案保留各自的許可證。AndroidHarness 與這些專案無隸屬關係。"</string>
+    <string name="ui_every_project_keeps_its_own_license_androidharness">"各專案保留各自的許可證。VEXORA 與這些專案無隸屬關係。"</string>
     <string name="ui_exported_chats_messages">"已匯出 %1$s 個聊天（%2$s 條訊息，%3$s 條記憶）。"</string>
     <string name="ui_export_failed">"匯出失敗。"</string>
     <string name="ui_export_failed_1230">"匯出失敗：%1$s"</string>
@@ -1247,7 +1247,7 @@
     <string name="ui_status">"狀態"</string>
     <string name="ui_retry_resume">"重試 / 恢復"</string>
     <string name="ui_pause_telegram">"暫停 Telegram"</string>
-    <string name="ui_welcome_to_androidharness">"歡迎使用 AndroidHarness"</string>
+    <string name="ui_welcome_to_androidharness">"歡迎使用 VEXORA"</string>
     <string name="ui_grant_storage_access_to_start_coding_notifications">"授予儲存訪問許可權以開始程式設計。通知和其他工具為可選項。"</string>
     <string name="ui_device_storage_access_granted">"已獲得裝置儲存訪問許可權"</string>
     <string name="ui_required_allow_access_to_device_files_and">"必需：允許訪問裝置檔案和資料夾"</string>
@@ -1265,7 +1265,7 @@
     <string name="ui_optional_keeps_long_runs_alive_on_aggressive">"可選：避免嚴格的廠商後臺限制終止長時間任務"</string>
     <string name="ui_ready_to_begin">"準備就緒"</string>
     <string name="ui_allow_storage_access_to_begin">"允許儲存訪問以開始"</string>
-    <string name="ui_start_harness">"啟動 Harness"</string>
+    <string name="ui_start_harness">"啟動 VEXORA"</string>
     <string name="ui_optional">"可選"</string>
     <string name="ui_model_activity_and_ai_code_changes">"模型活動和 AI 程式碼更改"</string>
     <string name="ui_model_activity">"模型活動"</string>
@@ -1585,7 +1585,7 @@
     <string name="ui_access_mode">"訪問模式：%1$s"</string>
     <string name="ui_scheduled_tasks">"定時任務"</string>
     <string name="ui_project_and_chat_sidebar">"專案與聊天側邊欄"</string>
-    <string name="ui_androidharness_icon">"AndroidHarness 圖示"</string>
+    <string name="ui_androidharness_icon">"VEXORA 圖示"</string>
     <string name="ui_collapse_sidebar">"收起側邊欄"</string>
     <string name="ui_search_chats_and_messages">"搜尋聊天和訊息"</string>
     <string name="ui_search_chats">"搜尋聊天"</string>
@@ -1634,7 +1634,7 @@
         <item quantity="other">"%1$d 行"</item>
     </plurals>
     <string name="voice_transcribing">"正在轉寫…"</string>
-    <string name="donate_funding_message">"我們用於持續開發 AndroidHarness 的資金不足。您的支援能幫助我們繼續開發。"</string>
+    <string name="donate_funding_message">"我們用於持續開發 VEXORA 的資金不足。您的支援能幫助我們繼續開發。"</string>
     <string name="donate_dismiss_message">"關閉捐贈提示"</string>
     <string name="background_settings_title">"後臺與通知"</string>
     <string name="background_settings_description">"管理後臺工作和通知。"</string>
@@ -1644,7 +1644,7 @@
     <string name="background_notifications_description">"允許應用提醒。服務通知由 Android 管理。"</string>
     <string name="background_android_title">"Android 通知設定"</string>
     <string name="background_android_description">"管理所有 Android 通知設定。"</string>
-    <string name="background_run_blocked">"後臺執行已關閉。請開啟 AndroidHarness 以開始或繼續任務。"</string>
+    <string name="background_run_blocked">"後臺執行已關閉。請開啟 VEXORA 以開始或繼續任務。"</string>
     <string name="background_service_notice">"後臺服務正在執行"</string>
     <string name="local_gpu_download_title">"GPU 支援"</string>
     <string name="local_gpu_runtime_repository">"來源：Sanuu7/AH-GPU-Runtime"</string>

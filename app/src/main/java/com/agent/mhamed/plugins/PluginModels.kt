@@ -45,7 +45,7 @@ data class PluginContents(
     val warnings: List<String>,
     val agents: List<String> = emptyList(),
     val commandHooks: List<String> = emptyList(),
-    val format: String = "AndroidHarness",
+    val format: String = "VEXORA",
     val runtimes: List<String> = emptyList(),
 )
 
@@ -166,7 +166,7 @@ object PluginManifest {
                 warnings += "This package declares npm installation scripts. They are not run when the plugin installs."
         }
         return PluginContents(name, version, description, instructions, skillNames.sorted(), mcp?.fields?.keys.orEmpty().toList(),
-            hooks, needsRuntime, warnings.distinct(), agents.sorted(), commandHooks, value["format"]?.string() ?: "AndroidHarness", runtimes)
+            hooks, needsRuntime, warnings.distinct(), agents.sorted(), commandHooks, value["format"]?.string() ?: "VEXORA", runtimes)
     }
 
     fun digest(root: File): String {

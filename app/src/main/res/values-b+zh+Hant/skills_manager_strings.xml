@@ -27,7 +27,7 @@
     <string name="sk_copy">"複製"</string>
     <string name="sk_copied">"技能已複製"</string>
     <string name="sk_copy_note">"儲存後會保留你自己的副本，並取代內建技能。之後刪除你的副本即可還原原始技能。"</string>
-    <string name="sk_workspace_note">"此技能位於工作區的 .harness/skills 資料夾中。請在那裡編輯。"</string>
+    <string name="sk_workspace_note">"此技能位於工作區的 .VEXORA/skills 資料夾中。請在那裡編輯。"</string>
     <string name="sk_preview">"預覽"</string>
     <string name="sk_markdown">"Markdown"</string>
     <string name="sk_files">"檔案 (%1$d)"</string>

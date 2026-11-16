@@ -66,7 +66,7 @@ object LiveMode {
 
     fun startTaskSchema(): ToolSchema = ToolSchema(
         name = START_TASK_TOOL,
-        description = "Hand a task to the main AndroidHarness agent, which can edit files and run tools with " +
+        description = "Hand a task to the main VEXORA agent, which can edit files and run tools with " +
             "the chat's usual permissions. Use only after the user explicitly asks you to go ahead.",
         parametersJson = buildJsonObject {
             put("type", "object")

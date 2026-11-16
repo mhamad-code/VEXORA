@@ -139,9 +139,9 @@
     <string name="settings_search_license_title">"உரிமம்"</string>
     <string name="settings_search_license_desc">"பற்றி · MIT உரிமம் மற்றும் ஃபோர்க்குகளுக்கு என்ன அர்த்தம்"</string>
     <string name="settings_search_credits_title">"கடன்கள்"</string>
-    <string name="settings_search_credits_desc">"பற்றி · AndroidHarness க்கு பின்னால் திறந்த மூல திட்டங்கள்"</string>
+    <string name="settings_search_credits_desc">"பற்றி · VEXORA க்கு பின்னால் திறந்த மூல திட்டங்கள்"</string>
     <string name="settings_search_author_title">"ஆசிரியர்"</string>
-    <string name="settings_search_author_desc">"பற்றி · யார் AndroidHarness ஐ உருவாக்குகிறார்கள் மற்றும் அதை எங்கே கண்டுபிடிப்பது"</string>
+    <string name="settings_search_author_desc">"பற்றி · யார் VEXORA ஐ உருவாக்குகிறார்கள் மற்றும் அதை எங்கே கண்டுபிடிப்பது"</string>
     <string name="settings_anchor_progress_bar_style">"முன்னேற்றப் பட்டை பாணி"</string>
     <string name="settings_anchor_fallbacks">"வீழ்ச்சியடைகிறது"</string>
     <string name="settings_anchor_continue_chatgpt">"ChatGPT உடன் தொடரவும்"</string>
@@ -287,10 +287,10 @@
     <string name="settings_restore_reconnect_title">"மீட்டெடுக்கப்பட்ட அரட்டைகளை மீண்டும் இணைக்கவும்"</string>
     <string name="settings_restore_reconnect_note">"படிக்க மட்டும் அணுகல் படிக்க மட்டுமே இருக்கும். பல பணியிடங்களைப் பயன்படுத்திய அரட்டைகளுக்கு ஒவ்வொன்றிற்கும் தனித்தனி கோப்புறைகள் தேவை."</string>
     <string name="settings_accounts_using_plan">"உங்கள் ChatGPT திட்டத்தைப் பயன்படுத்துகிறீர்கள்"</string>
-    <string name="settings_accounts_using_plan_desc">"AndroidHarness இல் உள்ள தகுதியான கோரிக்கைகள் உங்கள் ChatGPT திட்டம் அல்லது கிரெடிட்களைப் பயன்படுத்துகின்றன. ChatGPT அமைப்புகளில் பயன்பாட்டை மதிப்பாய்வு செய்து இந்த பயன்பாட்டின் அணுகலை நிர்வகிக்கவும்."</string>
+    <string name="settings_accounts_using_plan_desc">"VEXORA இல் உள்ள தகுதியான கோரிக்கைகள் உங்கள் ChatGPT திட்டம் அல்லது கிரெடிட்களைப் பயன்படுத்துகின்றன. ChatGPT அமைப்புகளில் பயன்பாட்டை மதிப்பாய்வு செய்து இந்த பயன்பாட்டின் அணுகலை நிர்வகிக்கவும்."</string>
     <string name="settings_action_got_it">"கிடைத்தது"</string>
     <string name="settings_accounts_signout_title">"இந்தக் கணக்கிலிருந்து வெளியேறவா?"</string>
-    <string name="settings_accounts_signout_message">"இது AndroidHarness இலிருந்து கணக்கைத் துண்டித்து, தானியங்கி மாறுதலில் இருந்து நீக்குகிறது. நீங்கள் பின்னர் மீண்டும் உள்நுழையலாம்."</string>
+    <string name="settings_accounts_signout_message">"இது VEXORA இலிருந்து கணக்கைத் துண்டித்து, தானியங்கி மாறுதலில் இருந்து நீக்குகிறது. நீங்கள் பின்னர் மீண்டும் உள்நுழையலாம்."</string>
     <string name="settings_action_continue">"தொடர்"</string>
     <string name="settings_progress_bar_subtitle">"முன்னேற்றப் பட்டைகள் எப்படி இருக்கும் என்பதைத் தேர்வு செய்யவும். உடனடியாக பொருந்தும்."</string>
     <string name="settings_provider_select">"தேர்ந்தெடு"</string>
@@ -335,7 +335,7 @@
     <string name="settings_action_disconnect">"துண்டிக்கவும்"</string>
     <string name="settings_local_models_on_device">"இந்த போனில்"</string>
     <string name="settings_local_models_system_tools">"கணினி வழிமுறைகள் மற்றும் கருவிகள்"</string>
-    <string name="settings_local_models_system_tools_desc">"இயல்பாக ஆஃப். உள்ளூர் மாடல்கள் உங்கள் அரட்டை செய்திகளை மட்டுமே பெறும். உங்கள் திட்டத்தில் வேலை செய்ய Harness வழிமுறைகள் மற்றும் கருவிகளைப் பயன்படுத்த அவர்களை அனுமதிக்கவும்."</string>
+    <string name="settings_local_models_system_tools_desc">"இயல்பாக ஆஃப். உள்ளூர் மாடல்கள் உங்கள் அரட்டை செய்திகளை மட்டுமே பெறும். உங்கள் திட்டத்தில் வேலை செய்ய VEXORA வழிமுறைகள் மற்றும் கருவிகளைப் பயன்படுத்த அவர்களை அனுமதிக்கவும்."</string>
     <string name="settings_local_models_system_tools_warning">"இதை இயக்குவது அதிக உள்ளீட்டைச் சேர்க்கிறது, அதிக நினைவகம் மற்றும் செயலாக்க சக்தியைப் பயன்படுத்துகிறது, மேலும் பதில் தொடங்குவதற்கு சில நிமிடங்கள் ஆகலாம். அடுத்த பதிலுக்கு மாற்றங்கள் பொருந்தும்."</string>
     <string name="settings_local_models_yours">"உங்கள் மாதிரிகள்"</string>
     <string name="settings_local_models_empty_title">"இன்னும் மாதிரிகள் எதுவும் சேர்க்கப்படவில்லை"</string>
@@ -484,7 +484,7 @@
     <string name="settings_storage_no_manifest">"இந்த பழைய நிறுவல் கோப்பு மேனிஃபெஸ்ட் இல்லை. உரிமை, அளவு மற்றும் பணியிட பயன்பாடு தெரியவில்லை; அகற்றுதல் பாதுகாக்கப்படுகிறது."</string>
     <string name="settings_storage_unverified">"சில சொந்தமான கோப்புகளை சரிபார்க்க முடியவில்லை. இந்த தொகுப்பு பாதுகாக்கப்படுகிறது."</string>
     <string name="settings_storage_release_confirm">"வெளியீட்டு தேவை"</string>
-    <string name="settings_storage_release_note">"பதிவுசெய்யப்பட்ட பயன்பாடுகள் Harness க்கு வெளியே தொடங்கப்பட்ட கட்டளைகளை சேர்க்காமல் இருக்கலாம். இந்தக் கருவியைப் பயன்படுத்தும் எந்தப் பணியிடத்திற்கும் ஒரு தேவையை வைத்திருங்கள்."</string>
+    <string name="settings_storage_release_note">"பதிவுசெய்யப்பட்ட பயன்பாடுகள் VEXORA க்கு வெளியே தொடங்கப்பட்ட கட்டளைகளை சேர்க்காமல் இருக்கலாம். இந்தக் கருவியைப் பயன்படுத்தும் எந்தப் பணியிடத்திற்கும் ஒரு தேவையை வைத்திருங்கள்."</string>
     <string name="settings_storage_cleanup_skip_note">"மாற்றப்பட்ட அல்லது இணைக்கப்பட்ட கோப்புகள் தவிர்க்கப்பட்டன. மூலக் கோப்புறைகள், மாதிரிகள் மற்றும் மீட்புத் தரவு ஆகியவை தொடர்ந்து சேமிக்கப்படும்."</string>
     <string name="settings_subagent_choose_model">"துணை முகவர் மாதிரியைத் தேர்ந்தெடுக்கவும்"</string>
     <string name="settings_subagent_use_main">"முக்கிய முகவர் மாதிரியைப் பயன்படுத்தவும்"</string>
@@ -905,7 +905,7 @@
     <string name="chat_handoff_picker_note">"எங்கு கட்ட வேண்டும் என்பதை தேர்வு செய்யவும். உங்கள் Chat திட்டம் வருகிறது."</string>
     <string name="chat_handoff_close">"பணியிடத் தேர்வியை மூடு"</string>
     <string name="chat_handoff_no_workspace">"தொடர, Code இல் பணியிடத்தைச் சேர்க்கவும்."</string>
-    <string name="chat_share_target">"AndroidHarness Chat"</string>
+    <string name="chat_share_target">"VEXORA Chat"</string>
     <string name="chat_share_title">"Chat இல் பகிரவும்"</string>
     <string name="chat_share_review">"நீங்கள் பகிரப்பட்ட உருப்படிகளை மதிப்பாய்வு செய்து, Chat ஐத் தேர்வுசெய்து, கேள்வியைச் சேர்க்கவும். Chat இல் அனுப்பு என்பதைத் தட்டும் வரை எதுவும் அனுப்பப்படாது."</string>
     <string name="chat_share_new">"புதிய Chat"</string>
@@ -974,7 +974,7 @@
     <string name="dhizuku_denied">"அணுகல் மறுக்கப்பட்டது · திசுகுவில் அணுகலை வழங்கவும்"</string>
     <string name="dhizuku_error">"இணைப்பு தோல்வியடைந்தது · திசுகுவைச் சரிபார்த்து மீண்டும் முயலவும்"</string>
     <string name="settings_language_sinhala">"සිංහල"</string>
-    <string name="glass_title">"AHarness கண்ணாடி (பரிசோதனை)"</string>
+    <string name="glass_title">"VEXORA கண்ணாடி (பரிசோதனை)"</string>
     <string name="glass_description">"வழிசெலுத்தல், கட்டுப்பாடுகள் மற்றும் அட்டைகளுக்கான கண்ணாடி விளைவுகள்."</string>
     <string name="glass_enable">"உறைந்த கண்ணாடி"</string>
     <string name="glass_enable_hint">"மென்மையான மங்கலான பின்னணியுடன் ஒளிஊடுருவக்கூடிய மேற்பரப்புகளைப் பயன்படுத்தவும்."</string>
@@ -983,7 +983,7 @@
     <string name="glass_unsupported">"கண்ணாடி விளைவுகளுக்கு Android 12 அல்லது அதற்குப் பிறகு தேவை."</string>
     <string name="glass_liquid_unsupported">"திரவக் கண்ணாடிக்கு Android 13 அல்லது அதற்குப் பிறகு தேவை. இந்த சாதனத்தில் உறைந்த கண்ணாடி கிடைக்கிறது."</string>
     <string name="glass_preview_label">"கண்ணாடி முன்னோட்டம்"</string>
-    <string name="glass_preview_title">"AndroidHarness"</string>
+    <string name="glass_preview_title">"VEXORA"</string>
     <string name="glass_preview_text">"தெளிவான உரை. மென்மையான பின்னணி."</string>
     <string name="glass_transparency">"வெளிப்படைத்தன்மை"</string>
     <string name="glass_transparency_percent">"%1$d%%"</string>
@@ -1010,9 +1010,9 @@
     <string name="auto_compact_saved">"இந்த அரட்டை சுமார் %1$s சூழல் டோக்கன்களில் தானாகச் சுருக்கி தொடரும். பதிலுக்கான இடம் ஒதுக்கப்பட்டுள்ளது."</string>
     <string name="auto_compact_reset">"இயல்புநிலையைப் பின்பற்றுகிறது: சுமார் %1$s சூழல் டோக்கன்களில் தானாகச் சுருக்கு."</string>
     <string name="tip_auto_compact">"350,000 டோக்கன்களில் சூழலைத் தானாகச் சுருக்கி இந்த அரட்டையைத் தொடர /autocompact 350K பயன்படுத்தவும். 258K அல்லது 1M ம் ஏற்கப்படும். /autocompact default அமைப்புகள் → குறியீட்டு முறை → முகவரின் நடத்தை பின்பற்றும்."</string>
-    <string name="harness_free_quota_title">"Harness இலவச ஒதுக்கீடு தீர்ந்துவிட்டது"</string>
+    <string name="harness_free_quota_title">"VEXORA இலவச ஒதுக்கீடு தீர்ந்துவிட்டது"</string>
     <string name="harness_free_quota_body">"இலவச ஒதுக்கீடு உங்கள் நெட்வொர்க்குடன் பகிரப்படுகிறது மற்றும் மணிநேர காலத்தில் புதுப்பிக்கப்படுகிறது. மீட்டமைப்புக்காக காத்திருங்கள், அல்லது தொடர வழங்குநரை மாற்றவும்."</string>
-    <string name="harness_free_rate_title">"Harness இலவச மாதிரிகள் தற்காலிகமாக வரம்பிடப்பட்டுள்ளன"</string>
+    <string name="harness_free_rate_title">"VEXORA இலவச மாதிரிகள் தற்காலிகமாக வரம்பிடப்பட்டுள்ளன"</string>
     <string name="harness_free_rate_body">"இந்த மாதிரி தற்காலிகமாக பிஸியாக உள்ளது அல்லது வேக வரம்பிடப்பட்டுள்ளது. சற்று நேரத்தில் மீண்டும் முயற்சிக்கவும், அல்லது தொடர வழங்குநரை மாற்றவும்."</string>
     <string name="harness_switch_provider">"வழங்குநரை மாற்று"</string>
     <string name="harness_free_wait">"நான் காத்திருப்பேன்"</string>

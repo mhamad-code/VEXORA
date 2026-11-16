@@ -139,9 +139,9 @@
     <string name="settings_search_license_title">"බලපත්රයක්"</string>
     <string name="settings_search_license_desc">"About · MIT බලපත්ර සහ එය forks සඳහා අදහස් කරන්නේ කුමක්ද"</string>
     <string name="settings_search_credits_title">"ණය"</string>
-    <string name="settings_search_credits_desc">"· විවෘත මූලාශ් ර ව්‍යාපෘති පසුපස AndroidHarness"</string>
+    <string name="settings_search_credits_desc">"· විවෘත මූලාශ් ර ව්‍යාපෘති පසුපස VEXORA"</string>
     <string name="settings_search_author_title">"ලේඛකයා"</string>
-    <string name="settings_search_author_desc">"About: කවුද ගොඩනගන්නේ AndroidHarness කොහෙද හොයාගන්නේ"</string>
+    <string name="settings_search_author_desc">"About: කවුද ගොඩනගන්නේ VEXORA කොහෙද හොයාගන්නේ"</string>
     <string name="settings_anchor_progress_bar_style">"ප්‍රගති තීරුවේ විලාසය"</string>
     <string name="settings_anchor_fallbacks">"පිටුපස"</string>
     <string name="settings_anchor_continue_chatgpt">"ChatGPT සමඟ ඉදිරියට යන්න"</string>
@@ -287,10 +287,10 @@
     <string name="settings_restore_reconnect_title">"ආපසු සම්බන්ධ කළ චැට්"</string>
     <string name="settings_restore_reconnect_note">"Read-only access only remains reading-only. විවිධ වැඩපිළිවෙළ භාවිතා කරන චැට් සෑම සඳහාම වෙන් ෆෝල්ඩර් අවශ්ය වේ."</string>
     <string name="settings_accounts_using_plan">"ඔබ ඔබේ භාවිතය ChatGPT සැලැස්ම"</string>
-    <string name="settings_accounts_using_plan_desc">"සුදුසු අයදුම්පත් AndroidHarness ඔබේ භාවිතය ChatGPT සැලසුම් හෝ ක්රෙඩිට්. මෙම යෙදුම ප්‍රවේශය පරික්ෂා හා කළමනාකරණය ChatGPT settings එක"</string>
+    <string name="settings_accounts_using_plan_desc">"සුදුසු අයදුම්පත් VEXORA ඔබේ භාවිතය ChatGPT සැලසුම් හෝ ක්රෙඩිට්. මෙම යෙදුම ප්‍රවේශය පරික්ෂා හා කළමනාකරණය ChatGPT settings එක"</string>
     <string name="settings_action_got_it">"ලැබුනා"</string>
     <string name="settings_accounts_signout_title">"මෙම ගිණුමේ පිටතට ලියාපදිංචි වන්නද?"</string>
-    <string name="settings_accounts_signout_message">"මෙය ගිණුම ඉවත් කරයි AndroidHarness එය ස්වයංක්‍රීය Switching වලින් ඉවත් කරන්න. ඔබට පසුව නැවත ලියාපදිංචි කළ හැකිය."</string>
+    <string name="settings_accounts_signout_message">"මෙය ගිණුම ඉවත් කරයි VEXORA එය ස්වයංක්‍රීය Switching වලින් ඉවත් කරන්න. ඔබට පසුව නැවත ලියාපදිංචි කළ හැකිය."</string>
     <string name="settings_action_continue">"ඉදිරියට යන්න"</string>
     <string name="settings_progress_bar_subtitle">"වැඩසටහන බාර් පෙනුම කෙසේද යන්න තෝරා ගන්න. වහාම අයදුම් කරන්න."</string>
     <string name="settings_provider_select">"තෝරන්න"</string>
@@ -335,7 +335,7 @@
     <string name="settings_action_disconnect">"විසන්ධි කරන්න"</string>
     <string name="settings_local_models_on_device">"මේ දුරකථනයේදී"</string>
     <string name="settings_local_models_system_tools">"පද්ධතිය උපදෙස් සහ මෙවලම්"</string>
-    <string name="settings_local_models_system_tools_desc">"නිශ්චිතව Off. දේශීය ආකෘති ඔබගේ චැට් පණිවිඩ පමණක් ලැබේ. ඔබගේ ව්‍යාපෘතිය මත වැඩ කිරීමට Harness උපදෙස් සහ මෙවලම් භාවිතා කිරීමට ඉඩ සලකා."</string>
+    <string name="settings_local_models_system_tools_desc">"නිශ්චිතව Off. දේශීය ආකෘති ඔබගේ චැට් පණිවිඩ පමණක් ලැබේ. ඔබගේ ව්‍යාපෘතිය මත වැඩ කිරීමට VEXORA උපදෙස් සහ මෙවලම් භාවිතා කිරීමට ඉඩ සලකා."</string>
     <string name="settings_local_models_system_tools_warning">"මෙම ක්‍රියාත්මක කිරීම, වැඩි මතකය හා සැකසුම් බලය භාවිතා, සහ ප්රතිචාර ආරම්භ කිරීමට පෙර මිනිත්තු කිහිපයක් ගත හැකිය."</string>
     <string name="settings_local_models_yours">"ඔබේ Models"</string>
     <string name="settings_local_models_empty_title">"තවමත් කිසිදු ආකෘති එකතු කර නැත"</string>
@@ -484,7 +484,7 @@
     <string name="settings_storage_no_manifest">"මෙම පැරණි ස්ථාපනය කිසිදු ගොනු ප්රකාශයක් නැත. අයිතිවාසිකම්, ප්රමාණය සහ වැඩපිළිවෙළ භාවිතය නොදන්නා ය; ඉවත් කිරීම ආරක්ෂිතව පවතී."</string>
     <string name="settings_storage_unverified">"සමහර අයිතිකරුවන් ගොනු තහවුරු කළ නොහැක. මෙම පැකේජය ආරක්ෂිතව පවතී."</string>
     <string name="settings_storage_release_confirm">"නිදහස් අවශ් යතාවය"</string>
-    <string name="settings_storage_release_note">"ලියාපදිංචි භාවිතයන් Harness පිටත ආරම්භ කරන නියෝග ඇතුළත් නොවිය හැකිය. තවමත් මෙම මෙවලම භාවිතා කරන ඕනෑම වැඩපිළිවෙළ සඳහා අවශ්යතාවයක් තබා ගන්න."</string>
+    <string name="settings_storage_release_note">"ලියාපදිංචි භාවිතයන් VEXORA පිටත ආරම්භ කරන නියෝග ඇතුළත් නොවිය හැකිය. තවමත් මෙම මෙවලම භාවිතා කරන ඕනෑම වැඩපිළිවෙළ සඳහා අවශ්යතාවයක් තබා ගන්න."</string>
     <string name="settings_storage_cleanup_skip_note">"වෙනස් කර හෝ සම්බන්ධ ගොනු ඉවත් කර ඇත. මූලාශ්රය ෆෝල්ඩර්, ආකෘති සහ ආපසු ලබා දත්ත ඉතිරි කර ඇත."</string>
     <string name="settings_subagent_choose_model">"Subagent model තෝරාගන්න"</string>
     <string name="settings_subagent_use_main">"ප් රධාන නියෝජිතයාගේ ආකෘතිය භාවිතා කරන්න"</string>
@@ -905,7 +905,7 @@
     <string name="chat_handoff_picker_note">"ඔබගේ චැට් සැලැස්ම එකට එයි තෝරා ගන්න."</string>
     <string name="chat_handoff_close">"වැඩපිළිවෙළ picker"</string>
     <string name="chat_handoff_no_workspace">"Continue to Code එකේ වැඩපිළිවෙළක් එකතු කරන්න."</string>
-    <string name="chat_share_target">"AndroidHarness කතාබහ"</string>
+    <string name="chat_share_target">"VEXORA කතාබහ"</string>
     <string name="chat_share_title">"චැට් එකට Share"</string>
     <string name="chat_share_review">"ඔබගේ බෙදාහරින්න අයිතීන් සමාලෝචනය කරන්න, චැට් තෝරන්න, හා ප්රශ්නයක් එකතු කරන්න. ඔබ චැට් යැවීම ටැප් කරන තුරු කිසිවක් යැවිය නොහැක."</string>
     <string name="chat_share_new">"නව කතාබහක්"</string>
@@ -965,7 +965,7 @@
     <string name="dhizuku_denied">"ප් රවේශය ප් රතික්ෂේප කිරීම · ප් රවේශය ලබා දීම Dhizuku"</string>
     <string name="dhizuku_error">"සම්බන්ධතාවය අසාර්ථක වී ඇත · චෙක් කරන්න Dhizuku නැවතත් උත්සාහ කරන්න"</string>
     <string name="settings_language_sinhala">"සිංහල"</string>
-    <string name="glass_title">AHarness Glass (පරීක්ෂණාත්මක)</string>
+    <string name="glass_title">VEXORA Glass (පරීක්ෂණාත්මක)</string>
     <string name="glass_description">සංචාලනය, පාලක සහ කාඩ්පත් සඳහා වීදුරු ප්‍රභාව.</string>
     <string name="glass_enable">මීදුම් වීදුරු</string>
     <string name="glass_enable_hint">මෘදු ලෙස බොඳ කළ පසුබිම් සහිත අර්ධ පාරදෘශ්‍ය මතුපිට භාවිත කරන්න.</string>
@@ -974,7 +974,7 @@
     <string name="glass_unsupported">වීදුරු ප්‍රභා සඳහා Android 12 හෝ ඊට පසු අවශ්‍ය වේ.</string>
     <string name="glass_liquid_unsupported">Liquid Glass සඳහා Android 13 හෝ ඊට පසු අවශ්‍ය වේ. මෙම උපාංගයේ මීදුම් වීදුරු ඇත.</string>
     <string name="glass_preview_label">වීදුරු පෙරදසුන</string>
-    <string name="glass_preview_title">AndroidHarness</string>
+    <string name="glass_preview_title">VEXORA</string>
     <string name="glass_preview_text">පැහැදිලි පෙළ. මෘදු පසුබිමක්.</string>
     <string name="glass_transparency">පාරදෘශ්‍යතාව</string>
     <string name="glass_transparency_percent">%1$d%%</string>
@@ -1010,9 +1010,9 @@
     <string name="auto_compact_saved">මෙම සංවාදය ආසන්න වශයෙන් සන්දර්භ ටෝකන් %1$sකදී ස්වයංක්‍රීයව සංක්ෂිප්ත වී දිගටම යයි. පිළිතුර සඳහා ඉඩ තබා ඇත.</string>
     <string name="auto_compact_reset">පෙරනිමිය අනුගමනය: ආසන්න වශයෙන් සන්දර්භ ටෝකන් %1$sකදී ස්වයංක්‍රීයව සංක්ෂිප්ත කරන්න.</string>
     <string name="tip_auto_compact">ටෝකන් 350,000දී සන්දර්භය ස්වයංක්‍රීයව සාරාංශ කර මෙම සංවාදය දිගටම කරගෙන යාමට /autocompact 350K භාවිතා කරන්න. 258K හෝ 1M ද පිළිගනී. /autocompact default සැකසීම් → කේතනය → නියෝජිත හැසිරීම අනුගමනය කරයි.</string>
-    <string name="harness_free_quota_title">"Harness නොමිලේ කෝටාව අවසන් වී ඇත"</string>
+    <string name="harness_free_quota_title">"VEXORA නොමිලේ කෝටාව අවසන් වී ඇත"</string>
     <string name="harness_free_quota_body">"නොමිලේ ප්‍රමාණය ඔබේ ජාලය සමඟ බෙදා ගන්නා අතර පැයක කවුළුවකින් අලුත් වේ. නැවත සැකසීමට රැඳී සිටින්න, නැතහොත් දිගටම යාමට සැපයුම්කරු මාරු කරන්න."</string>
-    <string name="harness_free_rate_title">"Harness නොමිලේ මාදිලි තාවකාලිකව සීමා කර ඇත"</string>
+    <string name="harness_free_rate_title">"VEXORA නොමිලේ මාදිලි තාවකාලිකව සීමා කර ඇත"</string>
     <string name="harness_free_rate_body">"මෙම මාදිලිය තාවකාලිකව කාර්යබහුලයි හෝ සීමා කර ඇත. ටික වේලාවකින් නැවත උත්සාහ කරන්න, නැතහොත් සැපයුම්කරු මාරු කරන්න."</string>
     <string name="harness_switch_provider">"සැපයුම්කරු මාරු කරන්න"</string>
     <string name="harness_free_wait">"මම රැඳී සිටිමි"</string>

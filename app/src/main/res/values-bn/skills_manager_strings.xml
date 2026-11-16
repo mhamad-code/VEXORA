@@ -27,7 +27,7 @@
     <string name="sk_copy">"কপি"</string>
     <string name="sk_copied">"দক্ষতা কপি হয়েছে"</string>
     <string name="sk_copy_note">"সংরক্ষণ করলে আপনার নিজের কপি থাকে, যা বান্ডল করা দক্ষতার জায়গা নেয়। মূলেতে ফিরতে পরে আপনার কপি মুছুন।"</string>
-    <string name="sk_workspace_note">"এই দক্ষতাটি কর্মক্ষেত্রের .harness/skills ফোল্ডারে আছে। সেখানেই এটি সম্পাদনা করুন।"</string>
+    <string name="sk_workspace_note">"এই দক্ষতাটি কর্মক্ষেত্রের .VEXORA/skills ফোল্ডারে আছে। সেখানেই এটি সম্পাদনা করুন।"</string>
     <string name="sk_preview">"পূর্বরূপ"</string>
     <string name="sk_markdown">"Markdown"</string>
     <string name="sk_files">"ফাইল (%1$d)"</string>

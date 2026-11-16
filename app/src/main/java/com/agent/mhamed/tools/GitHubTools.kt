@@ -60,7 +60,7 @@ internal class GitHubReadClient(
                 .url(API_BASE + path)
                 .header("Accept", accept)
                 .header("X-GitHub-Api-Version", "2022-11-28")
-                .header("User-Agent", "AndroidHarness")
+                .header("User-Agent", "VEXORA")
                 .apply { if (saved != null) header("Authorization", "Bearer $saved") }
                 .get()
                 .build()
