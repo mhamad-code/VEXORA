@@ -393,7 +393,7 @@ class LocalizationResourcesTest {
                 }
                 String.format(Locale.forLanguageTag(languageTag), translated, *args)
             }
-            for (token in listOf("Shizuku", "AndroidHarness", "GitHub", "CodeGraph", "localhost", "mcpServers")) {
+            for (token in listOf("Shizuku", "VEXORA", "GitHub", "CodeGraph", "localhost", "mcpServers")) {
                 assertEquals("Technical value $token in $name", format.split(token).size, translated.split(token).size)
             }
         }

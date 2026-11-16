@@ -69,7 +69,7 @@ class HarnessProviderTest {
             .header("Authorization", "Bearer secret").header("x-api-key", "secret").build())
         assertNull(request.header("Authorization"))
         assertNull(request.header("x-api-key"))
-        assertEquals("AndroidHarness", request.header("User-Agent"))
+        assertEquals("VEXORA", request.header("User-Agent"))
         assertFalse(request.header(HarnessProvider.SESSION_HEADER).isNullOrBlank())
     }
 
@@ -94,12 +94,12 @@ class HarnessProviderTest {
         val builder = Request.Builder().url("https://opencode.ai/zen/v1/chat/completions")
         val req = HarnessProvider.withSession(builder, "sess-xyz").build()
         assertEquals("sess-xyz", req.header(HarnessProvider.SESSION_HEADER))
-        assertEquals("AndroidHarness", req.header("User-Agent"))
+        assertEquals("VEXORA", req.header("User-Agent"))
 
         val fallbackBuilder = Request.Builder().url("https://opencode.ai/zen/v1/chat/completions")
         val fallbackReq = HarnessProvider.withSession(fallbackBuilder, null).build()
         assertFalse(fallbackReq.header(HarnessProvider.SESSION_HEADER).isNullOrBlank())
-        assertEquals("AndroidHarness", fallbackReq.header("User-Agent"))
+        assertEquals("VEXORA", fallbackReq.header("User-Agent"))
     }
 
     @Test fun withSessionSendsFullIdentityHeaderSet() {
@@ -122,7 +122,7 @@ class HarnessProviderTest {
         )
         assertEquals("Bearer secret-token", req.header("Authorization"))
         assertEquals("my-chat-session", req.header(HarnessProvider.SESSION_HEADER))
-        assertEquals("AndroidHarness", req.header("User-Agent"))
+        assertEquals("VEXORA", req.header("User-Agent"))
     }
 
     @Test fun modelCatalogInjectsOpenCodeHeadersWhileKeepingAuth() {
@@ -130,12 +130,12 @@ class HarnessProviderTest {
         val req = ModelCatalog.buildRequest(customConfig, "secret-token")
         assertEquals("Bearer secret-token", req.header("Authorization"))
         assertFalse(req.header(HarnessProvider.SESSION_HEADER).isNullOrBlank())
-        assertEquals("AndroidHarness", req.header("User-Agent"))
+        assertEquals("VEXORA", req.header("User-Agent"))
 
         val harnessReq = ModelCatalog.buildRequest(HarnessProvider.config, "ignored")
         assertNull(harnessReq.header("Authorization"))
         assertEquals(HarnessProvider.KILO_BASE_URL + "/models", harnessReq.url.toString())
         assertNull(harnessReq.header(HarnessProvider.SESSION_HEADER))
-        assertEquals("AndroidHarness", harnessReq.header("User-Agent"))
+        assertEquals("VEXORA", harnessReq.header("User-Agent"))
     }
 }
