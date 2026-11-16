@@ -341,7 +341,7 @@ class AppContainer(val appContext: Context) {
         },
     )
     val browser = com.agent.mhamed.browser.BrowserController(appContext, images)
-    val registry = ToolRegistry.default(
+    var registry = ToolRegistry.default(
         fetchClient, todoStore, backgroundProcesses, linuxEnv, shizuku, shellRouter, skills, codeGraph,
         imageStore = images,
         browserController = browser,
@@ -376,6 +376,17 @@ class AppContainer(val appContext: Context) {
     val mcp = com.agent.mhamed.tools.mcp.McpManager(appContext, linuxEnv, keys, codeGraph, configuration)
     val github = com.agent.mhamed.github.GitHubAuth(BuildConfig.GITHUB_CLIENT_ID,
         keys::githubCredential, keys::putGitHubCredential, { refreshGitHubAuth() })
+    // Self-development tools (GitHub Actions dispatch/status/artifact download + install).
+    init {
+        registry = registry.withExtra(
+            listOf(
+                com.agent.mhamed.tools.GitHubWorkflowDispatchTool({ github }),
+                com.agent.mhamed.tools.GitHubWorkflowRunsTool({ github }),
+                com.agent.mhamed.tools.GitHubArtifactDownloadTool({ github }, appContext),
+                com.agent.mhamed.tools.InstallApkTool(appContext),
+            )
+        )
+    }
     fun routedProvider(): com.agent.mhamed.llm.LlmProvider =
         com.agent.mhamed.llm.FallbackProvider(
                 factory = ProviderFactory::create,
