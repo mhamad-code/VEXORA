@@ -264,3 +264,11 @@ The app-tier shell and the terminal run bundled Bash directly on Android 8 and 9
 - Disabled by default; requires explicit enable in Settings.
 - Blocked-package list for sensitive apps; step/duration limits; secret/OTP refusal; blocked actions (uninstall/wipe/reset) not available.
 - Skills `device-control` and `app-ui-test` document the observe→decide→act→verify loop.
+
+## Activity display (grouped chat activity)
+
+- New **Activity display** setting: grouped lines (default) or classic cards.
+- Thinking and consecutive tool calls between two texts fold into one compact line with a small tinted glyph and a gray summary ("Read files, ran commands, used the browser"), no card chrome.
+- Tapping the line expands the exact same tool cards and details as before; running groups and groups awaiting approval open automatically, failures keep a warning glyph while collapsed.
+- Assistant prose inside a turn renders in full text colour between groups.
+- Summary phrases are translated with singular/plural forms (English source).

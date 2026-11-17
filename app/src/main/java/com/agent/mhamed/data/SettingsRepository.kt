@@ -241,6 +241,8 @@ data class AppSettings(
     val cavemanInstalled: Boolean = false,
     val cavemanIntensity: com.agent.mhamed.caveman.CavemanIntensity = com.agent.mhamed.caveman.CavemanIntensity.OFF,
     val cavemanWenyan: Boolean = false,
+    /** Activity presentation: NEW grouped lines (default) or CLASSIC cards. */
+    val activityDisplay: com.agent.mhamed.data.ActivityDisplay = com.agent.mhamed.data.ActivityDisplay.NEW,
     /** Code review before commit/push: OFF, SECRETS_ONLY, FULL (default FULL). */
     val codeReviewBeforeCommit: com.agent.mhamed.data.CodeReviewLevel = com.agent.mhamed.data.CodeReviewLevel.FULL,
     /** Minimum changed lines before the AI review runs (avoids trivial diffs). */
@@ -473,6 +475,7 @@ class SettingsRepository(private val context: Context) {
         val CAVEMAN_INSTALLED = booleanPreferencesKey("caveman_installed")
         val CAVEMAN_INTENSITY = stringPreferencesKey("caveman_intensity")
         val CAVEMAN_WENYAN = booleanPreferencesKey("caveman_wenyan")
+        val ACTIVITY_DISPLAY = stringPreferencesKey("activity_display")
         val CODE_REVIEW_BEFORE_COMMIT = stringPreferencesKey("code_review_before_commit")
         val CODE_REVIEW_MIN_DIFF_LINES = intPreferencesKey("code_review_min_diff_lines")
         val DEVICE_CONTROL_ENABLED = booleanPreferencesKey("device_control_enabled")
@@ -634,6 +637,9 @@ class SettingsRepository(private val context: Context) {
                 runCatching { com.agent.mhamed.caveman.CavemanIntensity.valueOf(it) }.getOrNull()
             } ?: com.agent.mhamed.caveman.CavemanIntensity.OFF,
             cavemanWenyan = prefs[Keys.CAVEMAN_WENYAN] ?: false,
+            activityDisplay = prefs[Keys.ACTIVITY_DISPLAY]
+                ?.let { runCatching { com.agent.mhamed.data.ActivityDisplay.valueOf(it) }.getOrNull() }
+                ?: com.agent.mhamed.data.ActivityDisplay.NEW,
             codeReviewBeforeCommit = prefs[Keys.CODE_REVIEW_BEFORE_COMMIT]
                 ?.let { runCatching { com.agent.mhamed.data.CodeReviewLevel.valueOf(it) }.getOrNull() }
                 ?: com.agent.mhamed.data.CodeReviewLevel.FULL,
@@ -1516,6 +1522,10 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setRunTipCursor(cursor: Int) {
         context.settingsStore.edit { it[Keys.RUN_TIP_CURSOR] = cursor }
+    }
+
+    suspend fun setActivityDisplay(display: com.agent.mhamed.data.ActivityDisplay) {
+        context.settingsStore.edit { it[Keys.ACTIVITY_DISPLAY] = display.name }
     }
 
     suspend fun setCodeReviewBeforeCommit(level: com.agent.mhamed.data.CodeReviewLevel) {

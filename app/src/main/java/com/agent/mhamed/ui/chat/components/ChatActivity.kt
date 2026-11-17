@@ -70,12 +70,15 @@ internal fun ChatActivity(
     turnStartedAt: Long? = null,
     onOpenUrl: (String) -> Unit = {},
     onStep: (RumbleCue) -> Unit = {},
+    grouped: Boolean = false,
+    pendingApprovalCallId: String? = null,
 ) {
     val entries = remember(messages, runningCalls, streamingThinking, streamId, streamingCommentary) {
         ChatActivityPresentation.timeline(messages, runningCalls, streamingThinking, streamId, streamingCommentary)
     }
     if (!live && entries.isEmpty()) return
     val thoughtChunks = remember { mutableMapOf<String, com.agent.mhamed.core.ReasoningTextChunks.Stream>() }
+    val groupedExpanded = remember { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
     val active = remember(messages, runningCalls) { ChatActivityPresentation.activeCall(messages, runningCalls) }
     val research = remember(messages) { ChatActivityPresentation.researchProgress(messages) }
     val lastTool = remember(entries) {
@@ -138,30 +141,40 @@ internal fun ChatActivity(
         progress = research,
         trailing = if (showThinkingMetrics) ({ ChatThinkingMetrics(messages, streamingThinking, thinkingTiming, reasoningTokens, live,
             turnStartedAt = turnStartedAt, streamId = streamId) }) else null) {
-        entries.forEach { entry ->
-            when (entry) {
-                is ChatActivityPresentation.Entry.Thought -> {
-                    item(key = entry.key + "-heading") {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Icon(painterResource(R.drawable.ic_brain), null, Modifier.size(13.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(if (entry.milliseconds >= 1000) stringResource(R.string.chat_thought_duration, com.agent.mhamed.ui.common.formatDuration(entry.milliseconds))
-                            else stringResource(R.string.chat_thought), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (grouped) {
+            val blocks = com.agent.mhamed.core.ActivityGrouping.blocks(entries, pendingApprovalCallId)
+            blocks.forEach { block ->
+                when (block) {
+                    is com.agent.mhamed.core.ActivityGrouping.Block.Text -> item(key = block.key) {
+                        Text(
+                            com.agent.mhamed.core.response.RichResponse.plainText(
+                                com.agent.mhamed.core.response.ChatRichResponse.normalize(block.text)),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
                     }
-                    }
-                    thoughtChunks.getOrPut(entry.key) { com.agent.mhamed.core.ReasoningTextChunks.Stream() }.update(entry.text).forEachIndexed { index, chunk ->
-                        item(key = entry.key + "-text-" + index) {
-                            Text(chunk, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    is com.agent.mhamed.core.ActivityGrouping.Block.Activity -> item(key = block.key) {
+                        val open = groupedExpanded[block.key] == true
+                        LaunchedEffect(block.group.awaitingApproval, block.group.hasFailure) {
+                            if (block.group.awaitingApproval || block.group.hasFailure) groupedExpanded[block.key] = true
+                        }
+                        Column(Modifier.fillMaxWidth()) {
+                            ActivityGroupLine(block.group, open) { groupedExpanded[block.key] = !open }
+                            AnimatedVisibility(open) {
+                                Column(Modifier.fillMaxWidth().padding(start = 4.dp, bottom = 6.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    block.group.entries.forEach { entry ->
+                                        ChatEntryContent(entry, live, true, thoughtChunks, onOpenUrl)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
-                is ChatActivityPresentation.Entry.Commentary -> item(key = entry.key) { Text(
-                    com.agent.mhamed.core.response.RichResponse.plainText(
-                        com.agent.mhamed.core.response.ChatRichResponse.normalize(entry.text)),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                ) }
-                is ChatActivityPresentation.Entry.Tool -> item(key = entry.key) { ChatToolActivity(entry.call, entry.result,
-                    running = live && entry.result == null, onOpenUrl) }
+            }
+        } else {
+            entries.forEach { entry ->
+                item(key = entry.key) { ChatEntryContent(entry, live, false, thoughtChunks, onOpenUrl) }
             }
         }
     }
@@ -171,6 +184,45 @@ internal fun ChatActivity(
         val sources = remember(messages) { ChatActivityPresentation.sources(messages) }
         LiveSourceChips(sources, messages.firstNotNullOfOrNull { it.turnId }, onOpenUrl)
     }
+    }
+}
+
+/**
+ * Draws one activity entry. The grouped layout keeps the exact same tool card and
+ * detail content, so opening a group reveals everything the classic layout showed.
+ */
+@Composable
+private fun ChatEntryContent(
+    entry: ChatActivityPresentation.Entry,
+    live: Boolean,
+    grouped: Boolean,
+    thoughtChunks: MutableMap<String, com.agent.mhamed.core.ReasoningTextChunks.Stream>,
+    onOpenUrl: (String) -> Unit,
+) {
+    when (entry) {
+        is ChatActivityPresentation.Entry.Thought -> Column(Modifier.fillMaxWidth()) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                Icon(painterResource(R.drawable.ic_brain), null, Modifier.size(13.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    if (entry.milliseconds >= 1000) stringResource(R.string.chat_thought_duration,
+                        com.agent.mhamed.ui.common.formatDuration(entry.milliseconds))
+                    else stringResource(R.string.chat_thought),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            thoughtChunks.getOrPut(entry.key) { com.agent.mhamed.core.ReasoningTextChunks.Stream() }.update(entry.text).forEachIndexed { _, chunk ->
+                Text(chunk, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        is ChatActivityPresentation.Entry.Commentary -> Text(
+            com.agent.mhamed.core.response.RichResponse.plainText(
+                com.agent.mhamed.core.response.ChatRichResponse.normalize(entry.text)),
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (grouped) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        is ChatActivityPresentation.Entry.Tool ->
+            ChatToolActivity(entry.call, entry.result, running = live && entry.result == null, onOpenUrl)
     }
 }
 

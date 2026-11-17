@@ -1963,6 +1963,8 @@ private fun ChatScreenContent(
                                         reasoningTokens = state.reasoningTokens.takeIf { running && !committed },
                                         turnStartedAt = state.turnStartedAt.takeIf { running },
                                         autoExpand = !appSettings.chatKeepThinkingCollapsed,
+                                        grouped = appSettings.activityDisplay == com.agent.mhamed.data.ActivityDisplay.NEW,
+                                        pendingApprovalCallId = state.pendingApproval?.call?.id,
                                         onStep = rumble,
                                         runningCalls = if (running) state.runningCalls else emptyList(),
                                         streamingThinking = if (running && !committed) state.streamingThinking.orEmpty() else "",

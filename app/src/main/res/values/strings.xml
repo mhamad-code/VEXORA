@@ -3,8 +3,7 @@
     <!-- The product name is a brand, not UI copy, so it is never translated. -->
     <string name="app_name" translatable="false">VEXORA</string>
 
-    <!-- ================================================================
-         Settings · page titles, descriptions and groups.
+    <!-- =========================================================         Settings · page titles, descriptions and groups.
          A page title is also the sidebar label and the landing target of
          search results and deep links, so the title and the anchor it points
          at must come from the same resource id, never from two literals that
@@ -1183,4 +1182,53 @@
     <string name="stream_writes_title">Stream file writes as text</string>
     <string name="stream_writes_desc">Some servers, including several NVIDIA models, only send a file write once it is finished. For those models the agent writes the file into its reply instead, so you can watch it being written.</string>
     <string name="stream_writes_detected">Models detected so far: %1$d</string>
+
+    <string name="settings_activity_display">Activity display</string>
+    <string name="settings_activity_display_desc">How thinking and tool calls are drawn in the chat.</string>
+    <string name="activity_display_new">Grouped lines (new)</string>
+    <string name="activity_display_classic">Classic cards</string>
+    <string name="activity_group_expand">Expand activity</string>
+    <string name="activity_group_collapse">Collapse activity</string>
+    <string name="activity_group_failed">Activity finished with an error</string>
+    <string name="activity_group_waiting">Activity is waiting for your approval</string>
+    <plurals name="activity_read_files">
+        <item quantity="one">read a file</item>
+        <item quantity="other">read files</item>
+    </plurals>
+    <plurals name="activity_edit_files">
+        <item quantity="one">edited a file</item>
+        <item quantity="other">edited files</item>
+    </plurals>
+    <plurals name="activity_commands">
+        <item quantity="one">ran a command</item>
+        <item quantity="other">ran commands</item>
+    </plurals>
+    <plurals name="activity_browser">
+        <item quantity="one">used the browser</item>
+        <item quantity="other">used the browser</item>
+    </plurals>
+    <plurals name="activity_git">
+        <item quantity="one">used git</item>
+        <item quantity="other">used git</item>
+    </plurals>
+    <plurals name="activity_search">
+        <item quantity="one">searched</item>
+        <item quantity="other">searched</item>
+    </plurals>
+    <plurals name="activity_mcp">
+        <item quantity="one">used a tool</item>
+        <item quantity="other">used tools</item>
+    </plurals>
+    <plurals name="activity_subagent">
+        <item quantity="one">used a subagent</item>
+        <item quantity="other">used subagents</item>
+    </plurals>
+    <plurals name="activity_thinking">
+        <item quantity="one">thought</item>
+        <item quantity="other">thought</item>
+    </plurals>
+    <plurals name="activity_other">
+        <item quantity="one">ran a tool</item>
+        <item quantity="other">ran tools</item>
+    </plurals>
 </resources>

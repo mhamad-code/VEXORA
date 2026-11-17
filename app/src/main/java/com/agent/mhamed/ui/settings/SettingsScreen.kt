@@ -488,6 +488,9 @@ private fun SettingsScreenContent(
                                 onSearchChatChats = { value -> scope.launch { container.settings.setCodeSearchChatChats(value) } },
                             )
                             CodingSection { page -> openPage(page) }
+                            ActivityDisplaySettingsCard(settings) { display ->
+                                scope.launch { container.settings.setActivityDisplay(display) }
+                            }
                             CodeReviewSettingsCard(settings) { level ->
                                 scope.launch { container.settings.setCodeReviewBeforeCommit(level) }
                             }

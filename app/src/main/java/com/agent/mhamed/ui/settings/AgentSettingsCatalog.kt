@@ -376,6 +376,9 @@ internal object AgentSettingsCatalog {
         AgentSetting("caveman_classical_chinese", R.string.settings_caveman_classical_chinese, SettingsPage.CAVEMAN, SettingKind.Toggle,
             "Caveman in classical Chinese (wenyan).", keywords = "caveman wenyan chinese",
             read = { it.cavemanWenyan.toString() }, write = { r, v -> r.setCavemanWenyan(bool(v)) }),
+        AgentSetting("activity_display", R.string.settings_activity_display, SettingsPage.CODING, SettingKind.Choice({ listOf("NEW", "CLASSIC") }),
+            "How thinking and tool calls are drawn: grouped lines (new) or classic cards.", keywords = "activity display thinking tools grouped classic cards",
+            read = { it.activityDisplay.name }, write = { r, v -> r.setActivityDisplay(com.agent.mhamed.data.ActivityDisplay.valueOf(v)) }),
         // Code review before commit
         AgentSetting("code_review_before_commit", R.string.settings_code_review_before_commit, SettingsPage.CODING, SettingKind.Choice({ listOf("OFF", "SECRETS_ONLY", "FULL") }),
             "Review changes before commit/push: Off, Secrets only, or Full (deterministic + AI).", keywords = "code review commit push secrets blocker",

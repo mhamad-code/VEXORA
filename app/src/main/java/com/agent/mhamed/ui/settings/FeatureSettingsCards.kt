@@ -18,6 +18,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.agent.mhamed.R
 import com.agent.mhamed.data.AppSettings
+import com.agent.mhamed.data.ActivityDisplay
 import com.agent.mhamed.data.CodeReviewLevel
 
 /** Master switch for the Android device-control tools (Feature A). */
@@ -95,4 +96,37 @@ private fun levelLabel(level: CodeReviewLevel): String = when (level) {
     CodeReviewLevel.OFF -> stringResource(R.string.settings_code_review_off)
     CodeReviewLevel.SECRETS_ONLY -> stringResource(R.string.settings_code_review_secrets_only)
     CodeReviewLevel.FULL -> stringResource(R.string.settings_code_review_full)
+}
+
+/** Activity display: grouped lines (default) or the classic cards. */
+@Composable
+internal fun ActivityDisplaySettingsCard(
+    settings: AppSettings,
+    onSelect: (ActivityDisplay) -> Unit,
+) {
+    SettingsPanel(Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(stringResource(R.string.settings_activity_display), style = MaterialTheme.typography.titleSmall)
+            Text(
+                stringResource(R.string.settings_activity_display_desc),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            ActivityDisplay.entries.forEach { option ->
+                Row(
+                    Modifier.fillMaxWidth()
+                        .selectable(settings.activityDisplay == option, role = Role.RadioButton) { onSelect(option) }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    RadioButton(selected = settings.activityDisplay == option, onClick = { onSelect(option) })
+                    Text(
+                        stringResource(if (option == ActivityDisplay.NEW) R.string.activity_display_new else R.string.activity_display_classic),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
+        }
+    }
 }

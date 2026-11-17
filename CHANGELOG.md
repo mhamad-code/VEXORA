@@ -944,3 +944,7 @@
 
 - **Code review before commit (Feature B)**: deterministic secret scan (regex + entropy), redacted diff for AI review, Blocker/Warning/Note card, Off/Secrets only/Full setting (default Full), minimum diff size, `/review` slash command, and mandatory review step in `self-dev-agent` skill.
 - **Device control agent (Feature A)**: `device_screenshot`, `device_ui_tree`, `device_tap`, `device_swipe`, `device_type_text`, `device_key`, `device_open_app`, `device_wait` tools via existing shell tiers; disabled by default; blocked-package list; step/duration limits; secret/OTP refusal; `device-control` and `app-ui-test` skills.
+
+### Added (feature branch feature/activity-ui)
+
+- **Activity display**: a new grouped presentation for chat thinking and tool calls. Consecutive activity between two texts collapses into a single summary line with a small glyph; tapping opens the existing tool cards. Running and approval-waiting groups open automatically and failures keep a warning marker. A setting switches between the new grouped lines (default) and the classic cards, and all summary phrases are translatable with singular/plural forms.
