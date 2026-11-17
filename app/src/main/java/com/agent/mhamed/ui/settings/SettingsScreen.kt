@@ -488,6 +488,9 @@ private fun SettingsScreenContent(
                                 onSearchChatChats = { value -> scope.launch { container.settings.setCodeSearchChatChats(value) } },
                             )
                             CodingSection { page -> openPage(page) }
+                            CodeReviewSettingsCard(settings) { level ->
+                                scope.launch { container.settings.setCodeReviewBeforeCommit(level) }
+                            }
                         }
                         SettingsPage.NINE_ROUTER -> NineRouterSection(container)
                         SettingsPage.CONNECTED_ACCOUNTS -> ConnectedAccountsSection(container)
@@ -551,7 +554,12 @@ private fun SettingsScreenContent(
                         }
                         SettingsPage.BACKGROUND -> BackgroundSettingsSection(container, settings)
                         SettingsPage.STORAGE -> StorageSection(container)
-                        SettingsPage.ENVIRONMENT -> TerminalSection(container, envState, shizukuState, serviceState)
+                        SettingsPage.ENVIRONMENT -> {
+                            TerminalSection(container, envState, shizukuState, serviceState)
+                            DeviceControlSettingsCard(settings) { enabled ->
+                                scope.launch { container.settings.setDeviceControlEnabled(enabled) }
+                            }
+                        }
                         SettingsPage.TROUBLESHOOTING -> TroubleshootingSection(container, ::openPage)
                         SettingsPage.PROVIDER_DEBUG -> ProviderDebugSection(container)
                         SettingsPage.BACKUP -> {

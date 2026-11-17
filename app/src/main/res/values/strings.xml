@@ -294,6 +294,12 @@
     <string name="settings_code_review_before_commit">Review code before commit</string>
     <string name="settings_code_review_min_diff_lines">Minimum changed lines for AI review</string>
     <string name="settings_device_control_enabled">Device control (Android apps)</string>
+    <string name="settings_device_control_desc">Let the agent open and control Android apps on this device through Shizuku, Wireless ADB or root. Steps and duration are limited.</string>
+    <string name="settings_device_control_off_note">Device control is off. The agent cannot see or control other apps.</string>
+    <string name="settings_code_review_desc">Check changes for leaked secrets and obvious errors before the agent commits or pushes.</string>
+    <string name="settings_code_review_off">Off</string>
+    <string name="settings_code_review_secrets_only">Secrets only</string>
+    <string name="settings_code_review_full">Full (secrets + AI review)</string>
     <string name="settings_device_control_max_steps">Device control max steps per task</string>
     <string name="settings_device_control_max_duration">Device control max duration (seconds)</string>
     <string name="settings_caveman_classical_chinese_desc">Wenyan variant of the selected intensity</string>
