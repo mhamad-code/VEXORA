@@ -947,4 +947,5 @@
 
 ### Added (feature branch feature/activity-ui)
 
+- **Activity display, both modes**: the grouped presentation applies to code conversations as well as regular chat. A finished turn now reads as a plain "Worked for 17m 53s" line followed by one-line activity rows (no card chrome), each row opening its tool cards; commentary prose sits between the rows. Version 3.8 (build 42).
 - **Activity display**: a new grouped presentation for chat thinking and tool calls. Consecutive activity between two texts collapses into a single summary line with a small glyph; tapping opens the existing tool cards. Running and approval-waiting groups open automatically and failures keep a warning marker. A setting switches between the new grouped lines (default) and the classic cards, and all summary phrases are translatable with singular/plural forms.

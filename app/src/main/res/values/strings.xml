@@ -1184,7 +1184,7 @@
     <string name="stream_writes_detected">Models detected so far: %1$d</string>
 
     <string name="settings_activity_display">Activity display</string>
-    <string name="settings_activity_display_desc">How thinking and tool calls are drawn in the chat.</string>
+    <string name="settings_activity_display_desc">How thinking and tool calls are drawn in chat and code conversations.</string>
     <string name="activity_display_new">Grouped lines (new)</string>
     <string name="activity_display_classic">Classic cards</string>
     <string name="activity_group_expand">Expand activity</string>

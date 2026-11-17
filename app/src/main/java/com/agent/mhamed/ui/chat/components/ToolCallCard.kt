@@ -18,6 +18,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -339,9 +340,22 @@ internal fun TurnActivityCard(
     showLiveCode: Boolean = true,
     onWatchBrowser: ((String?) -> Unit)? = null,
     browserTargets: Map<String, String> = emptyMap(),
+    grouped: Boolean = false,
 ) {
     val uiContext = androidx.compose.ui.platform.LocalContext.current
     if (activity.isEmpty()) return
+    if (grouped) {
+        GroupedTurnActivity(
+            activity = activity,
+            results = results,
+            workedLabel = workedLabel,
+            onOpenFile = onOpenFile,
+            showLiveCode = showLiveCode,
+            onWatchBrowser = onWatchBrowser,
+            browserTargets = browserTargets,
+        )
+        return
+    }
     val rows = remember(activity) {
         val plan = com.agent.mhamed.agent.CodeActivityGroups.plan(activity)
         buildList {
@@ -409,6 +423,103 @@ internal fun TurnActivityCard(
                             onWatchBrowser = onWatchBrowser,
                             browserTarget = browserTargets[row.call.id],
                         )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The compact finished-turn log: one "Worked for" line with no card chrome, then
+ * a single-row summary per run of activity, exactly like the chat transcript.
+ * Opening a row reveals the same tool cards the classic layout showed.
+ */
+@Composable
+private fun GroupedTurnActivity(
+    activity: List<ChatMessage>,
+    results: Map<String, ChatMessage?>,
+    workedLabel: String,
+    onOpenFile: (String, Int?) -> Unit,
+    showLiveCode: Boolean,
+    onWatchBrowser: ((String?) -> Unit)?,
+    browserTargets: Map<String, String>,
+) {
+    val uiContext = androidx.compose.ui.platform.LocalContext.current
+    val entries = remember(activity) { com.agent.mhamed.core.ChatActivityPresentation.timeline(activity) }
+    val blocks = remember(entries) { com.agent.mhamed.core.ActivityGrouping.blocks(entries) }
+    var expanded by rememberSaveable(activity.joinToString(",") { it.id ?: it.createdAt.toString() }) { mutableStateOf(true) }
+    val opened = remember { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
+    val scheme = MaterialTheme.colorScheme
+    val rotation = animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        animationSpec = fastEffectsSpec(),
+        label = "worked chevron",
+    )
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth()
+                .heightIn(min = 48.dp)
+                .toggleable(expanded, role = androidx.compose.ui.semantics.Role.Button) { expanded = !expanded }
+                .padding(vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                if (workedLabel.isNotBlank()) uiContext.getString(R.string.ui_worked_for, workedLabel)
+                else uiContext.getString(R.string.ui_work_summary),
+                Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyMedium,
+                color = scheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Icon(
+                Icons.Filled.KeyboardArrowDown,
+                contentDescription = if (expanded) uiContext.getString(R.string.ui_collapse_activity) else uiContext.getString(R.string.ui_expand_activity),
+                tint = scheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp).graphicsLayer { rotationZ = rotation.value },
+            )
+        }
+        AnimatedVisibility(
+            expanded,
+            enter = expandVertically(animationSpec = fastSpatialSpec()) + fadeIn(defaultEffectsSpec()),
+            exit = shrinkVertically(animationSpec = fastSpatialSpec()) + fadeOut(defaultEffectsSpec()),
+        ) {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                blocks.forEach { block ->
+                    when (block) {
+                        is com.agent.mhamed.core.ActivityGrouping.Block.Text -> AssistantText(block.text)
+                        is com.agent.mhamed.core.ActivityGrouping.Block.Activity -> {
+                            val open = opened[block.key] == true
+                            Column(Modifier.fillMaxWidth()) {
+                                ActivityGroupLine(group = block.group, expanded = open) { opened[block.key] = !open }
+                                AnimatedVisibility(open) {
+                                    Column(
+                                        Modifier.fillMaxWidth().padding(start = 4.dp, bottom = 6.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        block.group.entries.forEach { entry ->
+                                            when (entry) {
+                                                is com.agent.mhamed.core.ChatActivityPresentation.Entry.Thought ->
+                                                    ThinkingBlock(entry.text, thinkingMs = entry.milliseconds)
+                                                is com.agent.mhamed.core.ChatActivityPresentation.Entry.Commentary ->
+                                                    AssistantText(entry.text)
+                                                is com.agent.mhamed.core.ChatActivityPresentation.Entry.Tool -> ToolCallCard(
+                                                    call = entry.call,
+                                                    result = entry.result ?: results[entry.call.id],
+                                                    running = false,
+                                                    onOpenFile = onOpenFile,
+                                                    showLiveCode = showLiveCode,
+                                                    onWatchBrowser = onWatchBrowser,
+                                                    browserTarget = browserTargets[entry.call.id],
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

@@ -1956,6 +1956,10 @@ private fun ChatScreenContent(
                             // One composition path keeps the disclosure and its inner scroll
                             // position intact when live activity becomes a saved message.
                             fun chatActivityItem(activityKey: String?, messages: List<ChatMessage>, running: Boolean, committed: Boolean) {
+                                // The grouped header reports how long the turn took ("Worked for 17m 53s").
+                                val workedLabel = messages.firstOrNull { it.role == Role.USER }?.createdAt
+                                    ?.let { start -> messages.lastOrNull()?.createdAt?.takeIf { it > start }?.let { formatDuration(it - start) } }
+                                    .orEmpty()
                                 indexedItem(key = "chat-turn-$activityKey-activity", contentType = ChatListContentType.Thinking) {
                                     com.agent.mhamed.ui.chat.components.ChatActivity(messages, live = running,
                                         showThinkingMetrics = true,
@@ -1964,6 +1968,7 @@ private fun ChatScreenContent(
                                         turnStartedAt = state.turnStartedAt.takeIf { running },
                                         autoExpand = !appSettings.chatKeepThinkingCollapsed,
                                         grouped = appSettings.activityDisplay == com.agent.mhamed.data.ActivityDisplay.NEW,
+                                        workedLabel = workedLabel,
                                         pendingApprovalCallId = state.pendingApproval?.call?.id,
                                         onStep = rumble,
                                         runningCalls = if (running) state.runningCalls else emptyList(),
@@ -2314,6 +2319,7 @@ private fun ChatScreenContent(
                                                             workedLabel = userAt?.let { formatDuration((message.createdAt - it).coerceAtLeast(0)) }.orEmpty(),
                                                             activity = activity, onOpenFile = onOpenFile, showLiveCode = state.showLiveCode,
                                                             onWatchBrowser = ::watchBrowser, browserTargets = browserTargets,
+                                                            grouped = appSettings.activityDisplay == com.agent.mhamed.data.ActivityDisplay.NEW,
                                                         )
                                                     }
                                                 }
