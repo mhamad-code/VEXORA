@@ -1,6 +1,7 @@
 package com.agent.mhamed.ui.chat.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -20,10 +21,12 @@ import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -32,9 +35,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.agent.mhamed.R
+import com.agent.mhamed.core.ChatActivityPresentation
 import com.agent.mhamed.core.ActivityGrouping
 import com.agent.mhamed.ui.common.DotLoading
 
@@ -50,7 +56,18 @@ internal fun ActivityGroupLine(
     onToggle: () -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
-    val summary = GroupSummary(group.kinds)
+    val runningKind = remember(group) {
+        group.entries.lastOrNull { it is ChatActivityPresentation.Entry.Tool && it.result == null }?.let { (it as ChatActivityPresentation.Entry.Tool).call.name }?.let { com.agent.mhamed.core.ActivityGrouping.kindOfTool(it) }
+            ?: if (group.kinds.contains(com.agent.mhamed.core.ActivityGrouping.Kind.THINKING)) com.agent.mhamed.core.ActivityGrouping.Kind.THINKING else group.kinds.firstOrNull()
+    }
+    val runningLabel = when (runningKind) {
+        com.agent.mhamed.core.ActivityGrouping.Kind.THINKING -> stringResource(R.string.activity_running_thinking)
+        com.agent.mhamed.core.ActivityGrouping.Kind.READ_FILES -> stringResource(R.string.activity_running_read)
+        com.agent.mhamed.core.ActivityGrouping.Kind.EDIT_FILES -> stringResource(R.string.activity_running_edit)
+        com.agent.mhamed.core.ActivityGrouping.Kind.BROWSER, com.agent.mhamed.core.ActivityGrouping.Kind.MCP -> stringResource(R.string.activity_running_browser)
+        else -> stringResource(R.string.activity_running_command)
+    }
+    val summary = GroupSummary(group.kinds).replaceFirstChar { it.uppercase() }
     val a11y = buildString {
         append(summary)
         if (group.hasFailure) append(". ").append(stringResource(R.string.activity_group_failed))
@@ -64,29 +81,58 @@ internal fun ActivityGroupLine(
     }
     Row(
         Modifier.fillMaxWidth()
-            .heightIn(min = 48.dp)
+            .heightIn(min = 29.dp)
             .toggleable(expanded, role = Role.Button, onValueChange = { onToggle() })
             .semantics { contentDescription = a11y }
-            .padding(horizontal = 2.dp, vertical = 6.dp),
+            .padding(vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        if (group.hasFailure) Icon(Icons.Outlined.Warning, null, Modifier.size(16.dp), tint = tint)
-        else Icon(GroupGlyph(group.kinds.firstOrNull() ?: ActivityGrouping.Kind.OTHER), null, Modifier.size(16.dp), tint = tint)
-        Text(
-            summary,
-            Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyMedium,
-            color = scheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        if (group.running) DotLoading() else Icon(
-            if (expanded) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown,
-            null,
-            Modifier.size(18.dp),
-            tint = scheme.onSurfaceVariant,
-        )
+        if (group.running) {
+            Box(Modifier.size(19.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(15.dp),
+                    strokeWidth = 2.dp,
+                    color = Color(0xFF5AA9F0),
+                )
+            }
+        } else if (group.hasFailure) {
+            Icon(Icons.Outlined.Warning, null, Modifier.size(19.dp), tint = Color(0xFFD28C4C))
+        } else {
+            val ic = when (group.kinds.firstOrNull() ?: ActivityGrouping.Kind.OTHER) {
+                ActivityGrouping.Kind.THINKING -> Icons.Outlined.AutoAwesome
+                ActivityGrouping.Kind.BROWSER, ActivityGrouping.Kind.MCP -> Icons.Outlined.Public
+                ActivityGrouping.Kind.READ_FILES -> Icons.Outlined.Description
+                ActivityGrouping.Kind.EDIT_FILES -> Icons.Outlined.Edit
+                ActivityGrouping.Kind.COMMAND -> Icons.Outlined.Code
+                else -> Icons.Outlined.Build
+            }
+            val color = when (group.kinds.firstOrNull() ?: ActivityGrouping.Kind.OTHER) {
+                ActivityGrouping.Kind.THINKING, ActivityGrouping.Kind.BROWSER, ActivityGrouping.Kind.MCP -> Color(0xFF5AA9F0)
+                ActivityGrouping.Kind.READ_FILES, ActivityGrouping.Kind.EDIT_FILES -> Color(0xFF4FC38A)
+                ActivityGrouping.Kind.COMMAND -> Color(0xFFD28C4C)
+                else -> scheme.onSurfaceVariant
+            }
+            Icon(ic, null, Modifier.size(19.dp), tint = color)
+        }
+        if (group.running) {
+            Box(Modifier.weight(1f)) {
+                ChatShimmerText(
+                    text = runningLabel,
+                    running = true,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.5.sp),
+                )
+            }
+        } else {
+            Text(
+                summary,
+                Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.5.sp),
+                color = Color(0xFF8E8E93),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 

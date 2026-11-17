@@ -52,12 +52,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.agent.mhamed.agent.toolPresentation
 import com.agent.mhamed.core.ChatMessage
 import com.agent.mhamed.core.ImageRef
@@ -469,8 +471,8 @@ private fun GroupedTurnActivity(
                 if (workedLabel.isNotBlank()) uiContext.getString(R.string.ui_worked_for, workedLabel)
                 else uiContext.getString(R.string.ui_work_summary),
                 Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyMedium,
-                color = scheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 17.sp),
+                color = Color(0xFF8E8E93),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )

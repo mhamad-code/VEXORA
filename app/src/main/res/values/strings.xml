@@ -1189,6 +1189,11 @@
     <string name="activity_display_classic">Classic cards</string>
     <string name="activity_group_expand">Expand activity</string>
     <string name="activity_group_collapse">Collapse activity</string>
+    <string name="activity_running_thinking">Thinking…</string>
+    <string name="activity_running_command">Running a command…</string>
+    <string name="activity_running_browser">Using the browser…</string>
+    <string name="activity_running_read">Reading files…</string>
+    <string name="activity_running_edit">Editing files…</string>
     <string name="activity_group_failed">Activity finished with an error</string>
     <string name="activity_group_waiting">Activity is waiting for your approval</string>
     <plurals name="activity_read_files">

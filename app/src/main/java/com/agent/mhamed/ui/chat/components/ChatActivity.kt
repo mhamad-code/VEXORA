@@ -44,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.agent.mhamed.R
 import com.agent.mhamed.core.ChatActivityPresentation
 import com.agent.mhamed.core.ChatMessage
@@ -81,6 +82,9 @@ internal fun ChatActivity(
     val thoughtChunks = remember { mutableMapOf<String, com.agent.mhamed.core.ReasoningTextChunks.Stream>() }
     val groupedExpanded = remember { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
     val active = remember(messages, runningCalls) { ChatActivityPresentation.activeCall(messages, runningCalls) }
+    val hasAttention = remember(entries) {
+        entries.any { it is ChatActivityPresentation.Entry.Tool && it.result?.isError == true } || pendingApprovalCallId != null
+    }
     val research = remember(messages) { ChatActivityPresentation.researchProgress(messages) }
     val lastTool = remember(entries) {
         entries.filterIsInstance<ChatActivityPresentation.Entry.Tool>().lastOrNull()
@@ -95,8 +99,20 @@ internal fun ChatActivity(
         showToolPhase = false
     }
     val completedPhase = showToolPhase && active == null && lastTool?.result != null
+    var elapsedMs by remember { mutableStateOf(0L) }
+    LaunchedEffect(live, turnStartedAt) {
+        if (live && turnStartedAt != null) {
+            while (true) {
+                elapsedMs = (System.currentTimeMillis() - turnStartedAt).coerceAtLeast(0)
+                kotlinx.coroutines.delay(500)
+            }
+        } else {
+            elapsedMs = 0
+        }
+    }
     val seconds = messages.sumOf { it.thinkingMs }.coerceAtLeast(0) / 1000
     val title = when {
+        live && turnStartedAt != null -> stringResource(R.string.ui_working_for, formatElapsed(elapsedMs))
         live && showToolPhase && active != null -> activityLabel(active.name, true)
         live && completedPhase -> if (lastTool!!.result?.isError == true) stringResource(R.string.chat_tool_failed) else activityLabel(lastTool.call.name, false)
         live && writing -> stringResource(R.string.chat_writing_reply)
@@ -140,8 +156,7 @@ internal fun ChatActivity(
     if (!showActivity) ChatTurnIntro(started = modelStarted || !live, onFinished = { introDone = true }) else
     ChatActivityRow(title, if (live && showToolPhase) (active ?: lastTool?.call?.takeIf { completedPhase })?.name else null, live, entries.isNotEmpty(), followLatest = live, autoExpand = autoExpand,
         writing = live && writing && active == null,
-        plainDetails = grouped,
-        progress = research,
+        plainDetails = grouped, grouped = grouped, attention = hasAttention, progress = research,
         trailing = if (showThinkingMetrics) ({ ChatThinkingMetrics(messages, streamingThinking, thinkingTiming, reasoningTokens, live,
             turnStartedAt = turnStartedAt, streamId = streamId) }) else null) {
         if (grouped) {
@@ -322,6 +337,8 @@ private fun ChatActivityRow(
     /** The answer is streaming: the working log steps aside so the reply has the focus. */
     writing: Boolean = false,
     plainDetails: Boolean = false,
+    grouped: Boolean = false,
+    attention: Boolean = false,
     progress: ChatActivityPresentation.ResearchProgress? = null,
     trailing: (@Composable () -> Unit)? = null,
     compactPreview: Boolean = false,
@@ -343,9 +360,12 @@ private fun ChatActivityRow(
             expanded = true
             autoOpened = true
         }
-        // The grouped layout keeps the worked log open after the turn, like the
-        // compact lines it replaces; the reader still folds it with one tap.
-        if (!plainDetails && !live && autoOpened) {
+        // Attention items never collapse; normal grouped turns fold away.
+        if (grouped && !live && autoOpened && !attention) {
+            expanded = false
+            autoOpened = false
+        }
+        if (!grouped && !plainDetails && !live && autoOpened) {
             expanded = false
             autoOpened = false
         }
@@ -447,7 +467,8 @@ private fun ChatActivityRow(
                     AnimatedContent(title, transitionSpec = {
                         (fadeIn(tween(if (motion) 180 else 0)) + slideInVertically { if (motion) it / 3 else 0 }) togetherWith
                             fadeOut(tween(if (motion) 100 else 0))
-                    }, label = "Chat activity phase", modifier = Modifier.weight(1f, fill = false)) { label -> ChatShimmerText(label, live && motion) }
+                    }, label = "Chat activity phase", modifier = Modifier.weight(1f, fill = false)) { label -> ChatShimmerText(label, live && motion,
+                        style = if (grouped) MaterialTheme.typography.bodyMedium.copy(fontSize = 17.sp) else MaterialTheme.typography.labelLarge) }
                     if (expandable) Icon(if (expanded) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown,
                         stringResource(if (expanded) R.string.ui_collapse else R.string.ui_expand), Modifier.size(16.dp), tint = scheme.onSurfaceVariant)
                 }
@@ -760,4 +781,11 @@ internal fun ChatShimmerText(text: String, running: Boolean, style: androidx.com
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
     )
+}
+
+private fun formatElapsed(ms: Long): String {
+    val total = (ms / 1000).coerceAtLeast(1)
+    val m = total / 60
+    val s = total % 60
+    return if (m > 0) "${m}m ${s}s" else "${s}s"
 }

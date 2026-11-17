@@ -1967,7 +1967,7 @@ private fun ChatScreenContent(
                                         reasoningTokens = state.reasoningTokens.takeIf { running && !committed },
                                         turnStartedAt = state.turnStartedAt.takeIf { running },
                                         autoExpand = !appSettings.chatKeepThinkingCollapsed,
-                                        grouped = appSettings.activityDisplay == com.agent.mhamed.data.ActivityDisplay.NEW,
+                                        grouped = true,
                                         workedLabel = workedLabel,
                                         pendingApprovalCallId = state.pendingApproval?.call?.id,
                                         onStep = rumble,
@@ -2319,7 +2319,7 @@ private fun ChatScreenContent(
                                                             workedLabel = userAt?.let { formatDuration((message.createdAt - it).coerceAtLeast(0)) }.orEmpty(),
                                                             activity = activity, onOpenFile = onOpenFile, showLiveCode = state.showLiveCode,
                                                             onWatchBrowser = ::watchBrowser, browserTargets = browserTargets,
-                                                            grouped = appSettings.activityDisplay == com.agent.mhamed.data.ActivityDisplay.NEW,
+                                                            grouped = true,
                                                         )
                                                     }
                                                 }
