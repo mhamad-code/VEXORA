@@ -1,8 +1,8 @@
-package com.androidharness.app;
+package com.agent.mhamed;
 
 /**
  * Runs inside the Shizuku server process with ADB-shell (or root) privileges.
- * The Shizuku server instantiates {@link com.androidharness.app.data.env.HarnessUserService}
+ * The Shizuku server instantiates {@link com.agent.mhamed.data.env.HarnessUserService}
  * reflectively, so the app needs only the IHarnessService class + a bind via
  * Shizuku.bindUserService — no <service> entry in the manifest.
  */

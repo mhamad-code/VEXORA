@@ -136,22 +136,22 @@ When a project configuration is present, `memory_write` caps the core file to `m
 - Tools are registered per run and removed when memory or personalization is off.
 - Backup formats accept a project remap function, so other callers can restore into a mapped workspace.
 
-Sources: [app/src/main/java/com/androidharness/app/data/MemoryRepository.kt](../app/src/main/java/com/androidharness/app/data/MemoryRepository.kt)#L124-L157)
+Sources: [app/src/main/java/com/agent/mhamed/data/MemoryRepository.kt](../app/src/main/java/com/agent/mhamed/data/MemoryRepository.kt)#L124-L157)
 
 ## Source files
 
-- `app/src/main/java/com/androidharness/app/tools/UniversalMemoryTools.kt`
-- `app/src/main/java/com/androidharness/app/tools/MemoryTools.kt`
-- `app/src/main/java/com/androidharness/app/tools/InteractiveTools.kt`
-- `app/src/main/java/com/androidharness/app/data/MemoryRepository.kt`
-- `app/src/main/java/com/androidharness/app/data/MemoryPolicy.kt`
-- `app/src/main/java/com/androidharness/app/data/MemoryBackup.kt`
-- `app/src/main/java/com/androidharness/app/data/SettingsRepository.kt`
-- `app/src/main/java/com/androidharness/app/data/db/Database.kt`
-- `app/src/main/java/com/androidharness/app/agent/MemoryNotes.kt`
-- `app/src/main/java/com/androidharness/app/agent/MemoryTopics.kt`
-- `app/src/main/java/com/androidharness/app/workspace/ProjectMemory.kt`
-- `app/src/main/java/com/androidharness/app/ui/settings/MemorySection.kt`
-- `app/src/main/java/com/androidharness/app/ui/chat/components/ChatMemoryReceipt.kt`
-- `app/src/main/java/com/androidharness/app/core/ChatActivityPresentation.kt`
-- `app/src/main/java/com/androidharness/app/agent/AgentEngine.kt`
+- `app/src/main/java/com/agent/mhamed/tools/UniversalMemoryTools.kt`
+- `app/src/main/java/com/agent/mhamed/tools/MemoryTools.kt`
+- `app/src/main/java/com/agent/mhamed/tools/InteractiveTools.kt`
+- `app/src/main/java/com/agent/mhamed/data/MemoryRepository.kt`
+- `app/src/main/java/com/agent/mhamed/data/MemoryPolicy.kt`
+- `app/src/main/java/com/agent/mhamed/data/MemoryBackup.kt`
+- `app/src/main/java/com/agent/mhamed/data/SettingsRepository.kt`
+- `app/src/main/java/com/agent/mhamed/data/db/Database.kt`
+- `app/src/main/java/com/agent/mhamed/agent/MemoryNotes.kt`
+- `app/src/main/java/com/agent/mhamed/agent/MemoryTopics.kt`
+- `app/src/main/java/com/agent/mhamed/workspace/ProjectMemory.kt`
+- `app/src/main/java/com/agent/mhamed/ui/settings/MemorySection.kt`
+- `app/src/main/java/com/agent/mhamed/ui/chat/components/ChatMemoryReceipt.kt`
+- `app/src/main/java/com/agent/mhamed/core/ChatActivityPresentation.kt`
+- `app/src/main/java/com/agent/mhamed/agent/AgentEngine.kt`
