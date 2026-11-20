@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/mhamad-code/VEXORA/main/docs/harness.schema.json",
-  "title": "VEXORA workspace configuration",
+  "title": "AndroidHarness workspace configuration",
   "type": "object",
   "properties": {
     "$schema": {

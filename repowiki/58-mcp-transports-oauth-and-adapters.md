@@ -48,7 +48,7 @@ sequenceDiagram
 
 ### Connection and handshake
 
-`connect(cwd)` chooses the transport from `config.type` (`McpConnection.kt:78-L92`). It launches a collector on the connection scope that feeds every inbound line into `handleLine`, starts the transport, then issues `initialize` with `protocolVersion` equal to `McpProtocol.REMOTE_VERSION` (`2025-06-18`) for remote servers or `2024-11-05` for stdio, empty `capabilities`, and `clientInfo` name `VEXORA` version `0.4-alpha` (`McpConnection.kt:104-L118`). It sends `notifications/initialized`, calls `tools/list`, parses the result into `McpToolInfo` objects, and only then sets `ConnectionState.READY`.
+`connect(cwd)` chooses the transport from `config.type` (`McpConnection.kt:78-L92`). It launches a collector on the connection scope that feeds every inbound line into `handleLine`, starts the transport, then issues `initialize` with `protocolVersion` equal to `McpProtocol.REMOTE_VERSION` (`2025-06-18`) for remote servers or `2024-11-05` for stdio, empty `capabilities`, and `clientInfo` name `AndroidHarness` version `0.4-alpha` (`McpConnection.kt:104-L118`). It sends `notifications/initialized`, calls `tools/list`, parses the result into `McpToolInfo` objects, and only then sets `ConnectionState.READY`.
 
 `handleLine` ignores any message that carries a `method`, which means server-initiated requests and notifications (sampling, roots, elicitation, progress, logging) are dropped rather than answered. Responses are matched by integer `id` into `pending` (`McpConnection.kt:218-L225`).
 
@@ -161,17 +161,17 @@ All token requests share `tokenRequest`, which applies a 30 second `callTimeout`
 - `McpManager.startAuthentication` searches only the app-side `_servers` list, so a server that exists only in `harness.json` or a plugin cannot use the Authenticate button.
 - The OAuth access token is only used for `http` and `sse` transports; stdio servers have no token path.
 
-Sources: [app/src/main/java/com/agent/mhamed/tools/mcp/McpTransport.kt](../app/src/main/java/com/agent/mhamed/tools/mcp/McpTransport.kt)#L122-L176), [app/src/main/java/com/agent/mhamed/tools/mcp/McpConnection.kt](../app/src/main/java/com/agent/mhamed/tools/mcp/McpConnection.kt)#L77-L169), [app/src/main/java/com/agent/mhamed/tools/mcp/McpOAuth.kt](../app/src/main/java/com/agent/mhamed/tools/mcp/McpOAuth.kt)#L92-L133), [app/src/main/java/com/agent/mhamed/tools/mcp/McpToolAdapter.kt](../app/src/main/java/com/agent/mhamed/tools/mcp/McpToolAdapter.kt)#L18-L68)
+Sources: [app/src/main/java/com/androidharness/app/tools/mcp/McpTransport.kt](../app/src/main/java/com/androidharness/app/tools/mcp/McpTransport.kt)#L122-L176), [app/src/main/java/com/androidharness/app/tools/mcp/McpConnection.kt](../app/src/main/java/com/androidharness/app/tools/mcp/McpConnection.kt)#L77-L169), [app/src/main/java/com/androidharness/app/tools/mcp/McpOAuth.kt](../app/src/main/java/com/androidharness/app/tools/mcp/McpOAuth.kt)#L92-L133), [app/src/main/java/com/androidharness/app/tools/mcp/McpToolAdapter.kt](../app/src/main/java/com/androidharness/app/tools/mcp/McpToolAdapter.kt)#L18-L68)
 
 ## Source files
 
-- `app/src/main/java/com/agent/mhamed/tools/mcp/McpTransport.kt`
-- `app/src/main/java/com/agent/mhamed/tools/mcp/McpConnection.kt`
-- `app/src/main/java/com/agent/mhamed/tools/mcp/McpOAuth.kt`
-- `app/src/main/java/com/agent/mhamed/tools/mcp/McpToolAdapter.kt`
-- `app/src/main/java/com/agent/mhamed/tools/mcp/McpModels.kt`
-- `app/src/main/java/com/agent/mhamed/tools/mcp/McpManager.kt`
-- `app/src/main/java/com/agent/mhamed/ui/common/OAuthBrowser.kt`
-- `app/src/main/java/com/agent/mhamed/MainActivity.kt`
-- `app/src/main/java/com/agent/mhamed/data/KeyStoreManager.kt`
+- `app/src/main/java/com/androidharness/app/tools/mcp/McpTransport.kt`
+- `app/src/main/java/com/androidharness/app/tools/mcp/McpConnection.kt`
+- `app/src/main/java/com/androidharness/app/tools/mcp/McpOAuth.kt`
+- `app/src/main/java/com/androidharness/app/tools/mcp/McpToolAdapter.kt`
+- `app/src/main/java/com/androidharness/app/tools/mcp/McpModels.kt`
+- `app/src/main/java/com/androidharness/app/tools/mcp/McpManager.kt`
+- `app/src/main/java/com/androidharness/app/ui/common/OAuthBrowser.kt`
+- `app/src/main/java/com/androidharness/app/MainActivity.kt`
+- `app/src/main/java/com/androidharness/app/data/KeyStoreManager.kt`
 - `app/src/main/AndroidManifest.xml`

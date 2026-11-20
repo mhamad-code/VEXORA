@@ -1,4 +1,4 @@
-package com.agent.mhamed.local;
+package com.androidharness.app.local;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;

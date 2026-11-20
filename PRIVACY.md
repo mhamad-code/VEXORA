@@ -1,8 +1,8 @@
-# Privacy Policy for VEXORA
+# Privacy Policy for AndroidHarness
 
 Last updated: September 6, 2026
 
-VEXORA runs on your device. It is a tool that connects to services you
+AndroidHarness runs on your device. It is a tool that connects to services you
 choose and configure yourself. I built it so that your data stays between you
 and those services. This page explains what the app handles and what it does
 with it.

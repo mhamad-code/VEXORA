@@ -64,7 +64,7 @@ jobs:
         run: |
           STAMP=$(date -u +%Y%m%d-%H%M)
           SHA=$(git rev-parse --short HEAD)
-          NAME="VEXORA-${STAMP}-${SHA}-debug.apk"
+          NAME="AndroidHarness-${STAMP}-${SHA}-debug.apk"
           mkdir dist && cp app/build/outputs/apk/debug/app-debug.apk "dist/${NAME}"
           cp app/build/outputs/gpuRuntime/debug/*.gz dist/
           echo "name=${NAME}" >> "$GITHUB_OUTPUT"
@@ -78,7 +78,7 @@ jobs:
             exit 0
           fi
           if ! gh release view 1 --repo Sanuu7/AH-GPU-Runtime >/dev/null 2>&1; then
-            gh release create 1 --repo Sanuu7/AH-GPU-Runtime --title 'Optional local GPU runtime' --notes 'Verified GPU packages downloaded by VEXORA when requested.' --latest=false
+            gh release create 1 --repo Sanuu7/AH-GPU-Runtime --title 'Optional local GPU runtime' --notes 'Verified GPU packages downloaded by AndroidHarness when requested.' --latest=false
           fi
           gh release upload 1 --repo Sanuu7/AH-GPU-Runtime app/build/outputs/gpuRuntime/debug/*.gz --clobber
 

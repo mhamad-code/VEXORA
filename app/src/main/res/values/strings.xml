@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- The product name is a brand, not UI copy, so it is never translated. -->
-    <string name="app_name" translatable="false">VEXORA</string>
+    <string name="app_name" translatable="false">AndroidHarness</string>
 
-    <!-- =========================================================         Settings · page titles, descriptions and groups.
+    <!-- ================================================================
+         Settings · page titles, descriptions and groups.
          A page title is also the sidebar label and the landing target of
          search results and deep links, so the title and the anchor it points
          at must come from the same resource id, never from two literals that
@@ -161,9 +162,9 @@
     <string name="settings_search_license_title">License</string>
     <string name="settings_search_license_desc">About · The MIT license and what it means for forks</string>
     <string name="settings_search_credits_title">Credits</string>
-    <string name="settings_search_credits_desc">About · Open source projects behind VEXORA</string>
+    <string name="settings_search_credits_desc">About · Open source projects behind AndroidHarness</string>
     <string name="settings_search_author_title">Author</string>
-    <string name="settings_search_author_desc">About · Who builds VEXORA and where to find it</string>
+    <string name="settings_search_author_desc">About · Who builds AndroidHarness and where to find it</string>
 
     <!-- Settings · anchors. Referenced by both the search entry and the
          SettingsAnchor call so the pair can never drift apart. -->
@@ -290,17 +291,6 @@
     <string name="settings_caveman_install_desc">Installs from the app. Reply mode starts Off; coding skills can be switched off individually.</string>
     <string name="settings_caveman_mode_desc">Automatically applied from the next model request, across chats. Off removes style instructions; skills stay independent.</string>
     <string name="settings_caveman_classical_chinese">Classical Chinese</string>
-    <string name="settings_code_review_before_commit">Review code before commit</string>
-    <string name="settings_code_review_min_diff_lines">Minimum changed lines for AI review</string>
-    <string name="settings_device_control_enabled">Device control (Android apps)</string>
-    <string name="settings_device_control_desc">Let the agent open and control Android apps on this device through Shizuku, Wireless ADB or root. Steps and duration are limited.</string>
-    <string name="settings_device_control_off_note">Device control is off. The agent cannot see or control other apps.</string>
-    <string name="settings_code_review_desc">Check changes for leaked secrets and obvious errors before the agent commits or pushes.</string>
-    <string name="settings_code_review_off">Off</string>
-    <string name="settings_code_review_secrets_only">Secrets only</string>
-    <string name="settings_code_review_full">Full (secrets + AI review)</string>
-    <string name="settings_device_control_max_steps">Device control max steps per task</string>
-    <string name="settings_device_control_max_duration">Device control max duration (seconds)</string>
     <string name="settings_caveman_classical_chinese_desc">Wenyan variant of the selected intensity</string>
     <string name="settings_caveman_classical_chinese_note">Code, paths and exact errors stay intact. Warnings and unclear instructions use full sentences.</string>
     <string name="settings_caveman_skills_desc">Loaded only when relevant. Available in the Skills picker after installation.</string>
@@ -329,10 +319,10 @@
     <string name="settings_restore_reconnect_title">Reconnect restored chats</string>
     <string name="settings_restore_reconnect_note">Read-only access stays read-only. Chats that used multiple workspaces need separate folders for each one.</string>
     <string name="settings_accounts_using_plan">You\'re using your ChatGPT plan</string>
-    <string name="settings_accounts_using_plan_desc">Eligible requests in VEXORA use your ChatGPT plan or credits. Review usage and manage this app\'s access in ChatGPT settings.</string>
+    <string name="settings_accounts_using_plan_desc">Eligible requests in AndroidHarness use your ChatGPT plan or credits. Review usage and manage this app\'s access in ChatGPT settings.</string>
     <string name="settings_action_got_it">Got it</string>
     <string name="settings_accounts_signout_title">Sign out of this account?</string>
-    <string name="settings_accounts_signout_message">This disconnects the account from VEXORA and removes it from automatic switching. You can sign in again later.</string>
+    <string name="settings_accounts_signout_message">This disconnects the account from AndroidHarness and removes it from automatic switching. You can sign in again later.</string>
     <string name="settings_action_continue">Continue</string>
     <string name="settings_progress_bar_subtitle">Choose how progress bars look. Applies immediately.</string>
     <string name="settings_provider_select">Select</string>
@@ -946,7 +936,7 @@
     <string name="reminders_on_time">On-time reminders</string>
     <string name="reminders_on_time_on">On. Reminders show at the exact minute.</string>
     <string name="reminders_on_time_off">Off. Android may show reminders a few minutes late. Tap to allow.</string>
-    <string name="reminders_notifications_blocked">Notifications are blocked for VEXORA, so reminders will not show. Tap to allow them.</string>
+    <string name="reminders_notifications_blocked">Notifications are blocked for AndroidHarness, so reminders will not show. Tap to allow them.</string>
     <string name="reminders_upcoming">Upcoming</string>
     <string name="reminders_cancel">Cancel reminder</string>
     <string name="reminders_channel">Reminders</string>
@@ -1014,7 +1004,7 @@
     <string name="chat_handoff_picker_note">Choose where to build. Your Chat plan comes along.</string>
     <string name="chat_handoff_close">Close workspace picker</string>
     <string name="chat_handoff_no_workspace">Add a workspace in Code to continue.</string>
-    <string name="chat_share_target">VEXORA Chat</string>
+    <string name="chat_share_target">AndroidHarness Chat</string>
     <string name="chat_share_title">Share to Chat</string>
     <string name="chat_share_review">Review your shared items, choose a Chat, and add a question. Nothing is sent until you tap Send in Chat.</string>
     <string name="chat_share_new">New Chat</string>
@@ -1092,7 +1082,7 @@
     <string name="glass_unsupported">Glass effects need Android 12 or later.</string>
     <string name="glass_liquid_unsupported">Liquid Glass needs Android 13 or later. Frosted glass is available on this device.</string>
     <string name="glass_preview_label">Glass preview</string>
-    <string name="glass_preview_title">VEXORA</string>
+    <string name="glass_preview_title">AndroidHarness</string>
     <string name="glass_preview_text">Clear text. A softer background.</string>
     <string name="glass_transparency">Transparency</string>
     <string name="glass_transparency_percent">%1$d%%</string>
@@ -1182,58 +1172,4 @@
     <string name="stream_writes_title">Stream file writes as text</string>
     <string name="stream_writes_desc">Some servers, including several NVIDIA models, only send a file write once it is finished. For those models the agent writes the file into its reply instead, so you can watch it being written.</string>
     <string name="stream_writes_detected">Models detected so far: %1$d</string>
-
-    <string name="settings_activity_display">Activity display</string>
-    <string name="settings_activity_display_desc">How thinking and tool calls are drawn in chat and code conversations.</string>
-    <string name="activity_display_new">Grouped lines (new)</string>
-    <string name="activity_display_classic">Classic cards</string>
-    <string name="activity_group_expand">Expand activity</string>
-    <string name="activity_group_collapse">Collapse activity</string>
-    <string name="activity_running_thinking">Thinking…</string>
-    <string name="activity_running_command">Running a command…</string>
-    <string name="activity_running_browser">Using the browser…</string>
-    <string name="activity_running_read">Reading files…</string>
-    <string name="activity_running_edit">Editing files…</string>
-    <string name="activity_group_failed">Activity finished with an error</string>
-    <string name="activity_group_waiting">Activity is waiting for your approval</string>
-    <plurals name="activity_read_files">
-        <item quantity="one">read a file</item>
-        <item quantity="other">read files</item>
-    </plurals>
-    <plurals name="activity_edit_files">
-        <item quantity="one">edited a file</item>
-        <item quantity="other">edited files</item>
-    </plurals>
-    <plurals name="activity_commands">
-        <item quantity="one">ran a command</item>
-        <item quantity="other">ran commands</item>
-    </plurals>
-    <plurals name="activity_browser">
-        <item quantity="one">used the browser</item>
-        <item quantity="other">used the browser</item>
-    </plurals>
-    <plurals name="activity_git">
-        <item quantity="one">used git</item>
-        <item quantity="other">used git</item>
-    </plurals>
-    <plurals name="activity_search">
-        <item quantity="one">searched</item>
-        <item quantity="other">searched</item>
-    </plurals>
-    <plurals name="activity_mcp">
-        <item quantity="one">used a tool</item>
-        <item quantity="other">used tools</item>
-    </plurals>
-    <plurals name="activity_subagent">
-        <item quantity="one">used a subagent</item>
-        <item quantity="other">used subagents</item>
-    </plurals>
-    <plurals name="activity_thinking">
-        <item quantity="one">thought</item>
-        <item quantity="other">thought</item>
-    </plurals>
-    <plurals name="activity_other">
-        <item quantity="one">ran a tool</item>
-        <item quantity="other">ran tools</item>
-    </plurals>
 </resources>

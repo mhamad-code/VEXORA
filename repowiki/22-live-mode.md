@@ -128,23 +128,23 @@ The overlay opens from the empty message box or the + menu when `liveMode.enable
 - `LiveModeSession` takes `chatProvider` and `sendToAgent` callbacks, so it can be hosted by another screen without changing the loop.
 - `start_task` is an ordinary tool schema produced by `LiveMode.startTaskSchema()`, and its result is controlled by the intercept callback.
 
-Sources: [app/src/main/java/com/agent/mhamed/ui/chat/LiveModeSession.kt](../app/src/main/java/com/agent/mhamed/ui/chat/LiveModeSession.kt)#L83-L236)
+Sources: [app/src/main/java/com/androidharness/app/ui/chat/LiveModeSession.kt](../app/src/main/java/com/androidharness/app/ui/chat/LiveModeSession.kt)#L83-L236)
 
 ## Source files
 
-- `app/src/main/java/com/agent/mhamed/agent/LiveMode.kt`
-- `app/src/main/java/com/agent/mhamed/ui/chat/LiveListener.kt`
-- `app/src/main/java/com/agent/mhamed/ui/chat/LiveModeSession.kt`
-- `app/src/main/java/com/agent/mhamed/ui/chat/LiveModeOverlay.kt`
-- `app/src/main/java/com/agent/mhamed/ui/chat/LiveTranscriptCard.kt`
-- `app/src/main/java/com/agent/mhamed/ui/chat/ChatScreen.kt`
-- `app/src/main/java/com/agent/mhamed/ui/chat/ChatViewModel.kt`
-- `app/src/main/java/com/agent/mhamed/data/LiveModeSettings.kt`
-- `app/src/main/java/com/agent/mhamed/ui/settings/LiveModeSection.kt`
-- `app/src/main/java/com/agent/mhamed/data/audio/TtsController.kt`
-- `app/src/main/java/com/agent/mhamed/data/audio/TtsTextChunker.kt`
-- `app/src/main/java/com/agent/mhamed/data/audio/SpeechText.kt`
-- `app/src/main/java/com/agent/mhamed/data/audio/GroqTtsClient.kt`
-- `app/src/main/java/com/agent/mhamed/data/audio/GroqWhisperClient.kt`
-- `app/src/main/java/com/agent/mhamed/agent/RunManager.kt`
-- `app/src/main/java/com/agent/mhamed/data/SettingsRepository.kt`
+- `app/src/main/java/com/androidharness/app/agent/LiveMode.kt`
+- `app/src/main/java/com/androidharness/app/ui/chat/LiveListener.kt`
+- `app/src/main/java/com/androidharness/app/ui/chat/LiveModeSession.kt`
+- `app/src/main/java/com/androidharness/app/ui/chat/LiveModeOverlay.kt`
+- `app/src/main/java/com/androidharness/app/ui/chat/LiveTranscriptCard.kt`
+- `app/src/main/java/com/androidharness/app/ui/chat/ChatScreen.kt`
+- `app/src/main/java/com/androidharness/app/ui/chat/ChatViewModel.kt`
+- `app/src/main/java/com/androidharness/app/data/LiveModeSettings.kt`
+- `app/src/main/java/com/androidharness/app/ui/settings/LiveModeSection.kt`
+- `app/src/main/java/com/androidharness/app/data/audio/TtsController.kt`
+- `app/src/main/java/com/androidharness/app/data/audio/TtsTextChunker.kt`
+- `app/src/main/java/com/androidharness/app/data/audio/SpeechText.kt`
+- `app/src/main/java/com/androidharness/app/data/audio/GroqTtsClient.kt`
+- `app/src/main/java/com/androidharness/app/data/audio/GroqWhisperClient.kt`
+- `app/src/main/java/com/androidharness/app/agent/RunManager.kt`
+- `app/src/main/java/com/androidharness/app/data/SettingsRepository.kt`

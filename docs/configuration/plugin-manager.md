@@ -70,4 +70,4 @@ MCP startup and executable hooks retain the existing exact-definition project ap
 
 Hooks require a standalone JavaScript entry. They run in Android's isolated JavaScript runtime, with no Node `require`, filesystem or network bridge. Supported events, return values, time and memory limits are described in the [configuration guide](README.md#restricted-plugins). Skills and static instructions do not require that runtime.
 
-Packages written for another harness are not automatically compatible. Repackage their supported skills, instructions and MCP definitions with this manifest, and adapt executable hooks to VEXORA's restricted API. An incompatible package is reported instead of being installed with missing functionality.
+Packages written for another harness are not automatically compatible. Repackage their supported skills, instructions and MCP definitions with this manifest, and adapt executable hooks to AndroidHarness's restricted API. An incompatible package is reported instead of being installed with missing functionality.

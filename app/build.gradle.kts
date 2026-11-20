@@ -42,7 +42,7 @@ val hasNdk: Boolean = run {
 android {
     if (distributionChannel == "play") dynamicFeatures += setOf(":local_gpu")
     sourceSets.getByName("main").java.srcDir("src/${distributionChannel}Delivery/java")
-    namespace = "com.agent.mhamed"
+    namespace = "com.androidharness.app"
     // The in-app picker must be able to switch languages without a Play download.
     bundle { language { enableSplit = false } }
     compileSdk = 37
@@ -59,10 +59,10 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.agent.mhamed"
+        applicationId = "com.androidharness.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 43
+        versionCode = 40
         versionName = "4.0"
         buildConfigField("String", "GITHUB_CLIENT_ID", "\"$githubClientId\"")
         buildConfigField("boolean", "PLAY_DISTRIBUTION", (distributionChannel == "play").toString())

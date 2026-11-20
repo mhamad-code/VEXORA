@@ -1,10 +1,10 @@
 ---
 name: androidharness-environment
-description: VEXORA workspaces, execution tiers, runtime paths and tool workflows.
+description: AndroidHarness workspaces, execution tiers, runtime paths and tool workflows.
 category: environment
 ---
 
-# Working inside VEXORA
+# Working inside AndroidHarness
 
 You run inside an Android app. The live environment section and the tool schemas attached to the current request describe this run. A reference explains how a capability works; it does not make that capability available or authorize its use.
 

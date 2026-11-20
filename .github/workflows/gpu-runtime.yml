@@ -38,6 +38,6 @@ jobs:
             exit 0
           fi
           if ! gh release view 1 --repo Sanuu7/AH-GPU-Runtime >/dev/null 2>&1; then
-            gh release create 1 --repo Sanuu7/AH-GPU-Runtime --title 'Optional local GPU runtime' --notes 'Verified, device-specific GPU packages for VEXORA. The app contains the expected content hash.' --latest=false
+            gh release create 1 --repo Sanuu7/AH-GPU-Runtime --title 'Optional local GPU runtime' --notes 'Verified, device-specific GPU packages for AndroidHarness. The app contains the expected content hash.' --latest=false
           fi
           gh release upload 1 --repo Sanuu7/AH-GPU-Runtime app/build/outputs/gpuRuntime/release/*.gz --clobber
