@@ -82,7 +82,7 @@ title: The verdict
 text: A useful summary.
 ::
 ::profile
-name: AndroidHarness
+name: VEXORA
 subtitle: Android app
 description: An app for coding.
 facts: [{label:License,value:MIT,source:https://example.com/license}]

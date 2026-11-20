@@ -339,7 +339,7 @@ class AgentService : Service() {
     private fun buildNotification(text: String): Notification {
         val alertsEnabled = AppNotifications.enabled(this)
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("AndroidHarness")
+            .setContentTitle("VEXORA")
             .setContentText(if (alertsEnabled) localizedOptionLabel(text) else getString(R.string.background_service_notice))
             .setSmallIcon(R.drawable.ic_launcher_monochrome)
             .setContentIntent(appPendingIntent())

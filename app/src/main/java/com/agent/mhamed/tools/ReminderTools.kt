@@ -31,7 +31,7 @@ object ReminderTools {
         listOf(ReminderSetTool(backend), ReminderListTool(backend), ReminderCancelTool(backend), AlarmSetTool(clock), TimerSetTool(clock))
 
     internal fun timingNote(backend: ReminderBackend): String = buildString {
-        if (!backend.notificationsAllowed()) append(" Notifications are blocked for AndroidHarness, so the user will not see it " +
+        if (!backend.notificationsAllowed()) append(" Notifications are blocked for VEXORA, so the user will not see it " +
             "until they allow notifications in Android settings. Tell them.")
         if (!backend.exactTiming()) append(" On-time reminders are off, so Android may show it a few minutes late. " +
             "The user can turn them on in Settings, Chat, Reminders.")
@@ -83,7 +83,7 @@ class ReminderSetTool(private val backend: () -> ReminderBackend) : Tool {
     }
 
     private fun userNote(): String = buildList {
-        if (!backend().notificationsAllowed()) add("Notifications are blocked for AndroidHarness, so this will not show until you allow them.")
+        if (!backend().notificationsAllowed()) add("Notifications are blocked for VEXORA, so this will not show until you allow them.")
         if (!backend().exactTiming()) add("On-time reminders are off, so this may show a few minutes late. Turn them on in Settings, Chat, Reminders.")
     }.joinToString("\n")
 
@@ -128,10 +128,10 @@ class ReminderCancelTool(private val backend: () -> ReminderBackend) : Tool {
     }
 }
 
-/** Shared by the alarm and timer tools: the Clock app must exist and AndroidHarness must be on screen. */
+/** Shared by the alarm and timer tools: the Clock app must exist and VEXORA must be on screen. */
 private fun clockProblem(clock: ClockBackend): String? = when {
     !clock.clockAvailable() -> "This phone has no Clock app that accepts alarms or timers. Offer a reminder with reminder_set instead."
-    !clock.inForeground() -> "AndroidHarness is not on screen, and Android only lets it open the Clock app while it is. " +
+    !clock.inForeground() -> "VEXORA is not on screen, and Android only lets it open the Clock app while it is. " +
         "Ask the user to open the chat and try again, or offer a reminder with reminder_set."
     else -> null
 }

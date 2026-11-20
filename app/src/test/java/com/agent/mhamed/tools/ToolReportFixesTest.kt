@@ -112,6 +112,6 @@ class ToolReportFixesTest {
         assertEquals("Not Found", httpReason(404))
         assertEquals("I'm a teapot", httpReason(418))
         assertNull(httpReason(299))
-        assertTrue(HTTP_TOOL_USER_AGENT.startsWith("AndroidHarness/"))
+        assertTrue(HTTP_TOOL_USER_AGENT.startsWith("VEXORA/"))
     }
 }

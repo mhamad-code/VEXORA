@@ -352,8 +352,8 @@ class PluginManager(
 /** Real, bundled starter packs; community search results are labelled separately. */
 object PluginStarters {
     val listings = listOf(
-        PluginListing("review-workflow", "A code-review skill and instructions for reporting verified findings.", "1.0.0", PluginOrigin("builtin", "review-workflow"), "AndroidHarness", true, kind = "skill", source = "Built in"),
-        PluginListing("test-workflow", "A regression-testing skill and instructions for checking changes.", "1.0.0", PluginOrigin("builtin", "test-workflow"), "AndroidHarness", true, kind = "skill", source = "Built in"),
+        PluginListing("review-workflow", "A code-review skill and instructions for reporting verified findings.", "1.0.0", PluginOrigin("builtin", "review-workflow"), "VEXORA", true, kind = "skill", source = "Built in"),
+        PluginListing("test-workflow", "A regression-testing skill and instructions for checking changes.", "1.0.0", PluginOrigin("builtin", "test-workflow"), "VEXORA", true, kind = "skill", source = "Built in"),
     )
     fun materialize(id: String, folder: File) {
         val entry = listings.firstOrNull { it.origin.target == id } ?: error("Unknown starter pack.")

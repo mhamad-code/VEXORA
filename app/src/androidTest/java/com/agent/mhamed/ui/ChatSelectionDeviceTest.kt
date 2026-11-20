@@ -146,7 +146,7 @@ class ChatSelectionDeviceTest {
             await { nodes().any { text(it) == "3 selected" } }
             assertTrue("Other section must stay outside this selection", nodes().none { text(it) == "4 selected" })
             click("Clear selection")
-            await { nodes().any { it.contentDescription?.toString() == "AndroidHarness icon" } }
+            await { nodes().any { it.contentDescription?.toString() == "VEXORA icon" } }
             longClick("$prefix One"); click("Select"); click("$prefix Two")
             click("Delete")
             await { nodes().any { text(it) == "Delete selected chats?" } }

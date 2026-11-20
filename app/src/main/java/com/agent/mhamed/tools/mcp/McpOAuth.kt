@@ -138,7 +138,7 @@ object McpOAuth {
             val endpoint = ctx.registrationEndpoint ?: return@withContext ctx
             val body = buildString {
                 append('{')
-                append("\"client_name\":\"AndroidHarness\",")
+                append("\"client_name\":\"VEXORA\",")
                 append("\"redirect_uris\":[\"$REDIRECT_URI\"],")
                 append("\"grant_types\":[\"authorization_code\",\"refresh_token\"],")
                 append("\"response_types\":[\"code\"],")

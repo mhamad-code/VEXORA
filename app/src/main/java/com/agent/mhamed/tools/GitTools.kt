@@ -347,12 +347,12 @@ class GitCommitTool(
                     linuxEnv,
                     ctx,
                     gitCmd(
-                        "config user.name 'Android Harness'",
+                        "config user.name 'VEXORA'",
                         "config user.email 'harness@android.local'",
                     ),
                 )
                 var note =
-                    "[note: auto-configured repository git identity 'Android Harness <harness@android.local>']"
+                    "[note: auto-configured repository git identity 'VEXORA <harness@android.local>']"
                 if (!repoConfig.ok) {
                     // Repo-local config failed (read-only .git/config etc.),
                     // fall back to the global ~/.gitconfig identity.
@@ -361,12 +361,12 @@ class GitCommitTool(
                         linuxEnv,
                         ctx,
                         gitCmd(
-                            "config --global user.name 'Android Harness'",
+                            "config --global user.name 'VEXORA'",
                             "config --global user.email 'harness@android.local'",
                         ),
                     )
                     if (globalConfig.ok) {
-                        note = "[note: auto-configured global git identity 'Android Harness <harness@android.local>' in ~/.gitconfig]"
+                        note = "[note: auto-configured global git identity 'VEXORA <harness@android.local>' in ~/.gitconfig]"
                     }
                 }
                 val retryRes = runGitWithRetry(router, linuxEnv, ctx, commitCommand)

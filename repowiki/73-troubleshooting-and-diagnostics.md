@@ -53,7 +53,7 @@ On `ON_RESUME` the section calls `storage.refresh()` and `shizuku.refresh()`, re
 
 `diagnosticReport` is deliberately narrow ([DiagnosticReport.kt:37](../app/src/main/java/com/agent/mhamed/ui/settings/DiagnosticReport.kt)#L37-L49)). It emits:
 
-1. The fixed title `AndroidHarness troubleshooting`.
+1. The fixed title `VEXORA troubleshooting`.
 2. The app version, filtered to letters, digits, `.`, `-`, and `+`, then capped at 40 characters.
 3. The Android API level.
 4. The fixed scope line `Scope: default provider and default workspace`.

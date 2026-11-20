@@ -2,7 +2,7 @@
 
 > Defines the Gradle toolchain, the two distribution channels, the signing and native packaging rules, the test source sets, and the GitHub Actions jobs that build and publish artifacts.
 
-AndroidHarness is a single `:app` module plus a conditional `:local_gpu` dynamic feature. There are no Android product flavors. Distribution is selected by the `distribution` Gradle property, which adds a delivery source set and a `PLAY_DISTRIBUTION` BuildConfig field. The build pins AGP 9.3.1, Kotlin 2.4.10, Gradle 9.7.0, SDK 37, and a specific NDK, and both CI workflows use JDK 21 to compile Java 17 bytecode.
+VEXORA is a single `:app` module plus a conditional `:local_gpu` dynamic feature. There are no Android product flavors. Distribution is selected by the `distribution` Gradle property, which adds a delivery source set and a `PLAY_DISTRIBUTION` BuildConfig field. The build pins AGP 9.3.1, Kotlin 2.4.10, Gradle 9.7.0, SDK 37, and a specific NDK, and both CI workflows use JDK 21 to compile Java 17 bytecode.
 
 ## Module Responsibilities
 
@@ -131,7 +131,7 @@ There are exactly two workflow files.
 
 - Triggers: cron `0 2 * * *` UTC, `workflow_dispatch`, and pushes to `main` touching `app/**` or the workflow file.
 - Permissions: `contents: write`; concurrency group `nightly-build` with cancel in progress.
-- Steps: checkout v7, Temurin JDK 21, `gradle/actions/setup-gradle@v6`, install NDK `27.2.12479018`, install `glslc`, run `:app:testDebugUnitTest`, upload the test report on failure, run `:app:assembleDebug`, stamp the APK as `AndroidHarness-<UTC yyyymmdd-HHMM>-<shortsha>-debug.apk`, copy GPU `.gz` outputs into `dist/`, optionally publish the GPU packages to release ID 1 of `Sanuu7/AH-GPU-Runtime` when `GPU_RUNTIME_PUBLISH_TOKEN` is set, and upload `dist/*` as an artifact kept 30 days.
+- Steps: checkout v7, Temurin JDK 21, `gradle/actions/setup-gradle@v6`, install NDK `27.2.12479018`, install `glslc`, run `:app:testDebugUnitTest`, upload the test report on failure, run `:app:assembleDebug`, stamp the APK as `VEXORA-<UTC yyyymmdd-HHMM>-<shortsha>-debug.apk`, copy GPU `.gz` outputs into `dist/`, optionally publish the GPU packages to release ID 1 of `Sanuu7/AH-GPU-Runtime` when `GPU_RUNTIME_PUBLISH_TOKEN` is set, and upload `dist/*` as an artifact kept 30 days.
 
 **`gpu-runtime.yml`, display name "Publish GPU runtime packages"** ([gpu-runtime.yml:1](../.github/workflows/gpu-runtime.yml)#L1-L43)):
 

@@ -47,7 +47,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-private const val WORDMARK = "Android Harness"
+private const val WORDMARK = "VEXORA"
 
 /** Material's emphasized decelerate curve: quick start, long soft landing. */
 private val Emphasized = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f)
@@ -55,7 +55,7 @@ private val Emphasized = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f)
 /**
  * Plays at the start of a Chat turn, in the exact spot and size of the
  * activity row it hands over to: the small AH glyph pops into the row's
- * circle and "Android Harness" unrolls beside it. The wordmark stays out,
+ * circle and "VEXORA" unrolls beside it. The wordmark stays out,
  * shimmering, for as long as the model has not answered, so the row never
  * claims to be thinking before it is. Once [started] turns true it rolls
  * back into the glyph, the AH holds on its own for a moment, then morphs

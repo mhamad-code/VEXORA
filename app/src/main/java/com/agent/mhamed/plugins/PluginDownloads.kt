@@ -32,7 +32,7 @@ class PluginDownloads(
     }
     private suspend fun <T> request(url: String, headers: Map<String, String> = emptyMap(), read: (Response) -> T): T =
         suspendCancellableCoroutine { continuation ->
-            val request = Request.Builder().url(checked(url)).header("User-Agent", "AndroidHarness-Plugins")
+            val request = Request.Builder().url(checked(url)).header("User-Agent", "VEXORA-Plugins")
             headers.forEach { (key, value) -> request.header(key, value) }
             val call = client.newCall(request.build())
             continuation.invokeOnCancellation { call.cancel() }

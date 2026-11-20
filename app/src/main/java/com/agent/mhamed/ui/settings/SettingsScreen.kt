@@ -2782,16 +2782,16 @@ private fun UpdatesCard(container: AppContainer) {
 // About
 // ---------------------------------------------------------------------------
 
-private const val AUTHOR_URL = "https://github.com/Sanuu7"
-private const val REPO_URL = "https://github.com/Sanuu7/AndroidHarness"
-private const val LICENSE_URL = "https://github.com/Sanuu7/AndroidHarness/blob/main/LICENSE"
+private const val AUTHOR_URL = "https://github.com/mhamad-code"
+private const val REPO_URL = "https://github.com/mhamad-code/VEXORA"
+private const val LICENSE_URL = "https://github.com/mhamad-code/VEXORA/blob/main/LICENSE"
 
 /** Installed version, shared by the About page and the update card. */
 private fun appVersionLabel(context: Context): String = runCatching {
     context.packageManager.getPackageInfo(context.packageName, 0).versionName
 }.getOrNull().orEmpty().ifBlank { "?" }
 
-/** A project AndroidHarness leans on, listed on the About page. */
+/** A project VEXORA leans on, listed on the About page. */
 private data class Credit(val name: String, val role: String, val url: String)
 
 private val BUILT_WITH = listOf(
@@ -2834,7 +2834,7 @@ private fun AboutSection(container: AppContainer) {
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             HarnessMark(size = 58.dp)
-            Text("AndroidHarness", style = MaterialTheme.typography.titleLarge)
+            Text("VEXORA", style = MaterialTheme.typography.titleLarge)
             Text(
                 uiContext.getString(R.string.ui_a_coding_agent_that_lives_on_your),
                 style = MaterialTheme.typography.bodyMedium,
@@ -2857,7 +2857,7 @@ private fun AboutSection(container: AppContainer) {
         SettingsRow(
             leading = { GitHubMark() },
             title = "Sanuu",
-            subtitle = "github.com/Sanuu7",
+            subtitle = "github.com/mhamad-code",
             onClick = { open(AUTHOR_URL) },
             divider = true,
             trailing = { ExternalLinkIcon() },
@@ -2867,7 +2867,7 @@ private fun AboutSection(container: AppContainer) {
                 Icon(Icons.Rounded.Code, contentDescription = null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
             },
             title = stringResource(R.string.settings_about_source),
-            subtitle = "github.com/Sanuu7/AndroidHarness",
+            subtitle = "github.com/mhamad-code/VEXORA",
             onClick = { open(REPO_URL) },
             trailing = { ExternalLinkIcon() },
         )

@@ -110,7 +110,7 @@ class McpConnection(
                     )
                     putJsonObject("capabilities") {}
                     putJsonObject("clientInfo") {
-                        put("name", "AndroidHarness")
+                        put("name", "VEXORA")
                         put("version", "0.4-alpha")
                     }
                 },

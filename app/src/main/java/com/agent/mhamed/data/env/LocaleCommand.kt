@@ -4,7 +4,7 @@ import java.io.File
 
 /** Minimal locale inspection for the Android toolchain; does not install locale data. */
 internal object LocaleCommand {
-    private const val MARKER = "# AndroidHarness locale compatibility v1"
+    private const val MARKER = "# VEXORA locale compatibility v1"
 
     val script = """
         #!/system/bin/sh
@@ -46,7 +46,7 @@ internal object LocaleCommand {
                 val count = input.read(bytes).coerceAtLeast(0)
                 String(bytes, 0, count, Charsets.UTF_8)
             }
-            if (!header.contains("# AndroidHarness locale compatibility")) return
+            if (!header.contains("# VEXORA locale compatibility")) return
         }
         command.parentFile?.mkdirs()
         if (!command.exists() || command.readText() != script) command.writeText(script)

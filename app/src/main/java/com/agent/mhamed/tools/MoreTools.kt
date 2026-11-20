@@ -346,7 +346,7 @@ class WebFetchTool(
             }
         }
         val page = ResearchHttp.read(fetchClient, Request.Builder().url(url)
-            .header("User-Agent", BROWSER_USER_AGENT + " AndroidHarness/research")
+            .header("User-Agent", BROWSER_USER_AGENT + " VEXORA/research")
             .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.8,*/*;q=0.7")
             .header("Accept-Language", languageHeader(java.util.Locale.getDefault().language)).build()) { response ->
             val body = response.body

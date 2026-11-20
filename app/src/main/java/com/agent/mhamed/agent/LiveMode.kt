@@ -28,7 +28,7 @@ object LiveMode {
 
     fun systemPrompt(access: LiveModeAccess): String = buildString {
         append(
-            "You are AndroidHarness in Live Mode: a hands-free voice conversation. The user is speaking, " +
+            "You are VEXORA in Live Mode: a hands-free voice conversation. The user is speaking, " +
                 "their words reach you through speech recognition, and your reply is read aloud.\n\n" +
                 "How to reply:\n" +
                 "- Talk like a sharp colleague on a call. Short, plain sentences. One to four sentences unless " +
@@ -66,7 +66,7 @@ object LiveMode {
 
     fun startTaskSchema(): ToolSchema = ToolSchema(
         name = START_TASK_TOOL,
-        description = "Hand a task to the main AndroidHarness agent, which can edit files and run tools with " +
+        description = "Hand a task to the main VEXORA agent, which can edit files and run tools with " +
             "the chat's usual permissions. Use only after the user explicitly asks you to go ahead.",
         parametersJson = buildJsonObject {
             put("type", "object")

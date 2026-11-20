@@ -82,7 +82,7 @@ internal class FtpShareServer(
         fun serve() {
             socket.soTimeout = 60_000
             try {
-                reply(220, "AndroidHarness FTP ready")
+                reply(220, "VEXORA FTP ready")
                 while (!closed.get()) {
                     val request = line() ?: return
                     val command = request.substringBefore(' ').uppercase(java.util.Locale.ROOT)

@@ -41,8 +41,8 @@ class UpdateInstallDeviceTest {
         }
         Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK").body(body).build()
     }.build()
-    private fun release(file: File, sha: String? = null) = UpdateManager.LatestRelease("fixture", "fixture", "", "https://github.com/Sanuu7/AndroidHarness/releases",
-        "https://github.com/Sanuu7/AndroidHarness/releases/download/fixture/app.apk", "../../untrusted.apk", file.length(), sha)
+    private fun release(file: File, sha: String? = null) = UpdateManager.LatestRelease("fixture", "fixture", "", "https://github.com/mhamad-code/VEXORA/releases",
+        "https://github.com/mhamad-code/VEXORA/releases/download/fixture/app.apk", "../../untrusted.apk", file.length(), sha)
 
     @Test fun verifiedMatchingApkUsesTheSystemHandoffAndNeverTheAssetFilename() = fixture { directory, wrapped ->
         val source = File(context.applicationInfo.sourceDir)

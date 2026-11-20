@@ -389,7 +389,7 @@ internal object AgentSettingsCatalog {
         // Device control
         AgentSetting("device_control_enabled", R.string.settings_device_control_enabled, SettingsPage.CODING, SettingKind.Toggle,
             "Let the agent control Android apps on the device (disabled by default).", keywords = "device control android tap swipe screenshot ui automator",
-            sensitive = true, userOnlyValue = "true",
+            sensitive = true, userOnlyValues = setOf("true"),
             read = { it.deviceControlEnabled.toString() }, write = { r, v -> r.setDeviceControlEnabled(bool(v)) }),
         AgentSetting("device_control_max_steps", R.string.settings_device_control_max_steps, SettingsPage.CODING, SettingKind.Range(1.0, 500.0, RangeUnit.COUNT, true),
             "Maximum steps per device-control task.", keywords = "device control steps limit",

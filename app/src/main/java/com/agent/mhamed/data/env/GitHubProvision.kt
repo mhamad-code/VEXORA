@@ -39,7 +39,7 @@ object GitHubProvision {
      */
     fun gitConfigBody(token: String?): String = buildString {
         append("[safe]\n\tdirectory = *\n")
-        append("[user]\n\tname = Android Harness\n\temail = harness@android.local\n")
+        append("[user]\n\tname = VEXORA\n\temail = harness@android.local\n")
         append("[init]\n\tdefaultBranch = main\n")
         if (hasToken(token)) {
             append("[url \"https://x-access-token:").append(token).append("@github.com/\"]\n")

@@ -49,7 +49,7 @@ internal class NineRouterControl(private val data: File) {
             ?.takeIf { it.isNotBlank() } ?: error("9Router did not return an API key.")
     }
     companion object {
-        const val KEY_NAME = "AndroidHarness"
+        const val KEY_NAME = "VEXORA"
         internal fun cliToken(machine: String, secret: String): String = MessageDigest.getInstance("SHA-256")
             .digest((machine + "9r-cli-auth" + secret).toByteArray()).joinToString("") { "%02x".format(it) }.take(16)
     }

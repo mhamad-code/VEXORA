@@ -28,7 +28,7 @@ object HarnessProvider {
     const val DEFAULT_MODEL = "kilo-auto/free"
     const val KEYLESS = "harness-keyless"
     const val SESSION_HEADER = "x-opencode-session"
-    const val USER_AGENT = "AndroidHarness"
+    const val USER_AGENT = "VEXORA"
     val config = ProviderConfig(ID, "Harness", ProviderType.OPENAI_COMPAT, BASE_URL, DEFAULT_MODEL)
 
     /** Routing for the last successful free catalog, restored from disk on startup. */
@@ -111,7 +111,7 @@ object HarnessProvider {
         .readTimeout(90, TimeUnit.SECONDS)
         .addInterceptor { chain ->
             chain.proceed(chain.request().newBuilder()
-                .header("HTTP-Referer", "https://github.com/Sanuu7/AndroidHarness")
+                .header("HTTP-Referer", "https://github.com/mhamad-code/VEXORA")
                 .header("X-Title", "Harness")
                 .build())
         }
@@ -180,7 +180,7 @@ object HarnessProvider {
         val builder = request.newBuilder()
             .removeHeader("Authorization")
             .removeHeader("x-api-key")
-            .header("HTTP-Referer", "https://github.com/Sanuu7/AndroidHarness")
+            .header("HTTP-Referer", "https://github.com/mhamad-code/VEXORA")
             .header("X-Title", "Harness")
         withSession(builder, request.header(SESSION_HEADER))
         return builder.build()

@@ -66,7 +66,7 @@ flowchart TD
 | `DEFAULT_MODEL` | `kilo-auto/free` |
 | `KEYLESS` | `harness-keyless` |
 | `SESSION_HEADER` | `x-opencode-session` |
-| `USER_AGENT` | `AndroidHarness` |
+| `USER_AGENT` | `VEXORA` |
 
 `config` is `ProviderConfig(ID, "Harness", OPENAI_COMPAT, BASE_URL, DEFAULT_MODEL)`. The model field is replaced at read time by `ProviderRepository` with the sanitized saved or default model.
 
@@ -81,7 +81,7 @@ The pool has two sources:
 
 ## Live Catalog from Kilo
 
-`ModelCatalog.listModels` (`ModelCatalog.kt#L89`) special-cases the Harness id. It calls `buildRequest`, which for Harness is a `GET https://api.kilo.ai/api/gateway/models` with only `User-Agent: AndroidHarness` and no key (`ModelCatalog.kt#L119`). The body is passed to `HarnessProvider.parseKiloCatalog`.
+`ModelCatalog.listModels` (`ModelCatalog.kt#L89`) special-cases the Harness id. It calls `buildRequest`, which for Harness is a `GET https://api.kilo.ai/api/gateway/models` with only `User-Agent: VEXORA` and no key (`ModelCatalog.kt#L119`). The body is passed to `HarnessProvider.parseKiloCatalog`.
 
 `parseKiloCatalog` (`HarnessProvider.kt#L65`) requires a root `data` array. For each object it keeps the entry only when:
 
@@ -126,7 +126,7 @@ The first successful response wins. A probe counts only if HTTP succeeds and the
 - `x-opencode-request`: a fresh UUID per request.
 - `x-opencode-client`: `harness`.
 - `x-opencode-project`: `default`.
-- `User-Agent`: `AndroidHarness`.
+- `User-Agent`: `VEXORA`.
 
 Missing identity headers can cause `FreeTierError` or HTTP 500 from the relay. Pooled requests strip `Authorization` at the client. The anonymous Zen client removes `Authorization` and `x-api-key`, adds `HTTP-Referer` and `X-Title`, and reapplies the session headers. The keyed client keeps `Authorization` and has no stripping interceptor.
 

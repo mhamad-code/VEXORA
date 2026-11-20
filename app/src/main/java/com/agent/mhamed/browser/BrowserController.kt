@@ -404,7 +404,7 @@ class BrowserController(
             settings.domStorageEnabled = true
             settings.allowFileAccess = false
             settings.allowContentAccess = false
-            settings.userAgentString = "${settings.userAgentString} AndroidHarnessAgent/1.0"
+            settings.userAgentString = "${settings.userAgentString} VEXORAAgent/1.0"
             // Ensure headless webview has layout bounds for screenshots/rendering
             layout(0, 0, 1080, 1920)
 

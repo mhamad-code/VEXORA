@@ -43,9 +43,9 @@ class LearnGuideDeviceTest {
         try {
             ActivityScenario.launch(ChatListTestActivity::class.java).use { scenario ->
                 mount(scenario)
-                await("Learn AndroidHarness")
+                await("Learn VEXORA")
                 screenshot("learn-settings-entry-dark")
-                tap("Learn AndroidHarness")
+                tap("Learn VEXORA")
                 await("What would you like to learn?")
                 screenshot("learn-library-dark")
                 search("buy subscription")
@@ -70,7 +70,7 @@ class LearnGuideDeviceTest {
             }
             ActivityScenario.launch(ChatListTestActivity::class.java).use { scenario ->
                 mount(scenario, largeText = true, dark = false)
-                tap("Learn AndroidHarness")
+                tap("Learn VEXORA")
                 search("mocking module")
                 tap("Charts, diagrams, widgets, and mockups")
                 await("Where to go")
@@ -90,7 +90,7 @@ class LearnGuideDeviceTest {
             waitUntil { val d = instrumentation.targetContext.resources.displayMetrics; d.widthPixels > d.heightPixels }
             var closed = false
             mount(scenario, desktop = true, onClose = { closed = true })
-            tap("Learn AndroidHarness")
+            tap("Learn VEXORA")
             search("remote MCP server")
             tap("Connect a remote MCP server")
             screenshot("learn-desktop-reader")

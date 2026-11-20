@@ -256,7 +256,7 @@ internal fun ProjectNavigationSidebar(
                             onClickLabel = uiContext.getString(R.string.ui_replay_intro)) { brandReplay++ },
                             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             com.agent.mhamed.ui.common.SidebarBrandLogo(opened, 30.dp, description = uiContext.getString(R.string.ui_androidharness_icon), replay = brandReplay)
-                            com.agent.mhamed.ui.common.SidebarBrandName("AndroidHarness", opened, MaterialTheme.typography.titleMedium, Modifier.weight(1f), replay = brandReplay)
+                            com.agent.mhamed.ui.common.SidebarBrandName("VEXORA", opened, MaterialTheme.typography.titleMedium, Modifier.weight(1f), replay = brandReplay)
                         }
                         ExpressiveIconButton(onClick = onCollapse) { Icon(Icons.AutoMirrored.Outlined.MenuOpen, uiContext.getString(R.string.ui_collapse_sidebar), Modifier.size(19.dp)) }
                     }

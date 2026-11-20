@@ -43,7 +43,7 @@ class ChatGptProtocolTest {
         assertEquals("E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM", ChatGptProtocol.challenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"))
         val url = ChatGptProtocol.authorizeUrl("http://127.0.0.1:18763/auth/callback", "state", "nonce", "verifier", "urn:uuid:fixture", null).toHttpUrl()
         assertEquals("dynamic_agent_client", url.queryParameter("client_id"))
-        assertEquals("AndroidHarness", url.queryParameter("agent_name_hint"))
+        assertEquals("VEXORA", url.queryParameter("agent_name_hint"))
         assertTrue(url.queryParameter("scope")!!.split(' ').contains(ChatGptProtocol.PLAN_SCOPE))
         assertNull(url.queryParameter("client_secret"))
         val reconnect = ChatGptProtocol.authorizeUrl("http://127.0.0.1:18763/auth/callback", "state2", "nonce2", "v2", "urn:uuid:fixture",

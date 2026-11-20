@@ -19,7 +19,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.concurrent.thread
 
 class ProviderHeadersTest {
-    private val headers = listOf(ProviderHeader("X-Client-Type", "AndroidHarness"), ProviderHeader("X-Disabled", "secret", false))
+    private val headers = listOf(ProviderHeader("X-Client-Type", "VEXORA"), ProviderHeader("X-Disabled", "secret", false))
     private fun config(type: ProviderType = ProviderType.OPENAI_COMPAT) = ProviderConfig(
         "custom", "Custom", type, "https://gateway.example/v1", "test-model", headers = headers)
 
@@ -42,7 +42,7 @@ class ProviderHeadersTest {
             requests += ModelCatalog.buildRequest(config(type), "fixture-key")
             assertEquals(2, requests.size)
             requests.forEach {
-                assertEquals("AndroidHarness", it.header("X-Client-Type"))
+                assertEquals("VEXORA", it.header("X-Client-Type"))
                 assertNull(it.header("X-Disabled"))
                 val authHeader = when (type) {
                     ProviderType.ANTHROPIC -> "x-api-key"
@@ -120,7 +120,7 @@ class ProviderHeadersTest {
             worker.join(4000)
             assertTrue(result is ModelCatalog.Result.Failed)
             assertEquals(1, seen.size)
-            assertTrue(seen.single().contains("X-Client-Type: AndroidHarness"))
+            assertTrue(seen.single().contains("X-Client-Type: VEXORA"))
         }
     }
 }

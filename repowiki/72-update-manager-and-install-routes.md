@@ -54,7 +54,7 @@ flowchart TD
 
 ## Release Check and Version Selection
 
-`fetchLatest` requests `https://api.github.com/repos/Sanuu7/AndroidHarness/releases?per_page=100` with `Accept: application/vnd.github+json` and a 20 second call timeout ([UpdateManager.kt:132](../app/src/main/java/com/agent/mhamed/data/update/UpdateManager.kt)#L132-L158)). Pre-releases are included on purpose.
+`fetchLatest` requests `https://api.github.com/repos/mhamad-code/VEXORA/releases?per_page=100` with `Accept: application/vnd.github+json` and a 20 second call timeout ([UpdateManager.kt:132](../app/src/main/java/com/agent/mhamed/data/update/UpdateManager.kt)#L132-L158)). Pre-releases are included on purpose.
 
 `selectRelease` does not trust GitHub ordering ([UpdateManager.kt:294](../app/src/main/java/com/agent/mhamed/data/update/UpdateManager.kt)#L294-L305)):
 
@@ -92,7 +92,7 @@ Signature digests are SHA-256 over each `Signature` byte array, using `GET_SIGNI
 
 - Staging directory is `getExternalFilesDir(null)/update`, which the shell UID can read.
 - Final file is `pending-update.apk`; the in-progress file is `pending-update.apk.part`.
-- `UpdateInstallPolicy.trustedAsset` must accept the URL: HTTPS, host `github.com`, port 443 or default, no user info, path prefix `/Sanuu7/AndroidHarness/releases/download/`, no query, no fragment.
+- `UpdateInstallPolicy.trustedAsset` must accept the URL: HTTPS, host `github.com`, port 443 or default, no user info, path prefix `/mhamad-code/VEXORA/releases/download/`, no query, no fragment.
 - The declared length and the running byte count must stay at or below `MAX_APK_BYTES`, which is 512 MiB.
 - SHA-256 is computed while streaming. A release `digest` must match when present.
 - The byte count must equal the HTTP content length when known and must equal the asset size when the asset size is positive.

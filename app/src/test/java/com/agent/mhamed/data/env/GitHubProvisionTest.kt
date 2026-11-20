@@ -19,7 +19,7 @@ class GitHubProvisionTest {
         val body = GitHubProvision.gitConfigBody(null)
         assertTrue(body.contains("[safe]"))
         assertTrue(body.contains("directory = *"))
-        assertTrue(body.contains("name = Android Harness"))
+        assertTrue(body.contains("name = VEXORA"))
         assertTrue(body.contains("[init]"))
         assertTrue(body.contains("defaultBranch = main"))
         assertFalse(body.contains("insteadOf"))

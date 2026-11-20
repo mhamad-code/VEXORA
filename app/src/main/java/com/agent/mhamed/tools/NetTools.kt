@@ -402,7 +402,7 @@ class WebSearchTool(
  * NEVER attached for any other host, whatever the arguments say.
  */
 internal val HTTP_TOOL_USER_AGENT: String =
-    "AndroidHarness/${com.agent.mhamed.BuildConfig.VERSION_NAME} (+https://github.com/Sanuu7/AndroidHarness)"
+    "VEXORA/${com.agent.mhamed.BuildConfig.VERSION_NAME} (+https://github.com/mhamad-code/VEXORA)"
 
 internal fun httpReason(code: Int): String? = when (code) {
     200 -> "OK"; 201 -> "Created"; 202 -> "Accepted"; 204 -> "No Content"

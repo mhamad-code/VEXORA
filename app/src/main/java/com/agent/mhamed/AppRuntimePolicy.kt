@@ -103,4 +103,4 @@ internal object AppNotifications {
     }
 }
 
-internal class BackgroundExecutionDisabled : IllegalStateException("Background running is off. Open AndroidHarness to continue.")
+internal class BackgroundExecutionDisabled : IllegalStateException("Background running is off. Open VEXORA to continue.")

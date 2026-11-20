@@ -17,7 +17,7 @@ This page covers what happens after a bundle is downloaded and before its conten
 
 `PluginAdapter` handles these layouts (`PluginFormats.kt:11-16`):
 
-- **AndroidHarness**: a root `plugin.json` with array component fields and no Claude-only keys, recognized by `isNative` (`PluginFormats.kt:107-110`).
+- **VEXORA**: a root `plugin.json` with array component fields and no Claude-only keys, recognized by `isNative` (`PluginFormats.kt:107-110`).
 - **Claude Code plugins**: `.claude-plugin/plugin.json`, plus `commands`, `agents`, `skills`, `hooks`, `mcpServers`, `outputStyles` and `lspServers` fields. Also root `plugin.json` with Claude keys.
 - **Codex and Cursor plugins**: `.codex-plugin/plugin.json`, `.cursor-plugin/plugin.json`, and `.agents-plugin/plugin.json`, using the Claude shape.
 - **Gemini CLI extensions**: `gemini-extension.json` with `mcpServers`, `contextFileName` (default `GEMINI.md`), `commands` and `excludeTools`.
@@ -98,7 +98,7 @@ flowchart TD
 Persistence:
 
 - The normalized `plugin.json` is written into the bundle before it is moved into `packages/<uuid>`, so the digest covers the normalized form.
-- When the source was not already `AndroidHarness`, an existing `plugin.json` is renamed to `plugin.original.json` (or `plugin.original.N.json`) before the new one is written (`PluginFormats.kt:377-382`). The original file therefore remains part of the bundle and the digest.
+- When the source was not already `VEXORA`, an existing `plugin.json` is renamed to `plugin.original.json` (or `plugin.original.N.json`) before the new one is written (`PluginFormats.kt:377-382`). The original file therefore remains part of the bundle and the digest.
 - Command hooks store both names: `source` keeps the original event (for example `PreToolUse`) and `event` uses the internal name (`tool.before`), so the stdin payload reports Claude's vocabulary.
 
 Component generation details:

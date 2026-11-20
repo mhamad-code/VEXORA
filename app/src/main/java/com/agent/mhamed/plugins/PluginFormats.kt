@@ -9,8 +9,8 @@ import java.io.File
 class InstallerNeeded(val command: String, message: String) : IllegalStateException(message)
 
 /**
- * Turns any supported bundle layout into one AndroidHarness plugin.json, keeping the original files.
- * Understood: AndroidHarness bundles, Claude Code plugins and marketplaces (also the Codex and Cursor variants),
+ * Turns any supported bundle layout into one VEXORA plugin.json, keeping the original files.
+ * Understood: VEXORA bundles, Claude Code plugins and marketplaces (also the Codex and Cursor variants),
  * Gemini CLI extensions, single skills and skill collections, slash commands, subagents, command hooks,
  * .mcp.json files, editor rule files and npm MCP server packages.
  */
@@ -101,7 +101,7 @@ object PluginAdapter {
     private fun formatName(dir: String) = when (dir) {
         ".codex-plugin" -> "Codex plugin"; ".cursor-plugin" -> "Cursor plugin"; else -> "Claude Code plugin"
     }
-    /** An AndroidHarness manifest declares its parts as arrays and never uses Claude-only keys. */
+    /** An VEXORA manifest declares its parts as arrays and never uses Claude-only keys. */
     private fun isNative(manifest: JsonObject): Boolean =
         manifest.keys.none { it in claudeKeys } && manifest["skills"].let { it == null || it is JsonArray } &&
             manifest["hooks"].let { it == null || it is JsonArray } &&
@@ -134,7 +134,7 @@ object PluginAdapter {
             if (homepage.isBlank()) homepage = (manifest["homepage"].str() ?: manifest["repository"].let { it.str() ?: (it as? JsonObject)?.get("url").str() }).orEmpty()
         }
         fun native(manifest: JsonObject) {
-            format = "AndroidHarness"
+            format = "VEXORA"
             meta(manifest)
             manifest["skills"].paths().forEach { addSkills(it) }
             instructions += manifest["instructions"].paths().map(::clean)
@@ -347,7 +347,7 @@ object PluginAdapter {
         fun addHooks(document: JsonObject) {
             val events = (document["hooks"] as? JsonObject) ?: document
             events.forEach { (event, groups) ->
-                val mapped = hookEvents[event] ?: run { notes += "Hook event $event does not exist in AndroidHarness and was skipped."; return@forEach }
+                val mapped = hookEvents[event] ?: run { notes += "Hook event $event does not exist in VEXORA and was skipped."; return@forEach }
                 (groups as? JsonArray)?.forEach { group ->
                     val matcher = (group as? JsonObject)?.get("matcher").str().orEmpty()
                     (group as? JsonObject)?.get("hooks")?.let { it as? JsonArray }?.forEach hook@{ hook ->
@@ -406,7 +406,7 @@ object PluginAdapter {
             val pluginName = sanitizeName(name.ifBlank { fallback }, sanitizeName(fallback))
             val manifest = buildJsonObject {
                 put("name", pluginName); put("version", version.ifBlank { "0.0.0" }.take(80))
-                put("description", description.take(4000)); put("format", format.ifBlank { "AndroidHarness" })
+                put("description", description.take(4000)); put("format", format.ifBlank { "VEXORA" })
                 if (author.isNotBlank()) put("author", author.take(200))
                 if (homepage.isNotBlank()) put("homepage", homepage.take(500))
                 if (skills.isNotEmpty()) put("skills", buildJsonArray { skills.forEach { add(it) } })
@@ -423,7 +423,7 @@ object PluginAdapter {
                 if (notes.isNotEmpty()) put("notes", buildJsonArray { notes.distinct().forEach { add(it.take(300)) } })
             }
             val target = root.resolve("plugin.json")
-            if (target.isFile && format != "AndroidHarness") {
+            if (target.isFile && format != "VEXORA") {
                 var keep = root.resolve("plugin.original.json"); var n = 1
                 while (keep.exists()) keep = root.resolve("plugin.original.${n++}.json")
                 target.renameTo(keep)

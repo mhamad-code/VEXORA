@@ -14,12 +14,12 @@ class ActivityGroupingTest {
             thought("t1"), tool("a", "read_file"), tool("b", "shell"), tool("c", "search_files"),
             text("m1", "Now edit"), tool("d", "edit_file"), tool("e", "git_status"), text("m2", "Done"),
         ))
-        assertEquals(5, blocks.size)
+        assertEquals(4, blocks.size)
         assertTrue(blocks[0] is ActivityGrouping.Block.Activity)
         val first = (blocks[0] as ActivityGrouping.Block.Activity).group
         assertEquals(listOf(ActivityGrouping.Kind.THINKING, ActivityGrouping.Kind.READ_FILES,
-            ActivityGrouping.Kind.COMMAND), first.kinds)
-        assertEquals(3, first.entries.size)
+            ActivityGrouping.Kind.COMMAND, ActivityGrouping.Kind.READ_FILES), first.kinds)
+        assertEquals(4, first.entries.size)
         assertTrue(blocks[1] is ActivityGrouping.Block.Text)
         val second = (blocks[2] as ActivityGrouping.Block.Activity).group
         assertEquals(listOf(ActivityGrouping.Kind.EDIT_FILES, ActivityGrouping.Kind.GIT), second.kinds)

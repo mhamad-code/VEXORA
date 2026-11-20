@@ -82,7 +82,7 @@
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"
         android:enableOnBackInvokedCallback="true"
-        android:theme="@style/Theme.AndroidHarness">
+        android:theme="@style/Theme.VEXORA">
 
         <service android:name=".data.transfer.FtpShareService" android:exported="false" android:foregroundServiceType="dataSync" />
 

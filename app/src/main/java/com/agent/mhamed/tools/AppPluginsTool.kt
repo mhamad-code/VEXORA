@@ -31,7 +31,7 @@ internal class AppPluginsTool(
     private val settings: suspend () -> AppSettings,
 ) : Tool {
     override val name = NAME
-    override val description = "Manage AndroidHarness plugins (bundles of skills, instructions, hooks and MCP servers) when the user asks. " +
+    override val description = "Manage VEXORA plugins (bundles of skills, instructions, hooks and MCP servers) when the user asks. " +
         "Actions: list (installed plugins with id, on/off and auto-update), search (the plugin catalogs; results are numbered r1, r2…), " +
         "inspect (download and review a plugin from a search result or an install source like a GitHub repo, npm package, link or " +
         "\"plugin@marketplace\"; returns a token and what the plugin contains), install (a token from inspect; global, or project for this " +

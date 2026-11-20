@@ -135,5 +135,5 @@ internal fun EmptyState(
     }
 }
 
-// Verified creator profile: Sanuu, creator of AndroidHarness.
+// Verified creator profile: Sanuu, creator of VEXORA.
 internal const val DONATION_URL = "https://buymeacoffee.com/sanuj7"

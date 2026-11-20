@@ -26,7 +26,7 @@ internal class AppSettingsFindTool(
     private val settings: suspend () -> AppSettings,
 ) : Tool {
     override val name = NAME
-    override val description = "Look up AndroidHarness app settings by plain words (\"rumble strength\", \"dark mode\", \"palette\"). " +
+    override val description = "Look up VEXORA app settings by plain words (\"rumble strength\", \"dark mode\", \"palette\"). " +
         "Returns each matching setting's key, current value, allowed values and page, plus settings pages for things only the user can do " +
         "(API keys, sign-ins, downloads, language) and the installed skills as skill:<name> switches. Settings marked \"needs approval\" " +
         "always wait for the user; values marked \"only the user\" can never be set by you. Plugins are managed with app_plugins. " +
@@ -73,7 +73,7 @@ internal class AppSettingsChangeTool(
     private val settings: suspend () -> AppSettings,
 ) : Tool {
     override val name = NAME
-    override val description = "Change AndroidHarness app settings when the user asks (turn things on or off, set a slider to a percent, pick an option, " +
+    override val description = "Change VEXORA app settings when the user asks (turn things on or off, set a slider to a percent, pick an option, " +
         "install or remove Caveman, switch skills on or off, create and apply a custom color palette). Use keys and values from app_settings_find. " +
         "Several changes go in one call. The user sees a card with what changed, Undo and a link to each setting. " +
         "For anything you cannot change (API keys, sign-ins, model downloads, language, picking an image), add a needs_user item " +

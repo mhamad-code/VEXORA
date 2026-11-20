@@ -110,7 +110,7 @@ The provider representation of an installed model is synthetic. `LocalModelManag
 - Add a GPU delivery channel in `GpuDeliveryFactory` variants under `app/src/playDelivery` and `app/src/githubDelivery`. The `GpuDelivery` interface also has `prepareForLoad` and `confirm`.
 - Extend benchmark phases in `LocalBenchmarkPhase` and the sweep in `LocalModelManager.benchmark`.
 - Change 9Router version, port or API URL in `NineRouterManager`'s companion object. Update checks read the npm registry `9router/latest`.
-- `NineRouterControl` uses the same local CLI credential protocol as the 9Router terminal. `integrationKey` reuses an active key named `AndroidHarness` or creates one.
+- `NineRouterControl` uses the same local CLI credential protocol as the 9Router terminal. `integrationKey` reuses an active key named `VEXORA` or creates one.
 - `LinuxEnvironmentManager.install`, `shellProcessBuilder`, `processEnv`, `ensureShims` and `ensureScratchDirs` are the integration points for other Linux-hosted tools.
 
 ## Known gaps
