@@ -27,7 +27,7 @@
     <string name="sk_copy">Salin</string>
     <string name="sk_copied">Keahlian disalin</string>
     <string name="sk_copy_note">Menyimpan mempertahankan salinan Anda sendiri, yang menggantikan keahlian bawaan. Hapus salinan Anda nanti untuk kembali ke aslinya.</string>
-    <string name="sk_workspace_note">Keahlian ini berada di folder .VEXORA/skills ruang kerja. Edit di sana.</string>
+    <string name="sk_workspace_note">Keahlian ini berada di folder .harness/skills ruang kerja. Edit di sana.</string>
     <string name="sk_preview">Pratinjau</string>
     <string name="sk_markdown">Markdown</string>
     <string name="sk_files">Berkas (%1$d)</string>

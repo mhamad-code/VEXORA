@@ -23,7 +23,7 @@
     <string name="tip_memory_off">"Bật bộ nhớ để VEXORA ghi nhớ các tùy chọn và quyết định của bạn trong các cuộc trò chuyện."</string>
     <string name="tip_memory_on">"Bộ nhớ đang bật. Bạn có thể xem lại hoặc xóa những gì VEXORA ghi nhớ bất cứ lúc nào."</string>
     <string name="tip_thinking">"Nhấn vào cấp độ tư duy trong tiêu đề để đánh đổi tốc độ để có lý luận sâu sắc hơn."</string>
-    <string name="tip_glass">"Hãy dùng thử VEXORA Glass để có các bề mặt mờ, phân lớp trên ứng dụng."</string>
+    <string name="tip_glass">"Hãy dùng thử Harness Glass để có các bề mặt mờ, phân lớp trên ứng dụng."</string>
     <string name="tip_compact">"Thiếu bối cảnh? Gõ /compact để tóm tắt cuộc trò chuyện và tiếp tục."</string>
     <string name="tip_search_depth">"Đặt mức độ nghiên cứu trang web mà một câu trả lời thực hiện từ tiêu đề, từ nghiên cứu tức thì đến nghiên cứu tối đa."</string>
     <string name="tip_notifications">"Bật thông báo để biết khi nào một nhiệm vụ dài kết thúc."</string>
@@ -44,7 +44,7 @@
     <string name="tip_repo_map">"Bật bản đồ kho lưu trữ để trợ lý nhận được chỉ mục các ký hiệu của dự án của bạn."</string>
     <string name="tip_caveman">"Caveman đưa ra các câu trả lời ngắn hơn và báo cáo token, giúp lưu token đầu ra."</string>
     <string name="tip_telegram">"Ghép nối bot Telegram để tiếp tục trò chuyện và chỉnh sửa dự án từ Telegram."</string>
-    <string name="tip_config">"Chia sẻ cài đặt dự án với repo của bạn thông qua VEXORA.json."</string>
+    <string name="tip_config">"Chia sẻ cài đặt dự án với repo của bạn thông qua harness.json."</string>
     <string name="tip_shizuku">"Thiết lập Shizuku để trợ lý có thể sử dụng quyền truy cập shell nâng cao trên thiết bị của bạn."</string>
     <string name="tip_plugins">"Cài đặt gói plugin từ trang Plugin để thêm các kỹ năng và công cụ."</string>
     <string name="tip_language">"VEXORA có sẵn trong 11 ngôn ngữ. Thay đổi nó trong cài đặt Ngôn ngữ."</string>

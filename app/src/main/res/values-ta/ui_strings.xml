@@ -494,7 +494,7 @@
     <string name="ui_reasoning_and_thinking_tokens_are_billed_as">"பகுத்தறிவு மற்றும் சிந்தனை டோக்கன்கள் வெளியீட்டாகக் கட்டணம் விதிக்கப்படுகின்றன மற்றும் உள்ளீடாக மீண்டும் அனுப்பப்படாது."</string>
     <string name="ui_scheduled_messages">"திட்டமிடப்பட்ட செய்திகள்"</string>
     <string name="ui_allow_workspace_mcp_servers">"பணியிட MCP சேவையகங்களை அனுமதிக்கவா?"</string>
-    <string name="ui_this_workspace_ships_a_harness_mcp_json">"இந்த பணியிடம் இணைக்க விரும்பும் .VEXORA/mcp.json ஐ அனுப்புகிறது: %1$s. "</string>
+    <string name="ui_this_workspace_ships_a_harness_mcp_json">"இந்த பணியிடம் இணைக்க விரும்பும் .harness/mcp.json ஐ அனுப்புகிறது: %1$s. "</string>
     <string name="ui_its_servers_can_run_local_commands_and">"அதன் சேவையகங்கள் உள்ளூர் கட்டளைகளை இயக்கலாம் மற்றும் பிணையத்தை அடையலாம். "</string>
     <string name="ui_only_approve_configs_you_trust">"நீங்கள் நம்பும் கட்டமைப்புகளை மட்டும் அங்கீகரிக்கவும்."</string>
     <string name="ui_approve">"ஒப்புதல்"</string>
@@ -1052,14 +1052,14 @@
     <string name="ui_ready">"தயார்"</string>
     <string name="ui_local_semantic_code_graph_for_symbols_callers">"சின்னங்கள், அழைப்பாளர்கள், தாக்கம் மற்றும் பாதிக்கப்பட்ட சோதனைகளுக்கான உள்ளூர் சொற்பொருள் குறியீடு வரைபடம்"</string>
     <string name="ui_working">"வேலை செய்கிறது…"</string>
-    <string name="ui_harness_installs_codegraph_into_its_private_linux">"VEXORA CodeGraph ஐ அதன் தனிப்பட்ட Linux சூழலில் நிறுவுகிறது, அதற்குத் தேவையான நோட் இயக்க நேரத்துடன் சுமார் 170 MB. Termux பயன்பாடு இல்லை, Shizuku இல்லை மற்றும் உங்கள் ஏஜெண்டுகளுக்கு தனி CodeGraph அமைப்பு இல்லை."</string>
+    <string name="ui_harness_installs_codegraph_into_its_private_linux">"Harness CodeGraph ஐ அதன் தனிப்பட்ட Linux சூழலில் நிறுவுகிறது, அதற்குத் தேவையான நோட் இயக்க நேரத்துடன் சுமார் 170 MB. Termux பயன்பாடு இல்லை, Shizuku இல்லை மற்றும் உங்கள் ஏஜெண்டுகளுக்கு தனி CodeGraph அமைப்பு இல்லை."</string>
     <string name="ui_no_workspace">"பணியிடம் இல்லை"</string>
     <string name="ui_this_workspace_does_not_expose_a_real">"இந்த பணியிடம் உண்மையான filesystem பாதையை வெளிப்படுத்தாது"</string>
     <string name="ui_indexed">"அட்டவணைப்படுத்தப்பட்டது"</string>
     <string name="ui_not_indexed">"குறியிடப்படவில்லை"</string>
     <string name="ui_codegraph_needs_a_shell_capable_workspace_with">"CodeGraph க்கு உண்மையான சாதன பாதையுடன் ஷெல்-திறமையான பணியிடம் தேவை."</string>
     <string name="ui_install_codegraph_first_then_enable_it_for">"முதலில் CodeGraph ஐ நிறுவவும், பின்னர் இந்த பணியிடத்திற்கு அதை இயக்கவும்."</string>
-    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"இந்த பணியிடத்தை குறியிடும்போது, VEXORA ஆனது CodeGraph எக்ஸ்ப்ளோர், node, தாக்கம், பாதிக்கப்பட்ட சோதனைகள் மற்றும் ஒத்திசைவு கருவிகளை குறியீட்டு முகவருக்கு வெளிப்படுத்துகிறது. வரைபடத்தைப் படிக்கும் முன் வினவல்கள் மாற்றப்பட்ட கோப்புகளை ஒத்திசைக்கும்."</string>
+    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"இந்த பணியிடத்தை குறியிடும்போது, Harness ஆனது CodeGraph எக்ஸ்ப்ளோர், node, தாக்கம், பாதிக்கப்பட்ட சோதனைகள் மற்றும் ஒத்திசைவு கருவிகளை குறியீட்டு முகவருக்கு வெளிப்படுத்துகிறது. வரைபடத்தைப் படிக்கும் முன் வினவல்கள் மாற்றப்பட்ட கோப்புகளை ஒத்திசைக்கும்."</string>
     <string name="ui_keyless">"சாவி இல்லாதது"</string>
     <string name="ui_public_search_engines_no_setup">"பொது தேடுபொறிகள், அமைப்பு இல்லை"</string>
     <string name="ui_key_saved">"%1$s · விசை சேமிக்கப்பட்டது"</string>

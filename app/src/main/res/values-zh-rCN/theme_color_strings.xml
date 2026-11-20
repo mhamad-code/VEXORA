@@ -4,7 +4,7 @@
     <string name="theme_wallpaper_colors">壁纸颜色</string>
     <string name="theme_wallpaper_hint">跟随手机的 Material You 配色。</string>
     <string name="theme_wallpaper_unavailable">壁纸配色需要 Android 12 或更高版本。请在下方选择调色板。</string>
-    <string name="theme_palette_blue">VEXORA 蓝</string>
+    <string name="theme_palette_blue">Harness 蓝</string>
     <string name="theme_palette_ocean">海洋</string>
     <string name="theme_palette_indigo">靛蓝</string>
     <string name="theme_palette_lavender">薰衣草</string>

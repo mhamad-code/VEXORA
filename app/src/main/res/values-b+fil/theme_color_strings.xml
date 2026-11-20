@@ -5,7 +5,7 @@
     <string name="theme_wallpaper_colors">"Mga kulay ng wallpaper"</string>
     <string name="theme_wallpaper_hint">"Sundin ang mga kulay ng Material You ng iyong telepono."</string>
     <string name="theme_wallpaper_unavailable">"Ang mga kulay ng wallpaper ay nangangailangan ng Android 12 o mas bago. Pumili ng palette sa ibaba."</string>
-    <string name="theme_palette_blue">"VEXORA asul"</string>
+    <string name="theme_palette_blue">"Harness asul"</string>
     <string name="theme_palette_ocean">"Karagatan"</string>
     <string name="theme_palette_indigo">"Indigo"</string>
     <string name="theme_palette_lavender">"Lavender"</string>

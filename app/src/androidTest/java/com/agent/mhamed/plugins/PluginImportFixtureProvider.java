@@ -30,7 +30,7 @@ public final class PluginImportFixtureProvider extends ContentProvider {
             write("skill/notes.md", "SKILL_SUPPORTING_FILE");
             String target = getContext().getPackageName().replaceFirst("\\.test$", "");
             for (String id : new String[]{"fixture", "skill"}) {
-                Uri tree = DocumentsContract.buildTreeDocumentUri("com.agent.mhamed.pluginimport.fixture", id);
+                Uri tree = DocumentsContract.buildTreeDocumentUri("com.androidharness.pluginimport.fixture", id);
                 getContext().grantUriPermission(target, tree, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
             }
             return true;

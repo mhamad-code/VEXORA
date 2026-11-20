@@ -91,7 +91,7 @@ class ShellTlsSandboxTest {
     // ------------------------------------------------------------------
 
     private fun sharedStorageWorkspace(): File =
-        File("/storage/emulated/0/Android/data/com.agent.mhamed/files/workspace")
+        File("/storage/emulated/0/Android/data/com.androidharness/files/workspace")
 
     @Test
     fun `scratch carve-out allows read write cd and symlink targets in SCRATCH_TMP`() {
@@ -119,7 +119,7 @@ class ShellTlsSandboxTest {
             )
             assertNull(
                 ShellPolicy.denyReason(
-                    "tar -xf t.tar.gz -C /data/user/0/com.agent.mhamed.debug/files/.harness-scratch/jdk",
+                    "tar -xf t.tar.gz -C /data/user/0/com.androidharness.debug/files/.harness-scratch/jdk",
                     root,
                     root,
                 ),
@@ -154,7 +154,7 @@ class ShellTlsSandboxTest {
         for (cmd in listOf(
             "cat /data/local/tmp/androidharness-scratcher/x",
             "rm -rf /data/local/tmp/androidharness-scratch-twin",
-            "echo x > /storage/emulated/0/Android/data/com.agent.mhamed/filex/hax.txt",
+            "echo x > /storage/emulated/0/Android/data/com.androidharness/filex/hax.txt",
         )) {
             assertNotNull("$cmd must stay blocked", ShellPolicy.denyReason(cmd, root, root))
         }
@@ -191,7 +191,7 @@ class ShellTlsSandboxTest {
 
     @Test
     fun `extraction outside exec-hostile storage is untouched`() {
-        val cwd = File("/data/data/com.agent.mhamed/files/workspace")
+        val cwd = File("/data/data/com.androidharness/files/workspace")
         val cmd = "tar -xzf sdk.tar.gz -C toolchains"
         val (out, note) = ExecScratchRouting.prepare(cmd, cwd)
         assertEquals(cmd, out)

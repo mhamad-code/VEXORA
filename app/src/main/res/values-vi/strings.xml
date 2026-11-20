@@ -335,7 +335,7 @@
     <string name="settings_action_disconnect">"Ngắt kết nối"</string>
     <string name="settings_local_models_on_device">"Trên điện thoại này"</string>
     <string name="settings_local_models_system_tools">"Hướng dẫn và công cụ hệ thống"</string>
-    <string name="settings_local_models_system_tools_desc">"Tắt theo mặc định. Các mẫu cục bộ chỉ nhận được tin nhắn chat của bạn. Hãy bật để họ có thể sử dụng các hướng dẫn và công cụ VEXORA để thực hiện dự án của bạn."</string>
+    <string name="settings_local_models_system_tools_desc">"Tắt theo mặc định. Các mẫu cục bộ chỉ nhận được tin nhắn chat của bạn. Hãy bật để họ có thể sử dụng các hướng dẫn và công cụ Harness để thực hiện dự án của bạn."</string>
     <string name="settings_local_models_system_tools_warning">"Việc bật tính năng này sẽ thêm nhiều thông tin đầu vào, sử dụng nhiều bộ nhớ và sức mạnh xử lý hơn và có thể mất vài phút trước khi bắt đầu trả lời. Những thay đổi áp dụng cho câu trả lời tiếp theo."</string>
     <string name="settings_local_models_yours">"Mô hình của bạn"</string>
     <string name="settings_local_models_empty_title">"Chưa có mô hình nào được thêm vào"</string>
@@ -484,7 +484,7 @@
     <string name="settings_storage_no_manifest">"Bản cài đặt cũ hơn này không có tệp kê khai. Quyền sở hữu, kích thước và cách sử dụng không gian làm việc chưa được xác định; việc loại bỏ vẫn được bảo vệ."</string>
     <string name="settings_storage_unverified">"Không thể xác minh một số tệp sở hữu. Gói này vẫn được bảo vệ."</string>
     <string name="settings_storage_release_confirm">"Yêu cầu phát hành"</string>
-    <string name="settings_storage_release_note">"Việc sử dụng được ghi lại có thể không bao gồm các lệnh bắt đầu bên ngoài VEXORA. Giữ yêu cầu đối với mọi không gian làm việc vẫn sử dụng công cụ này."</string>
+    <string name="settings_storage_release_note">"Việc sử dụng được ghi lại có thể không bao gồm các lệnh bắt đầu bên ngoài Harness. Giữ yêu cầu đối với mọi không gian làm việc vẫn sử dụng công cụ này."</string>
     <string name="settings_storage_cleanup_skip_note">"Các tập tin đã thay đổi hoặc liên kết sẽ bị bỏ qua. Các thư mục nguồn, mô hình và dữ liệu khôi phục vẫn được giữ nguyên."</string>
     <string name="settings_subagent_choose_model">"Chọn mẫu trợ lý phụ"</string>
     <string name="settings_subagent_use_main">"Sử dụng mẫu trợ lý chính"</string>
@@ -1015,9 +1015,9 @@
     <string name="auto_compact_saved">Cuộc trò chuyện này sẽ tự nén ở khoảng %1$s token ngữ cảnh rồi tiếp tục. Chỗ cho câu trả lời được giữ lại.</string>
     <string name="auto_compact_reset">Theo mặc định: tự nén ở khoảng %1$s token ngữ cảnh.</string>
     <string name="tip_auto_compact">Dùng /autocompact 350K để tự động tóm tắt ngữ cảnh ở 350.000 token và tiếp tục cuộc trò chuyện này. Cũng chấp nhận 258K hoặc 1M. /autocompact default theo Cài đặt → Lập trình → Hành vi trợ lý.</string>
-    <string name="harness_free_quota_title">"Hạn mức miễn phí của VEXORA đã hết"</string>
+    <string name="harness_free_quota_title">"Hạn mức miễn phí của Harness đã hết"</string>
     <string name="harness_free_quota_body">"Hạn mức miễn phí được chia sẻ theo mạng của bạn và được làm mới theo khung giờ. Vui lòng chờ làm mới hoặc chuyển nhà cung cấp để tiếp tục."</string>
-    <string name="harness_free_rate_title">"Các mô hình miễn phí của VEXORA tạm thời bị giới hạn"</string>
+    <string name="harness_free_rate_title">"Các mô hình miễn phí của Harness tạm thời bị giới hạn"</string>
     <string name="harness_free_rate_body">"Mô hình này tạm thời bận hoặc bị giới hạn tốc độ. Hãy thử lại sau, hoặc chuyển nhà cung cấp để tiếp tục."</string>
     <string name="harness_switch_provider">"Chuyển nhà cung cấp"</string>
     <string name="harness_free_wait">"Tôi sẽ chờ"</string>

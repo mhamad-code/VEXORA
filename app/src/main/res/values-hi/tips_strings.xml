@@ -23,7 +23,7 @@
     <string name="tip_memory_off">"मेमोरी चालू करें ताकि VEXORA चैट के दौरान आपकी प्राथमिकताओं और निर्णयों को याद रखे।"</string>
     <string name="tip_memory_on">"मेमोरी चालू है. आप किसी भी समय VEXORA को याद रखने वाली चीज़ों की समीक्षा कर सकते हैं या उन्हें हटा सकते हैं।"</string>
     <string name="tip_thinking">"गहन तर्क के लिए गति का व्यापार करने के लिए हेडर में सोच स्तर पर टैप करें।"</string>
-    <string name="tip_glass">"ऐप में पारभासी, स्तरित सतहों के लिए VEXORA Glass आज़माएं।"</string>
+    <string name="tip_glass">"ऐप में पारभासी, स्तरित सतहों के लिए Harness Glass आज़माएं।"</string>
     <string name="tip_compact">"संदर्भ कम चल रहा है? बातचीत को सारांशित करने और जारी रखने के लिए /compact टाइप करें।"</string>
     <string name="tip_search_depth">"सेट करें कि एक उत्तर हेडर से कितना वेब शोध करता है, इंस्टेंट से अधिकतम शोध तक।"</string>
     <string name="tip_notifications">"कोई लंबा कार्य कब पूरा होगा यह जानने के लिए सूचनाएं चालू करें।"</string>

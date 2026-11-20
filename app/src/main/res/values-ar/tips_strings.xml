@@ -23,7 +23,7 @@
     <string name="tip_memory_off">شغّل الذاكرة ليتذكر VEXORA تفضيلاتك وقراراتك عبر المحادثات.</string>
     <string name="tip_memory_on">الذاكرة مفعّلة. يمكنك مراجعة ما يتذكره VEXORA أو حذفه في أي وقت.</string>
     <string name="tip_thinking">اضغط على مستوى التفكير في الشريط العلوي لتبادل السرعة بتفكير أعمق.</string>
-    <string name="tip_glass">جرّب VEXORA Glass لأسطح شفافة ومتعددة الطبقات في التطبيق كله.</string>
+    <string name="tip_glass">جرّب Harness Glass لأسطح شفافة ومتعددة الطبقات في التطبيق كله.</string>
     <string name="tip_compact">السياق يوشك على النفاد؟ اكتب /compact لتلخيص المحادثة والمتابعة.</string>
     <string name="tip_search_depth">حدّد من الشريط العلوي مقدار البحث على الويب في كل رد، من Instant إلى Max research.</string>
     <string name="tip_notifications">شغّل الإشعارات لتعرف متى تنتهي مهمة طويلة.</string>
@@ -44,7 +44,7 @@
     <string name="tip_repo_map">شغّل خريطة المستودع ليحصل الوكيل على فهرس لرموز مشروعك.</string>
     <string name="tip_caveman">يقدّم Caveman ردودًا أقصر وتقارير عن الرموز، فيوفّر رموز الإخراج.</string>
     <string name="tip_telegram">اربط بوت Telegram لمتابعة المحادثات وتعديل المشاريع من Telegram.</string>
-    <string name="tip_config">شارك إعدادات المشروع مع مستودعك عبر VEXORA.json.</string>
+    <string name="tip_config">شارك إعدادات المشروع مع مستودعك عبر harness.json.</string>
     <string name="tip_shizuku">اضبط Shizuku ليستخدم الوكيل صلاحيات shell أعلى على جهازك.</string>
     <string name="tip_plugins">ثبّت حزم الإضافات من صفحة الإضافات لإضافة مهارات وأدوات.</string>
     <string name="tip_language">يتوفر VEXORA بـ 11 لغة. غيّرها من إعدادات اللغة.</string>

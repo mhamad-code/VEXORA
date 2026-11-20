@@ -4,7 +4,7 @@
     <string name="theme_wallpaper_colors">ألوان الخلفية</string>
     <string name="theme_wallpaper_hint">يتبع ألوان Material You في هاتفك.</string>
     <string name="theme_wallpaper_unavailable">تتطلب ألوان الخلفية Android 12 أو أحدث. اختر لوحة أدناه.</string>
-    <string name="theme_palette_blue">أزرق VEXORA</string>
+    <string name="theme_palette_blue">أزرق Harness</string>
     <string name="theme_palette_ocean">محيط</string>
     <string name="theme_palette_indigo">نيلي</string>
     <string name="theme_palette_lavender">خزامى</string>

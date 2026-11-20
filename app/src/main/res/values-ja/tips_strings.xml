@@ -23,7 +23,7 @@
     <string name="tip_memory_off">メモリをオンにすると、VEXORA はチャットをまたいで好みや決定事項を覚えます。</string>
     <string name="tip_memory_on">メモリはオンです。VEXORA が覚えている内容はいつでも確認や削除ができます。</string>
     <string name="tip_thinking">ヘッダーの思考レベルをタップすると、速さとより深い推論を切り替えられます。</string>
-    <string name="tip_glass">VEXORA Glass で、アプリ全体を半透明で重なりのある見た目にできます。</string>
+    <string name="tip_glass">Harness Glass で、アプリ全体を半透明で重なりのある見た目にできます。</string>
     <string name="tip_compact">コンテキストが残り少ないときは、/compact と入力すると会話を要約して続けられます。</string>
     <string name="tip_search_depth">返信で行うウェブ調査の量は、ヘッダーで Instant から Max research まで設定できます。</string>
     <string name="tip_notifications">通知をオンにすると、長いタスクが終わったときにわかります。</string>
@@ -44,7 +44,7 @@
     <string name="tip_repo_map">リポジトリマップをオンにすると、エージェントはプロジェクトのシンボル索引を使えます。</string>
     <string name="tip_caveman">Caveman は返信を短くしてトークンレポートを出し、出力トークンを節約します。</string>
     <string name="tip_telegram">Telegram ボットと連携すると、Telegram からチャットの続きやプロジェクトの編集ができます。</string>
-    <string name="tip_config">VEXORA.json でプロジェクト設定をリポジトリと共有できます。</string>
+    <string name="tip_config">harness.json でプロジェクト設定をリポジトリと共有できます。</string>
     <string name="tip_shizuku">Shizuku を設定すると、エージェントが端末で権限の高いシェルを使えます。</string>
     <string name="tip_plugins">プラグインページでプラグインバンドルをインストールし、スキルやツールを追加できます。</string>
     <string name="tip_language">VEXORA は 11 の言語に対応しています。言語設定で変更できます。</string>

@@ -27,7 +27,7 @@
     <string name="sk_copy">"நகலெடு"</string>
     <string name="sk_copied">"திறன் நகலெடுக்கப்பட்டது"</string>
     <string name="sk_copy_note">"சேமித்தால் உங்கள் சொந்த நகல் இருக்கும், அது உள்ளமைந்த திறனை மாற்றும். மூலத்திற்குத் திரும்ப பின்னர் உங்கள் நகலை நீக்கவும்."</string>
-    <string name="sk_workspace_note">"இந்த திறன் பணியிடத்தின் .VEXORA/skills கோப்புறையில் உள்ளது. அங்கேயே திருத்தவும்."</string>
+    <string name="sk_workspace_note">"இந்த திறன் பணியிடத்தின் .harness/skills கோப்புறையில் உள்ளது. அங்கேயே திருத்தவும்."</string>
     <string name="sk_preview">"முன்னோட்டம்"</string>
     <string name="sk_markdown">"Markdown"</string>
     <string name="sk_files">"கோப்புகள் (%1$d)"</string>

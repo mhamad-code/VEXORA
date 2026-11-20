@@ -494,7 +494,7 @@
     <string name="ui_reasoning_and_thinking_tokens_are_billed_as">"Lý trí và suy nghĩ token được tính là đầu ra và không được gửi lại dưới dạng đầu vào."</string>
     <string name="ui_scheduled_messages">"Tin nhắn đã lên lịch"</string>
     <string name="ui_allow_workspace_mcp_servers">"Cho phép máy chủ không gian làm việc MCP?"</string>
-    <string name="ui_this_workspace_ships_a_harness_mcp_json">"Không gian làm việc này gửi một .VEXORA/mcp.json muốn kết nối: %1$s. "</string>
+    <string name="ui_this_workspace_ships_a_harness_mcp_json">"Không gian làm việc này gửi một .harness/mcp.json muốn kết nối: %1$s. "</string>
     <string name="ui_its_servers_can_run_local_commands_and">"Máy chủ của nó có thể chạy các lệnh cục bộ và truy cập mạng. "</string>
     <string name="ui_only_approve_configs_you_trust">"Chỉ phê duyệt các cấu hình mà bạn tin tưởng."</string>
     <string name="ui_approve">"Phê duyệt"</string>
@@ -1052,14 +1052,14 @@
     <string name="ui_ready">"Sẵn sàng"</string>
     <string name="ui_local_semantic_code_graph_for_symbols_callers">"Biểu đồ code ngữ nghĩa cục bộ cho các ký hiệu, lệnh gọi, tác động và kiểm tra bị ảnh hưởng"</string>
     <string name="ui_working">"Đang làm việc…"</string>
-    <string name="ui_harness_installs_codegraph_into_its_private_linux">"VEXORA cài đặt CodeGraph vào môi trường Linux riêng tư, khoảng 170 MB với thời gian chạy Node mà nó cần. Không có ứng dụng Termux, không có Shizuku và không có thiết lập CodeGraph riêng cho trợ lý của bạn."</string>
+    <string name="ui_harness_installs_codegraph_into_its_private_linux">"Harness cài đặt CodeGraph vào môi trường Linux riêng tư, khoảng 170 MB với thời gian chạy Node mà nó cần. Không có ứng dụng Termux, không có Shizuku và không có thiết lập CodeGraph riêng cho trợ lý của bạn."</string>
     <string name="ui_no_workspace">"Không không gian làm việc"</string>
     <string name="ui_this_workspace_does_not_expose_a_real">"Không gian làm việc này không hiển thị đường dẫn filesystem thực"</string>
     <string name="ui_indexed">"Đã lập chỉ mục"</string>
     <string name="ui_not_indexed">"Không được lập chỉ mục"</string>
     <string name="ui_codegraph_needs_a_shell_capable_workspace_with">"CodeGraph cần không gian làm việc có khả năng shell với đường dẫn thiết bị thực."</string>
     <string name="ui_install_codegraph_first_then_enable_it_for">"Trước tiên hãy cài đặt CodeGraph, sau đó kích hoạt nó cho không gian làm việc này."</string>
-    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"Khi không gian làm việc này được lập chỉ mục, VEXORA sẽ hiển thị các công cụ khám phá CodeGraph, node, tác động, kiểm tra bị ảnh hưởng và đồng bộ hóa với trợ lý lập trình. Truy vấn đồng bộ hóa các tệp đã thay đổi trước khi đọc biểu đồ."</string>
+    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"Khi không gian làm việc này được lập chỉ mục, Harness sẽ hiển thị các công cụ khám phá CodeGraph, node, tác động, kiểm tra bị ảnh hưởng và đồng bộ hóa với trợ lý lập trình. Truy vấn đồng bộ hóa các tệp đã thay đổi trước khi đọc biểu đồ."</string>
     <string name="ui_keyless">"Không cần khóa"</string>
     <string name="ui_public_search_engines_no_setup">"Công cụ tìm kiếm công cộng, không cần thiết lập"</string>
     <string name="ui_key_saved">"%1$s · khóa đã lưu"</string>
@@ -1266,7 +1266,7 @@
     <string name="ui_optional_keeps_long_runs_alive_on_aggressive">"Tùy chọn: duy trì hoạt động lâu dài trên các OEM năng nổ"</string>
     <string name="ui_ready_to_begin">"Sẵn sàng để bắt đầu"</string>
     <string name="ui_allow_storage_access_to_begin">"Cho phép truy cập bộ nhớ để bắt đầu"</string>
-    <string name="ui_start_harness">"Bắt đầu VEXORA"</string>
+    <string name="ui_start_harness">"Bắt đầu harness"</string>
     <string name="ui_optional">"Tùy chọn"</string>
     <string name="ui_model_activity_and_ai_code_changes">"Hoạt động của mô hình và những thay đổi của AI code"</string>
     <string name="ui_model_activity">"HOẠT ĐỘNG MÔ HÌNH"</string>

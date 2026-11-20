@@ -494,7 +494,7 @@
     <string name="ui_reasoning_and_thinking_tokens_are_billed_as">"推論・思考トークンは出力として課金され、入力として再送されません。"</string>
     <string name="ui_scheduled_messages">"予定メッセージ"</string>
     <string name="ui_allow_workspace_mcp_servers">"ワークスペースMCPサーバーを許可しますか？"</string>
-    <string name="ui_this_workspace_ships_a_harness_mcp_json">"このワークスペースには接続を要求する .VEXORA/mcp.json が含まれています: %1$s。 "</string>
+    <string name="ui_this_workspace_ships_a_harness_mcp_json">"このワークスペースには接続を要求する .harness/mcp.json が含まれています: %1$s。 "</string>
     <string name="ui_its_servers_can_run_local_commands_and">"そのサーバーはローカルコマンドを実行し、ネットワークにアクセスできます。 "</string>
     <string name="ui_only_approve_configs_you_trust">"信頼できる設定のみ承認してください。"</string>
     <string name="ui_approve">"承認"</string>
@@ -1052,14 +1052,14 @@
     <string name="ui_ready">"準備完了"</string>
     <string name="ui_local_semantic_code_graph_for_symbols_callers">"ローカルの意味解析コードグラフ（シンボル、呼び出し元、影響範囲、影響を受けるテスト向け）"</string>
     <string name="ui_working">"処理中…"</string>
-    <string name="ui_harness_installs_codegraph_into_its_private_linux">"VEXORAはCodeGraphをプライベートLinux環境にインストールします。Nodeランタイムを含めて約170MBです。Termuxアプリ、Shizuku、別途CodeGraphのセットアップは不要です。"</string>
+    <string name="ui_harness_installs_codegraph_into_its_private_linux">"HarnessはCodeGraphをプライベートLinux環境にインストールします。Nodeランタイムを含めて約170MBです。Termuxアプリ、Shizuku、別途CodeGraphのセットアップは不要です。"</string>
     <string name="ui_no_workspace">"ワークスペースなし"</string>
     <string name="ui_this_workspace_does_not_expose_a_real">"このワークスペースは実際のファイルシステムパスを公開しません"</string>
     <string name="ui_indexed">"インデックス済み"</string>
     <string name="ui_not_indexed">"未インデックス"</string>
     <string name="ui_codegraph_needs_a_shell_capable_workspace_with">"CodeGraphには、実際のデバイスパスを持つシェル対応ワークスペースが必要です。"</string>
     <string name="ui_install_codegraph_first_then_enable_it_for">"まずCodeGraphをインストールし、その後このワークスペースで有効にしてください。"</string>
-    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"このワークスペースがインデックスされると、VEXORAはコーディングエージェントにCodeGraphのexplore、node、impact、affected-tests、syncツールを提供します。クエリは読み取り前に変更ファイルを同期します。"</string>
+    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"このワークスペースがインデックスされると、HarnessはコーディングエージェントにCodeGraphのexplore、node、impact、affected-tests、syncツールを提供します。クエリは読み取り前に変更ファイルを同期します。"</string>
     <string name="ui_keyless">"キー不要"</string>
     <string name="ui_public_search_engines_no_setup">"公開検索エンジン、セットアップ不要"</string>
     <string name="ui_key_saved">"%1$s · キー保存済み"</string>

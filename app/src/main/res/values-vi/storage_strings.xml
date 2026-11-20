@@ -88,7 +88,7 @@
     <string name="storage_role_canvas">Canvas</string>
     <string name="storage_role_canvas_note">Bảng Canvas và hình ảnh của chúng</string>
     <string name="storage_role_settings">Cài đặt và cấu hình</string>
-    <string name="storage_role_settings_note">Tùy chọn và cấu hình VEXORA</string>
+    <string name="storage_role_settings_note">Tùy chọn và cấu hình harness</string>
     <string name="storage_role_scratch">Không gian tạm của shell</string>
     <string name="storage_role_scratch_note">Thư mục làm việc tạm cho lệnh shell</string>
     <string name="storage_role_router">9router</string>

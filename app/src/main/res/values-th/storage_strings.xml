@@ -88,7 +88,7 @@
     <string name="storage_role_canvas">"Canvas"</string>
     <string name="storage_role_canvas_note">"บอร์ด Canvas และรูปภาพ"</string>
     <string name="storage_role_settings">"การตั้งค่าและการกำหนดค่า"</string>
-    <string name="storage_role_settings_note">"ค่ากำหนดและการกำหนดค่า VEXORA"</string>
+    <string name="storage_role_settings_note">"ค่ากำหนดและการกำหนดค่า harness"</string>
     <string name="storage_role_scratch">"พื้นที่ชั่วคราวของเชลล์"</string>
     <string name="storage_role_scratch_note">"โฟลเดอร์ทำงานชั่วคราวสำหรับคำสั่งเชลล์"</string>
     <string name="storage_role_router">"9router"</string>

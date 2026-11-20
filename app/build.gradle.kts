@@ -90,35 +90,14 @@ android {
                 storeFile = stableDebugKey
             }
         }
-        // VEXORA's own release key. It is never stored in the repository: CI
-        // injects it from GitHub Secrets and local builds pass the same values
-        // as VEXORA_* environment variables (or a gitignored keystore.properties).
-        create("release") {
-            val localSigning = Properties().apply {
-                rootProject.file("keystore.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
-            }
-            val storePath = System.getenv("VEXORA_KEYSTORE_FILE") ?: localSigning.getProperty("storeFile")
-            val storePasswordValue = System.getenv("VEXORA_KEYSTORE_PASSWORD") ?: localSigning.getProperty("storePassword")
-            val aliasValue = System.getenv("VEXORA_KEY_ALIAS") ?: localSigning.getProperty("keyAlias")
-            val keyPasswordValue = System.getenv("VEXORA_KEY_PASSWORD") ?: localSigning.getProperty("keyPassword")
-            if (!storePath.isNullOrBlank() && !storePasswordValue.isNullOrBlank() &&
-                !aliasValue.isNullOrBlank() && !keyPasswordValue.isNullOrBlank()
-            ) {
-                storeFile = rootProject.file(storePath).takeIf { it.exists() } ?: file(storePath)
-                storePassword = storePasswordValue
-                keyAlias = aliasValue
-                keyPassword = keyPasswordValue
-            }
-        }
     }
 
     buildTypes {
         release {
-            // Signed with VEXORA's own release key when its secrets are present;
-            // otherwise the local alpha fallback keeps debug-signed APKs building.
-            signingConfig = signingConfigs.getByName(
-                if (signingConfigs.getByName("release").storeFile != null) "release" else "debug",
-            )
+            // Local alpha distribution: signed with the debug keystore so the
+            // APK installs without a release keystore. Swap to a dedicated
+            // signing config before any public/Play distribution.
+            signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")

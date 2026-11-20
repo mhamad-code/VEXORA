@@ -23,7 +23,7 @@
     <string name="tip_memory_off">"VEXORA\'nin sohbetler arasındaki tercihlerinizi ve kararlarınızı hatırlaması için belleği açın."</string>
     <string name="tip_memory_on">"Bellek açık. VEXORA\'nin hatırladıklarını istediğiniz zaman inceleyebilir veya silebilirsiniz."</string>
     <string name="tip_thinking">"Daha derin akıl yürütmeye hız kazandırmak için başlıktaki düşünme düzeyine dokunun."</string>
-    <string name="tip_glass">"Uygulama genelinde yarı saydam, katmanlı yüzeyler için VEXORA Glass\'yi deneyin."</string>
+    <string name="tip_glass">"Uygulama genelinde yarı saydam, katmanlı yüzeyler için Harness Glass\'yi deneyin."</string>
     <string name="tip_compact">"İçerik azalıyor mu? Konuşmayı özetlemek ve devam etmek için /compact yazın."</string>
     <string name="tip_search_depth">"Bir yanıtın başlıktan Anında Arama\'dan Maksimum araştırmaya kadar ne kadar web araştırması yapacağını ayarlayın."</string>
     <string name="tip_notifications">"Uzun bir görevin ne zaman tamamlandığını öğrenmek için bildirimleri açın."</string>

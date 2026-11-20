@@ -27,7 +27,7 @@
     <string name="sk_copy">පිටපත් කරන්න</string>
     <string name="sk_copied">කුසලතාව පිටපත් කරන ලදී</string>
     <string name="sk_copy_note">සුරැකීමෙන් ඔබගේම පිටපත රැඳේ, එය ඇතුළත් කුසලතාව ප්‍රතිස්ථාපනය කරයි. මුල් පිටපතට ආපසු යාමට පසුව ඔබගේ පිටපත මකන්න.</string>
-    <string name="sk_workspace_note">මෙම කුසලතාව වැඩබිමේ .VEXORA/skills ෆෝල්ඩරයේ ඇත. එහිදී එය සංස්කරණය කරන්න.</string>
+    <string name="sk_workspace_note">මෙම කුසලතාව වැඩබිමේ .harness/skills ෆෝල්ඩරයේ ඇත. එහිදී එය සංස්කරණය කරන්න.</string>
     <string name="sk_preview">පෙරදසුන</string>
     <string name="sk_markdown">Markdown</string>
     <string name="sk_files">ගොනු (%1$d)</string>

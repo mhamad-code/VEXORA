@@ -19,12 +19,12 @@
     <string name="theme_custom_delete">Удалить палитру</string>
     <string name="theme_custom_delete_message">Убрать эту сохранённую палитру? Приложение вернётся к выбранной предустановке, если эта палитра активна.</string>
     <string name="theme_custom_preview">Предпросмотр палитры</string>
-    <string name="theme_canvas_title">VEXORA Canvas</string>
+    <string name="theme_canvas_title">Harness Canvas</string>
     <string name="theme_canvas_description">Ваш собственный фон для чата и кода.</string>
     <string name="theme_canvas_add">Добавить изображение</string>
     <string name="theme_canvas_change">Заменить изображение</string>
     <string name="theme_canvas_remove">Убрать изображение</string>
-    <string name="theme_canvas_enabled">Показывать VEXORA Canvas</string>
+    <string name="theme_canvas_enabled">Показывать Harness Canvas</string>
     <string name="theme_canvas_chat">Чат</string>
     <string name="theme_canvas_code">Код</string>
     <string name="theme_canvas_dim">Затемнение изображения</string>

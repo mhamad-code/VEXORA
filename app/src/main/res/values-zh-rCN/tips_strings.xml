@@ -23,7 +23,7 @@
     <string name="tip_memory_off">开启记忆，让 VEXORA 在所有聊天中记住你的偏好和决定。</string>
     <string name="tip_memory_on">记忆已开启。你可以随时查看或删除 VEXORA 记住的内容。</string>
     <string name="tip_thinking">点按顶部的思考等级，用速度换取更深入的推理。</string>
-    <string name="tip_glass">试试 VEXORA Glass，让整个应用呈现半透明的层叠效果。</string>
+    <string name="tip_glass">试试 Harness Glass，让整个应用呈现半透明的层叠效果。</string>
     <string name="tip_compact">上下文快不够了？输入 /compact 总结对话后继续。</string>
     <string name="tip_search_depth">在顶部设置回复要做多少网络调研，从 Instant 到 Max research。</string>
     <string name="tip_notifications">开启通知，长任务完成时及时知道。</string>
@@ -44,7 +44,7 @@
     <string name="tip_repo_map">开启仓库地图，让智能体获得项目符号的索引。</string>
     <string name="tip_caveman">Caveman 让回复更简短并提供 token 报告，从而节省输出 token。</string>
     <string name="tip_telegram">绑定 Telegram 机器人，就能在 Telegram 中继续聊天和编辑项目。</string>
-    <string name="tip_config">通过 VEXORA.json 与仓库共享项目设置。</string>
+    <string name="tip_config">通过 harness.json 与仓库共享项目设置。</string>
     <string name="tip_shizuku">设置 Shizuku，让智能体在你的设备上使用更高权限的 shell。</string>
     <string name="tip_plugins">在插件页面安装插件包，添加技能和工具。</string>
     <string name="tip_language">VEXORA 支持 11 种语言，可在语言设置中切换。</string>

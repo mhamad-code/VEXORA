@@ -22,7 +22,7 @@ class LocalFileImportDeviceTest {
         val warnings = launch { manager.consent.warning.filterNotNull().collect { it.continueAnyway() } }
         try {
             withTimeout(60_000) {
-                val tree = DocumentsContract.buildTreeDocumentUri("com.agent.mhamed.localimport.fixture", "fixture")
+                val tree = DocumentsContract.buildTreeDocumentUri("com.androidharness.localimport.fixture", "fixture")
                 val converted = manager.importFromFiles(tree, LocalModelFormat.SAFETENSORS) {}
                 imported += converted.id
                 assertTrue(converted.localFile)

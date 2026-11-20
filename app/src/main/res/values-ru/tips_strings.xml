@@ -23,7 +23,7 @@
     <string name="tip_memory_off">Включите память, чтобы VEXORA запоминал ваши предпочтения и решения во всех чатах.</string>
     <string name="tip_memory_on">Память включена. Вы в любой момент можете просмотреть или удалить то, что запомнил VEXORA.</string>
     <string name="tip_thinking">Нажмите на уровень размышлений в заголовке, чтобы обменять скорость на более глубокое мышление.</string>
-    <string name="tip_glass">Попробуйте VEXORA Glass: полупрозрачные многослойные поверхности во всём приложении.</string>
+    <string name="tip_glass">Попробуйте Harness Glass: полупрозрачные многослойные поверхности во всём приложении.</string>
     <string name="tip_compact">Заканчивается контекст? Введите /compact, чтобы сжать разговор и продолжить.</string>
     <string name="tip_search_depth">Задайте в заголовке, сколько веб-поиска делает ответ, от Instant до Max research.</string>
     <string name="tip_notifications">Включите уведомления, чтобы узнавать о завершении долгой задачи.</string>
@@ -44,7 +44,7 @@
     <string name="tip_repo_map">Включите карту репозитория, чтобы агент получил индекс символов вашего проекта.</string>
     <string name="tip_caveman">Caveman даёт более короткие ответы и отчёты о токенах, экономя выходные токены.</string>
     <string name="tip_telegram">Подключите бота Telegram, чтобы продолжать чаты и редактировать проекты из Telegram.</string>
-    <string name="tip_config">Делитесь настройками проекта с репозиторием через VEXORA.json.</string>
+    <string name="tip_config">Делитесь настройками проекта с репозиторием через harness.json.</string>
     <string name="tip_shizuku">Настройте Shizuku, чтобы агент мог использовать расширенный доступ к оболочке на устройстве.</string>
     <string name="tip_plugins">Устанавливайте пакеты плагинов на странице «Плагины», чтобы добавить навыки и инструменты.</string>
     <string name="tip_language">VEXORA доступен на 11 языках. Смените язык в настройках языка.</string>

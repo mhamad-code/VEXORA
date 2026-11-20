@@ -23,7 +23,7 @@
     <string name="tip_memory_off">Activa la memoria para que VEXORA recuerde tus preferencias y decisiones entre chats.</string>
     <string name="tip_memory_on">La memoria está activada. Puedes revisar o borrar lo que VEXORA recuerda en cualquier momento.</string>
     <string name="tip_thinking">Toca el nivel de razonamiento en la cabecera para cambiar velocidad por un razonamiento más profundo.</string>
-    <string name="tip_glass">Prueba VEXORA Glass para superficies translúcidas y en capas en toda la app.</string>
+    <string name="tip_glass">Prueba Harness Glass para superficies translúcidas y en capas en toda la app.</string>
     <string name="tip_compact">¿Te queda poco contexto? Escribe /compact para resumir la conversación y seguir.</string>
     <string name="tip_search_depth">Ajusta desde la cabecera cuánta búsqueda web hace una respuesta, de Instant a Max research.</string>
     <string name="tip_notifications">Activa las notificaciones para saber cuándo termina una tarea larga.</string>
@@ -44,7 +44,7 @@
     <string name="tip_repo_map">Activa el mapa del repositorio para que el agente tenga un índice de los símbolos de tu proyecto.</string>
     <string name="tip_caveman">Caveman da respuestas más cortas e informes de tokens, lo que ahorra tokens de salida.</string>
     <string name="tip_telegram">Vincula un bot de Telegram para continuar chats y editar proyectos desde Telegram.</string>
-    <string name="tip_config">Comparte los ajustes del proyecto con tu repositorio mediante VEXORA.json.</string>
+    <string name="tip_config">Comparte los ajustes del proyecto con tu repositorio mediante harness.json.</string>
     <string name="tip_shizuku">Configura Shizuku para que el agente use acceso elevado a la shell en tu dispositivo.</string>
     <string name="tip_plugins">Instala paquetes de plugins desde la página Plugins para añadir skills y herramientas.</string>
     <string name="tip_language">VEXORA está disponible en 11 idiomas. Cámbialo en los ajustes de idioma.</string>

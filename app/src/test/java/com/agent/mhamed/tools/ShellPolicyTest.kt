@@ -60,7 +60,7 @@ class ShellPolicyTest {
 
     @Test
     fun `sandbox containment blocks escape attempts`() {
-        val root = java.io.File("/data/data/com.agent.mhamed/files/workspace")
+        val root = java.io.File("/data/data/com.androidharness/files/workspace")
         val escapeCmds = listOf(
             "echo INJECT > ../escape_me.txt",
             "echo INJECT >> ../escape_me.txt",
@@ -79,7 +79,7 @@ class ShellPolicyTest {
 
     @Test
     fun `sandbox containment allows in-workspace and toolchain paths`() {
-        val root = java.io.File("/data/data/com.agent.mhamed/files/workspace")
+        val root = java.io.File("/data/data/com.androidharness/files/workspace")
         val allowedCmds = listOf(
             "echo 'café 中文 ✅' > doctor/unicode.txt",
             "python3 -c \"print('z'*10000)\"",
@@ -99,7 +99,7 @@ class ShellPolicyTest {
 
     @Test
     fun `symlink failure reason contains expected message`() {
-        val root = java.io.File("/data/data/com.agent.mhamed/files/workspace")
+        val root = java.io.File("/data/data/com.androidharness/files/workspace")
         val reason = ShellPolicy.denyReason("ln -sf /etc/passwd link", root, root)
         assertNotNull(reason)
         assertTrue(reason!!.contains("symlink not supported/allowed"))
@@ -107,7 +107,7 @@ class ShellPolicyTest {
 
     @Test
     fun `sandbox blocks variable and command substitution bypasses (Bug G)`() {
-        val root = java.io.File("/data/data/com.agent.mhamed/files/workspace")
+        val root = java.io.File("/data/data/com.androidharness/files/workspace")
         val bypassCmds = listOf(
             "D=\"/storage/emulated/0/Download\"; echo \"BYPASS-DATA\" > \"\$D/harness_bypass_probe.txt\"",
             "echo LEAK > \"\$(printf '/storage/emulated/0/Download')/cs_write.txt\"",
@@ -135,7 +135,7 @@ class ShellPolicyTest {
 
     @Test
     fun `sandbox allows in-workspace variable and command substitutions`() {
-        val root = java.io.File("/data/data/com.agent.mhamed/files/workspace")
+        val root = java.io.File("/data/data/com.androidharness/files/workspace")
         val allowedCmds = listOf(
             "D=\"doctor/nested\"; mkdir -p \"\$D\"; echo test > \"\$D/file.txt\"",
             "VAR=\$(echo hello); echo \"\$VAR\"",

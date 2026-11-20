@@ -20,12 +20,12 @@
     <string name="theme_custom_delete">"पैलेट हटाएँ"</string>
     <string name="theme_custom_delete_message">"इस सहेजे गए पैलेट को हटाएं? यदि यह पैलेट सक्रिय है तो ऐप अपने चयनित प्रीसेट पर वापस आ जाएगा।"</string>
     <string name="theme_custom_preview">"पैलेट पूर्वावलोकन"</string>
-    <string name="theme_canvas_title">"VEXORA कैनवास"</string>
+    <string name="theme_canvas_title">"Harness कैनवास"</string>
     <string name="theme_canvas_description">"Chat और Code के लिए आपकी अपनी पृष्ठभूमि।"</string>
     <string name="theme_canvas_add">"छवि जोड़ें"</string>
     <string name="theme_canvas_change">"छवि बदलें"</string>
     <string name="theme_canvas_remove">"छवि हटाएँ"</string>
-    <string name="theme_canvas_enabled">"VEXORA कैनवास दिखाएँ"</string>
+    <string name="theme_canvas_enabled">"Harness कैनवास दिखाएँ"</string>
     <string name="theme_canvas_chat">"Chat"</string>
     <string name="theme_canvas_code">"Code"</string>
     <string name="theme_canvas_dim">"छवि धूमिल करना"</string>

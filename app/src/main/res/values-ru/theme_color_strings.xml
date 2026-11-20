@@ -4,7 +4,7 @@
     <string name="theme_wallpaper_colors">Цвета обоев</string>
     <string name="theme_wallpaper_hint">Следует цветам Material You вашего телефона.</string>
     <string name="theme_wallpaper_unavailable">Цвета обоев требуют Android 12 или новее. Выберите палитру ниже.</string>
-    <string name="theme_palette_blue">Синий VEXORA</string>
+    <string name="theme_palette_blue">Синий Harness</string>
     <string name="theme_palette_ocean">Океан</string>
     <string name="theme_palette_indigo">Индиго</string>
     <string name="theme_palette_lavender">Лаванда</string>

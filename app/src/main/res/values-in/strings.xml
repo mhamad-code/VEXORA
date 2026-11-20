@@ -335,7 +335,7 @@
     <string name="settings_action_disconnect">"Putuskan"</string>
     <string name="settings_local_models_on_device">"Di ponsel ini"</string>
     <string name="settings_local_models_system_tools">"Instruksi sistem dan alat"</string>
-    <string name="settings_local_models_system_tools_desc">"Nonaktif secara default. Model lokal hanya menerima pesan chat Anda. Aktifkan agar dapat menggunakan instruksi dan alat VEXORA untuk mengerjakan proyek."</string>
+    <string name="settings_local_models_system_tools_desc">"Nonaktif secara default. Model lokal hanya menerima pesan chat Anda. Aktifkan agar dapat menggunakan instruksi dan alat Harness untuk mengerjakan proyek."</string>
     <string name="settings_local_models_system_tools_warning">"Mengaktifkannya menambahkan banyak masukan, memakai lebih banyak memori dan daya pemrosesan, serta dapat memerlukan beberapa menit sebelum respons dimulai. Perubahan berlaku untuk respons berikutnya."</string>
     <string name="settings_local_models_yours">"Model Anda"</string>
     <string name="settings_local_models_empty_title">"Belum ada model ditambahkan"</string>
@@ -484,7 +484,7 @@
     <string name="settings_storage_no_manifest">"Instalasi lama ini tidak memiliki manifes berkas. Kepemilikan, ukuran, dan penggunaan ruang kerja tidak diketahui; penghapusan tetap dilindungi."</string>
     <string name="settings_storage_unverified">"Sebagian berkas milik paket tidak dapat diverifikasi. Paket ini tetap dilindungi."</string>
     <string name="settings_storage_release_confirm">"Lepaskan kebutuhan"</string>
-    <string name="settings_storage_release_note">"Penggunaan tercatat mungkin tidak mencakup perintah di luar VEXORA. Pertahankan kebutuhan untuk ruang kerja yang masih menggunakan alat ini."</string>
+    <string name="settings_storage_release_note">"Penggunaan tercatat mungkin tidak mencakup perintah di luar Harness. Pertahankan kebutuhan untuk ruang kerja yang masih menggunakan alat ini."</string>
     <string name="settings_storage_cleanup_skip_note">"Berkas berubah atau bertaut dilewati. Folder sumber, model, dan data pemulihan dipertahankan."</string>
     <string name="settings_subagent_choose_model">"Pilih model agen pendamping"</string>
     <string name="settings_subagent_use_main">"Gunakan model agen utama"</string>
@@ -970,7 +970,7 @@
     <string name="dhizuku_denied">Akses ditolak · izinkan akses di Dhizuku</string>
     <string name="dhizuku_error">Koneksi gagal · periksa Dhizuku dan coba lagi</string>
     <string name="settings_language_sinhala">සිංහල</string>
-    <string name="glass_title">VEXORA Glass (Eksperimental)</string>
+    <string name="glass_title">AHarness Glass (Eksperimental)</string>
     <string name="glass_description">Efek kaca untuk navigasi, kontrol, dan kartu.</string>
     <string name="glass_enable">Kaca buram</string>
     <string name="glass_enable_hint">Pakai permukaan tembus pandang dengan latar yang diburamkan lembut.</string>
@@ -1015,9 +1015,9 @@
     <string name="auto_compact_saved">Obrolan ini akan memadatkan otomatis sekitar %1$s token konteks lalu melanjutkan. Ruang untuk balasan disisakan.</string>
     <string name="auto_compact_reset">Mengikuti bawaan: padatkan otomatis sekitar %1$s token konteks.</string>
     <string name="tip_auto_compact">Gunakan /autocompact 350K untuk meringkas konteks otomatis pada 350.000 token dan melanjutkan obrolan ini. Menerima 258K atau 1M juga. /autocompact default mengikuti Setelan → Pemrograman → Perilaku agen.</string>
-    <string name="harness_free_quota_title">Kuota gratis VEXORA sudah habis</string>
+    <string name="harness_free_quota_title">Kuota gratis Harness sudah habis</string>
     <string name="harness_free_quota_body">Jatah gratis dibagi oleh jaringanmu dan diperbarui dalam jendela per jam. Tunggu hingga direset, atau ganti penyedia untuk melanjutkan.</string>
-    <string name="harness_free_rate_title">Model gratis VEXORA sementara dibatasi</string>
+    <string name="harness_free_rate_title">Model gratis Harness sementara dibatasi</string>
     <string name="harness_free_rate_body">Model ini sedang sibuk atau dibatasi sementara. Coba lagi sebentar lagi, atau ganti penyedia untuk melanjutkan.</string>
     <string name="harness_switch_provider">Ganti penyedia</string>
     <string name="harness_free_wait">Saya tunggu</string>

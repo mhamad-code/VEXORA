@@ -115,7 +115,7 @@ class PluginManagerDeviceTest {
     @Test fun localDocumentFoldersAndStandaloneSkillsImportWithSupportingFiles() = runBlocking {
         Fixture(c.appContext).use { f ->
             fun tree(id: String): Uri {
-                val tree = DocumentsContract.buildTreeDocumentUri("com.agent.mhamed.pluginimport.fixture", id)
+                val tree = DocumentsContract.buildTreeDocumentUri("com.androidharness.pluginimport.fixture", id)
                 // Starts the standalone fixture provider, which grants read-only access to this test's target app.
                 f.context.contentResolver.query(DocumentsContract.buildDocumentUriUsingTree(tree, id), null, null, null, null)?.close()
                 return tree

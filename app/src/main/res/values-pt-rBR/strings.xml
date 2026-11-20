@@ -345,7 +345,7 @@
     <string name="settings_action_disconnect">"Desconectar"</string>
     <string name="settings_local_models_on_device">"Neste celular"</string>
     <string name="settings_local_models_system_tools">"Instruções do sistema e ferramentas"</string>
-    <string name="settings_local_models_system_tools_desc">"Desativado por padrão. Modelos locais recebem apenas suas mensagens de chat. Ative para permitir que usem instruções e ferramentas do VEXORA para trabalhar no seu projeto."</string>
+    <string name="settings_local_models_system_tools_desc">"Desativado por padrão. Modelos locais recebem apenas suas mensagens de chat. Ative para permitir que usem instruções e ferramentas do Harness para trabalhar no seu projeto."</string>
     <string name="settings_local_models_system_tools_warning">"Ativar isso adiciona muita entrada, usa mais memória e processamento, e pode levar vários minutos antes de uma resposta começar. As alterações se aplicam à próxima resposta."</string>
     <string name="settings_local_models_yours">"Seus modelos"</string>
     <string name="settings_local_models_empty_title">"Nenhum modelo adicionado ainda"</string>
@@ -494,7 +494,7 @@
     <string name="settings_storage_no_manifest">"Esta instalação mais antiga não tem manifesto de arquivos. Propriedade, tamanho e uso da área de trabalho são desconhecidos; a remoção permanece protegida."</string>
     <string name="settings_storage_unverified">"Alguns arquivos próprios não puderam ser verificados. Este pacote permanece protegido."</string>
     <string name="settings_storage_release_confirm">"Liberar requisito"</string>
-    <string name="settings_storage_release_note">"Usos registrados podem não incluir comandos iniciados fora do VEXORA. Mantenha um requisito para qualquer área de trabalho que ainda use esta ferramenta."</string>
+    <string name="settings_storage_release_note">"Usos registrados podem não incluir comandos iniciados fora do Harness. Mantenha um requisito para qualquer área de trabalho que ainda use esta ferramenta."</string>
     <string name="settings_storage_cleanup_skip_note">"Arquivos alterados ou vinculados são ignorados. Pastas de origem, modelos e dados de recuperação permanecem mantidos."</string>
     <string name="settings_subagent_choose_model">"Escolher modelo do subagente"</string>
     <string name="settings_subagent_use_main">"Usar modelo do agente principal"</string>
@@ -981,7 +981,7 @@
     <string name="dhizuku_denied">Acesso negado · permita o acesso no Dhizuku</string>
     <string name="dhizuku_error">Falha na conexão · verifique o Dhizuku e tente novamente</string>
     <string name="settings_language_sinhala">සිංහල</string>
-    <string name="glass_title">VEXORA Glass (experimental)</string>
+    <string name="glass_title">AHarness Glass (experimental)</string>
     <string name="glass_description">Efeitos de vidro para navegação, controles e cartões.</string>
     <string name="glass_enable">Vidro fosco</string>
     <string name="glass_enable_hint">Use superfícies translúcidas com fundos suavemente desfocados.</string>
@@ -1026,9 +1026,9 @@
     <string name="auto_compact_saved">Esta conversa vai compactar automaticamente com cerca de %1$s tokens de contexto e continuar. O espaço para a resposta é reservado.</string>
     <string name="auto_compact_reset">Seguindo o padrão: compactar automaticamente com cerca de %1$s tokens de contexto.</string>
     <string name="tip_auto_compact">Use /autocompact 350K para resumir o contexto automaticamente em 350.000 tokens e continuar esta conversa. Também aceita 258K ou 1M. /autocompact default segue Configurações → Programação → Comportamento do agente.</string>
-    <string name="harness_free_quota_title">A cota gratuita do VEXORA foi esgotada</string>
+    <string name="harness_free_quota_title">A cota gratuita do Harness foi esgotada</string>
     <string name="harness_free_quota_body">A cota gratuita é compartilhada pela sua rede e é renovada a cada hora. Aguarde a redefinição ou troque de provedor para continuar.</string>
-    <string name="harness_free_rate_title">Os modelos gratuitos do VEXORA estão temporariamente limitados</string>
+    <string name="harness_free_rate_title">Os modelos gratuitos do Harness estão temporariamente limitados</string>
     <string name="harness_free_rate_body">Este modelo está temporariamente ocupado ou limitado. Tente novamente em breve ou troque de provedor para continuar.</string>
     <string name="harness_switch_provider">Trocar provedor</string>
     <string name="harness_free_wait">Vou esperar</string>

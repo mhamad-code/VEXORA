@@ -494,7 +494,7 @@
     <string name="ui_reasoning_and_thinking_tokens_are_billed_as">"Muhakeme ve düşünme belirteçleri çıktı olarak faturalandırılır ve girdi olarak yeniden gönderilmez."</string>
     <string name="ui_scheduled_messages">"Planlanmış mesajlar"</string>
     <string name="ui_allow_workspace_mcp_servers">"Çalışma alanı MCP sunucularına izin verilsin mi?"</string>
-    <string name="ui_this_workspace_ships_a_harness_mcp_json">"Bu çalışma alanı, bağlanmak isteyen bir .VEXORA/mcp.json gönderir: %1$s. "</string>
+    <string name="ui_this_workspace_ships_a_harness_mcp_json">"Bu çalışma alanı, bağlanmak isteyen bir .harness/mcp.json gönderir: %1$s. "</string>
     <string name="ui_its_servers_can_run_local_commands_and">"Sunucuları yerel komutları çalıştırabilir ve ağa erişebilir. "</string>
     <string name="ui_only_approve_configs_you_trust">"Yalnızca güvendiğiniz yapılandırmaları onaylayın."</string>
     <string name="ui_approve">"Onayla"</string>
@@ -1052,14 +1052,14 @@
     <string name="ui_ready">"Hazır"</string>
     <string name="ui_local_semantic_code_graph_for_symbols_callers">"Semboller, arayanlar, etki ve etkilenen testler için yerel anlamsal kod grafiği"</string>
     <string name="ui_working">"Çalışıyor…"</string>
-    <string name="ui_harness_installs_codegraph_into_its_private_linux">"VEXORA, CodeGraph\'yi, ihtiyaç duyduğu Düğüm çalışma zamanı ile birlikte yaklaşık 170 MB\'lık özel Linux ortamına yükler. Temsilcileriniz için Termux uygulaması, Shizuku ve ayrı CodeGraph kurulumu yok."</string>
+    <string name="ui_harness_installs_codegraph_into_its_private_linux">"Harness, CodeGraph\'yi, ihtiyaç duyduğu Düğüm çalışma zamanı ile birlikte yaklaşık 170 MB\'lık özel Linux ortamına yükler. Temsilcileriniz için Termux uygulaması, Shizuku ve ayrı CodeGraph kurulumu yok."</string>
     <string name="ui_no_workspace">"Çalışma alanı yok"</string>
     <string name="ui_this_workspace_does_not_expose_a_real">"Bu çalışma alanı gerçek bir filesystem yolunu göstermiyor"</string>
     <string name="ui_indexed">"Dizine eklendi"</string>
     <string name="ui_not_indexed">"Dizine eklenmedi"</string>
     <string name="ui_codegraph_needs_a_shell_capable_workspace_with">"CodeGraph, gerçek bir cihaz yoluna sahip kabuk özellikli bir çalışma alanına ihtiyaç duyar."</string>
     <string name="ui_install_codegraph_first_then_enable_it_for">"Önce CodeGraph\'yi yükleyin, ardından bu çalışma alanı için etkinleştirin."</string>
-    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"Bu çalışma alanı dizine eklendiğinde VEXORA, CodeGraph keşfetme, node, etki, etkilenen testler ve senkronizasyon araçlarını kodlama aracısına sunar. Grafiği okumadan önce değişen dosyaları senkronize eder."</string>
+    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"Bu çalışma alanı dizine eklendiğinde Harness, CodeGraph keşfetme, node, etki, etkilenen testler ve senkronizasyon araçlarını kodlama aracısına sunar. Grafiği okumadan önce değişen dosyaları senkronize eder."</string>
     <string name="ui_keyless">"Anahtarsız"</string>
     <string name="ui_public_search_engines_no_setup">"Herkese açık arama motorları, kurulum yok"</string>
     <string name="ui_key_saved">"%1$s · anahtar kaydedildi"</string>

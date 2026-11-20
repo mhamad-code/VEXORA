@@ -494,7 +494,7 @@
     <string name="ui_reasoning_and_thinking_tokens_are_billed_as">"ප්රතිඵල සහ හිතන ටෝකන් ප්රතිඵලයක් ලෙස බදු කරනු ලැබේ, ප්රතිඵල ලෙස නැවත යැවිය නොහැක."</string>
     <string name="ui_scheduled_messages">"සැලසුම් කර ඇති පණිවිඩ"</string>
     <string name="ui_allow_workspace_mcp_servers">"වැඩපිළිවෙළට ඉඩ දෙන්න MCP සේවාදායකයන් ?"</string>
-    <string name="ui_this_workspace_ships_a_harness_mcp_json">"මෙම වැඩපිළිවෙළේ නැව් A.VEXORA/mcp.json එය සම්බන්ධ කිරීමට අවශ්ය වේ: %1$s. "</string>
+    <string name="ui_this_workspace_ships_a_harness_mcp_json">"මෙම වැඩපිළිවෙළේ නැව් A.harness/mcp.json එය සම්බන්ධ කිරීමට අවශ්ය වේ: %1$s. "</string>
     <string name="ui_its_servers_can_run_local_commands_and">"එහි සේවාදායකයන් දේශීය නියෝග ක්‍රියාත්මක කිරීම සහ ජාලය වෙත ළඟා වීමට හැකිය. "</string>
     <string name="ui_only_approve_configs_you_trust">"ඔබ විශ්වාස කරන Configs පමණක් අනුමත කරන්න."</string>
     <string name="ui_approve">"අනුමත කිරීම"</string>

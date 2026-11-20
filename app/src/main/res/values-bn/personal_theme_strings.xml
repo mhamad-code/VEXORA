@@ -20,12 +20,12 @@
     <string name="theme_custom_delete">"প্যালেট মুছুন"</string>
     <string name="theme_custom_delete_message">"এই সংরক্ষিত প্যালেট সরান? এই প্যালেট সক্রিয় থাকলে অ্যাপটি তার নির্বাচিত প্রিসেটে ফিরে আসবে।"</string>
     <string name="theme_custom_preview">"প্যালেট পূর্বরূপ"</string>
-    <string name="theme_canvas_title">"VEXORA ক্যানভাস"</string>
+    <string name="theme_canvas_title">"Harness ক্যানভাস"</string>
     <string name="theme_canvas_description">"Chat এবং Code এর জন্য আপনার নিজস্ব ব্যাকড্রপ।"</string>
     <string name="theme_canvas_add">"ইমেজ যোগ করুন"</string>
     <string name="theme_canvas_change">"ছবি পরিবর্তন করুন"</string>
     <string name="theme_canvas_remove">"ছবি সরান"</string>
-    <string name="theme_canvas_enabled">"VEXORA ক্যানভাস দেখান"</string>
+    <string name="theme_canvas_enabled">"Harness ক্যানভাস দেখান"</string>
     <string name="theme_canvas_chat">"Chat"</string>
     <string name="theme_canvas_code">"Code"</string>
     <string name="theme_canvas_dim">"ছবি ম্লান হচ্ছে"</string>

@@ -452,14 +452,14 @@ object ShellPolicy {
             "/tmp",
             "/data/local/tmp/androidharness",
             "/data/local/tmp/androidharness-scratch",
-            "/data/data/com.agent.mhamed/files/.harness-scratch",
-            "/data/user/0/com.agent.mhamed/files/.harness-scratch",
-            "/data/data/com.agent.mhamed.debug/files/.harness-scratch",
-            "/data/user/0/com.agent.mhamed.debug/files/.harness-scratch",
-            "/data/data/com.agent.mhamed/files/linux",
-            "/data/user/0/com.agent.mhamed/files/linux",
-            "/data/data/com.agent.mhamed.debug/files/linux",
-            "/data/user/0/com.agent.mhamed.debug/files/linux",
+            "/data/data/com.androidharness/files/.harness-scratch",
+            "/data/user/0/com.androidharness/files/.harness-scratch",
+            "/data/data/com.androidharness.debug/files/.harness-scratch",
+            "/data/user/0/com.androidharness.debug/files/.harness-scratch",
+            "/data/data/com.androidharness/files/linux",
+            "/data/user/0/com.androidharness/files/linux",
+            "/data/data/com.androidharness.debug/files/linux",
+            "/data/user/0/com.androidharness.debug/files/linux",
         )
         return allowedPrefixes.any { path == it || path.startsWith("$it/") }
     }
@@ -698,9 +698,9 @@ object ShellPolicy {
      * /data/local/tmp access on newer builds: owned by this app's uid,
      * so the linker workaround still works on both package ids.
      */
-    const val SCRATCH_APPDATA = "/data/data/com.agent.mhamed/files/.harness-scratch"
+    const val SCRATCH_APPDATA = "/data/data/com.androidharness/files/.harness-scratch"
     const val SCRATCH_APPDATA_DEBUG =
-        "/data/data/com.agent.mhamed.debug/files/.harness-scratch"
+        "/data/data/com.androidharness.debug/files/.harness-scratch"
 
     /** Every exec-capable scratch root for all flavors of this app. */
     val SCRATCH_ROOTS = listOf(SCRATCH_TMP, SCRATCH_APPDATA, SCRATCH_APPDATA_DEBUG)

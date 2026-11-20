@@ -4,7 +4,7 @@
     <string name="theme_wallpaper_colors">壁紙の色</string>
     <string name="theme_wallpaper_hint">スマートフォンの Material You の色に合わせます。</string>
     <string name="theme_wallpaper_unavailable">壁紙の色には Android 12 以降が必要です。下からパレットを選んでください。</string>
-    <string name="theme_palette_blue">VEXORA ブルー</string>
+    <string name="theme_palette_blue">Harness ブルー</string>
     <string name="theme_palette_ocean">オーシャン</string>
     <string name="theme_palette_indigo">インディゴ</string>
     <string name="theme_palette_lavender">ラベンダー</string>

@@ -494,7 +494,7 @@
     <string name="ui_reasoning_and_thinking_tokens_are_billed_as">"तर्क और सोच के टोकन को आउटपुट के रूप में बिल किया जाता है और इनपुट के रूप में दोबारा नहीं भेजा जाता है।"</string>
     <string name="ui_scheduled_messages">"अनुसूचित संदेश"</string>
     <string name="ui_allow_workspace_mcp_servers">"कार्यस्थान MCP सर्वर की अनुमति दें?"</string>
-    <string name="ui_this_workspace_ships_a_harness_mcp_json">"यह कार्यक्षेत्र एक .VEXORA/mcp.json शिप करता है जो कनेक्ट करना चाहता है: %1$s। "</string>
+    <string name="ui_this_workspace_ships_a_harness_mcp_json">"यह कार्यक्षेत्र एक .harness/mcp.json शिप करता है जो कनेक्ट करना चाहता है: %1$s। "</string>
     <string name="ui_its_servers_can_run_local_commands_and">"इसके सर्वर स्थानीय कमांड चला सकते हैं और नेटवर्क तक पहुंच सकते हैं। "</string>
     <string name="ui_only_approve_configs_you_trust">"केवल उन्हीं कॉन्फ़िगरेशन को स्वीकृत करें जिन पर आपको भरोसा है।"</string>
     <string name="ui_approve">"स्वीकृत करें"</string>
@@ -1052,14 +1052,14 @@
     <string name="ui_ready">"तैयार"</string>
     <string name="ui_local_semantic_code_graph_for_symbols_callers">"प्रतीकों, कॉल करने वालों, प्रभाव और प्रभावित परीक्षणों के लिए स्थानीय सिमेंटिक कोड ग्राफ़"</string>
     <string name="ui_working">"काम कर रहा हूँ..."</string>
-    <string name="ui_harness_installs_codegraph_into_its_private_linux">"VEXORA अपने निजी Linux वातावरण में CodeGraph स्थापित करता है, लगभग 170 एमबी नोड रनटाइम के साथ इसकी आवश्यकता होती है। कोई Termux ऐप नहीं, कोई Shizuku नहीं और आपके एजेंटों के लिए कोई अलग CodeGraph सेटअप नहीं है।"</string>
+    <string name="ui_harness_installs_codegraph_into_its_private_linux">"Harness अपने निजी Linux वातावरण में CodeGraph स्थापित करता है, लगभग 170 एमबी नोड रनटाइम के साथ इसकी आवश्यकता होती है। कोई Termux ऐप नहीं, कोई Shizuku नहीं और आपके एजेंटों के लिए कोई अलग CodeGraph सेटअप नहीं है।"</string>
     <string name="ui_no_workspace">"कोई कार्यक्षेत्र नहीं"</string>
     <string name="ui_this_workspace_does_not_expose_a_real">"यह कार्यक्षेत्र वास्तविक filesystem पथ को उजागर नहीं करता है"</string>
     <string name="ui_indexed">"अनुक्रमित"</string>
     <string name="ui_not_indexed">"अनुक्रमित नहीं"</string>
     <string name="ui_codegraph_needs_a_shell_capable_workspace_with">"CodeGraph को वास्तविक डिवाइस पथ के साथ शेल-सक्षम कार्यक्षेत्र की आवश्यकता है।"</string>
     <string name="ui_install_codegraph_first_then_enable_it_for">"पहले CodeGraph इंस्टॉल करें, फिर इसे इस कार्यक्षेत्र के लिए सक्षम करें।"</string>
-    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"जब इस कार्यक्षेत्र को अनुक्रमित किया जाता है, तो VEXORA कोडिंग एजेंट के लिए CodeGraph एक्सप्लोर, node, प्रभाव, प्रभावित-परीक्षण और सिंक टूल को उजागर करता है। ग्राफ़ को पढ़ने से पहले क्वेरीज़ परिवर्तित फ़ाइलों को सिंक करती हैं।"</string>
+    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"जब इस कार्यक्षेत्र को अनुक्रमित किया जाता है, तो Harness कोडिंग एजेंट के लिए CodeGraph एक्सप्लोर, node, प्रभाव, प्रभावित-परीक्षण और सिंक टूल को उजागर करता है। ग्राफ़ को पढ़ने से पहले क्वेरीज़ परिवर्तित फ़ाइलों को सिंक करती हैं।"</string>
     <string name="ui_keyless">"बिना चाबी वाला"</string>
     <string name="ui_public_search_engines_no_setup">"सार्वजनिक खोज इंजन, कोई सेटअप नहीं"</string>
     <string name="ui_key_saved">"%1$s · कुंजी सहेजी गई"</string>

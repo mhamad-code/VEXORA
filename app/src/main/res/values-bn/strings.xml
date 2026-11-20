@@ -335,7 +335,7 @@
     <string name="settings_action_disconnect">"সংযোগ বিচ্ছিন্ন করুন"</string>
     <string name="settings_local_models_on_device">"এই ফোনে"</string>
     <string name="settings_local_models_system_tools">"সিস্টেম নির্দেশাবলী এবং সরঞ্জাম"</string>
-    <string name="settings_local_models_system_tools_desc">"ডিফল্টরূপে বন্ধ। স্থানীয় মডেল শুধুমাত্র আপনার চ্যাট বার্তা গ্রহণ. আপনার প্রকল্পে কাজ করার জন্য তাদের VEXORA নির্দেশাবলী এবং সরঞ্জামগুলি ব্যবহার করতে দিতে চালু করুন৷"</string>
+    <string name="settings_local_models_system_tools_desc">"ডিফল্টরূপে বন্ধ। স্থানীয় মডেল শুধুমাত্র আপনার চ্যাট বার্তা গ্রহণ. আপনার প্রকল্পে কাজ করার জন্য তাদের Harness নির্দেশাবলী এবং সরঞ্জামগুলি ব্যবহার করতে দিতে চালু করুন৷"</string>
     <string name="settings_local_models_system_tools_warning">"এটি সক্ষম করা অনেক ইনপুট যোগ করে, আরও মেমরি এবং প্রক্রিয়াকরণ শক্তি ব্যবহার করে এবং একটি উত্তর শুরু হওয়ার আগে কয়েক মিনিট সময় নিতে পারে। পরিবর্তন পরবর্তী উত্তর প্রযোজ্য."</string>
     <string name="settings_local_models_yours">"আপনার মডেল"</string>
     <string name="settings_local_models_empty_title">"এখনো কোনো মডেল যোগ করা হয়নি"</string>
@@ -484,7 +484,7 @@
     <string name="settings_storage_no_manifest">"এই পুরোনো ইনস্টলে কোনো ফাইল ম্যানিফেস্ট নেই৷ মালিকানা, আকার এবং কর্মক্ষেত্রের ব্যবহার অজানা; অপসারণ সুরক্ষিত থাকে।"</string>
     <string name="settings_storage_unverified">"কিছু মালিকানাধীন ফাইল যাচাই করা যায়নি. এই প্যাকেজ সুরক্ষিত থাকে।"</string>
     <string name="settings_storage_release_confirm">"রিলিজ প্রয়োজনীয়তা"</string>
-    <string name="settings_storage_release_note">"রেকর্ড করা ব্যবহারগুলি VEXORA এর বাইরে শুরু হওয়া কমান্ডগুলি অন্তর্ভুক্ত নাও করতে পারে৷ এখনও এই টুল ব্যবহার করে এমন যেকোনো ওয়ার্কস্পেসের জন্য একটি প্রয়োজনীয়তা রাখুন।"</string>
+    <string name="settings_storage_release_note">"রেকর্ড করা ব্যবহারগুলি Harness এর বাইরে শুরু হওয়া কমান্ডগুলি অন্তর্ভুক্ত নাও করতে পারে৷ এখনও এই টুল ব্যবহার করে এমন যেকোনো ওয়ার্কস্পেসের জন্য একটি প্রয়োজনীয়তা রাখুন।"</string>
     <string name="settings_storage_cleanup_skip_note">"পরিবর্তিত বা লিঙ্ক করা ফাইল বাদ দেওয়া হয়. উত্স ফোল্ডার, মডেল এবং পুনরুদ্ধারের ডেটা রাখা থাকে।"</string>
     <string name="settings_subagent_choose_model">"subagent মডেল চয়ন করুন"</string>
     <string name="settings_subagent_use_main">"প্রধান এজেন্ট মডেল ব্যবহার করুন"</string>
@@ -980,7 +980,7 @@
     <string name="dhizuku_denied">"অ্যাক্সেস অস্বীকৃত · ধিজুকুতে অ্যাক্সেস মঞ্জুর করুন"</string>
     <string name="dhizuku_error">"সংযোগ ব্যর্থ হয়েছে · ধিজুকু চেক করুন এবং আবার চেষ্টা করুন"</string>
     <string name="settings_language_sinhala">"සිංහල"</string>
-    <string name="glass_title">"VEXORA গ্লাস (পরীক্ষামূলক)"</string>
+    <string name="glass_title">"AHarness গ্লাস (পরীক্ষামূলক)"</string>
     <string name="glass_description">"নেভিগেশন, নিয়ন্ত্রণ, এবং কার্ডের জন্য গ্লাস প্রভাব।"</string>
     <string name="glass_enable">"হিমায়িত গ্লাস"</string>
     <string name="glass_enable_hint">"নরমভাবে ঝাপসা ব্যাকগ্রাউন্ড সহ স্বচ্ছ পৃষ্ঠতল ব্যবহার করুন।"</string>
@@ -1016,9 +1016,9 @@
     <string name="auto_compact_saved">"এই চ্যাট প্রায় %1$s প্রসঙ্গ টোকেনে স্বয়ংক্রিয়ভাবে সংকুচিত হয়ে চালিয়ে যাবে। উত্তরের জন্য জায়গা সংরক্ষিত।"</string>
     <string name="auto_compact_reset">"ডিফল্ট অনুসরণ: প্রায় %1$s প্রসঙ্গ টোকেনে স্বয়ংক্রিয়ভাবে সংকুচিত করুন।"</string>
     <string name="tip_auto_compact">"350,000 টোকেনে প্রসঙ্গ স্বয়ংক্রিয়ভাবে সংক্ষিপ্ত করে এই চ্যাট চালিয়ে যেতে /autocompact 350K ব্যবহার করুন। 258K বা 1M ও গ্রহণ করে। /autocompact default সেটিংস → কোডিং → এজেন্টের আচরণ অনুসরণ করে।"</string>
-    <string name="harness_free_quota_title">"VEXORA-এর বিনামূল্যের কোটা শেষ হয়েছে"</string>
+    <string name="harness_free_quota_title">"Harness-এর বিনামূল্যের কোটা শেষ হয়েছে"</string>
     <string name="harness_free_quota_body">"বিনামূল্যের ভাতা আপনার নেটওয়ার্কে ভাগ করা হয় এবং প্রতি ঘণ্টায় রিফ্রেশ হয়। রিসেটের জন্য অপেক্ষা করুন, অথবা চালিয়ে যেতে প্রদানকারী বদলান।"</string>
-    <string name="harness_free_rate_title">"VEXORA-এর বিনামূল্যের মডেল সাময়িকভাবে সীমাবদ্ধ"</string>
+    <string name="harness_free_rate_title">"Harness-এর বিনামূল্যের মডেল সাময়িকভাবে সীমাবদ্ধ"</string>
     <string name="harness_free_rate_body">"এই মডেলটি সাময়িকভাবে ব্যস্ত বা হার-সীমাবদ্ধ। একটু পরে আবার চেষ্টা করুন, অথবা চালিয়ে যেতে প্রদানকারী বদলান।"</string>
     <string name="harness_switch_provider">"প্রদানকারী বদলান"</string>
     <string name="harness_free_wait">"আমি অপেক্ষা করব"</string>

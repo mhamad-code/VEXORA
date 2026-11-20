@@ -494,7 +494,7 @@
     <string name="ui_reasoning_and_thinking_tokens_are_billed_as">"Token penaakulan dan pemikiran dibilkan sebagai output dan tidak dihantar semula sebagai input."</string>
     <string name="ui_scheduled_messages">"Mesej yang dijadualkan"</string>
     <string name="ui_allow_workspace_mcp_servers">"Benarkan pelayan MCP ruang kerja?"</string>
-    <string name="ui_this_workspace_ships_a_harness_mcp_json">"Ruang kerja ini menghantar .VEXORA/mcp.json yang ingin menyambung: %1$s. "</string>
+    <string name="ui_this_workspace_ships_a_harness_mcp_json">"Ruang kerja ini menghantar .harness/mcp.json yang ingin menyambung: %1$s. "</string>
     <string name="ui_its_servers_can_run_local_commands_and">"Pelayannya boleh menjalankan arahan tempatan dan mencapai rangkaian. "</string>
     <string name="ui_only_approve_configs_you_trust">"Hanya luluskan konfigurasi yang anda percayai."</string>
     <string name="ui_approve">"Luluskan"</string>
@@ -1052,14 +1052,14 @@
     <string name="ui_ready">"sedia"</string>
     <string name="ui_local_semantic_code_graph_for_symbols_callers">"Graf kod semantik tempatan untuk simbol, pemanggil, kesan dan ujian terjejas"</string>
     <string name="ui_working">"Bekerja…"</string>
-    <string name="ui_harness_installs_codegraph_into_its_private_linux">"VEXORA memasang CodeGraph ke dalam persekitaran Linux peribadinya, kira-kira 170 MB dengan masa jalan Node yang diperlukannya. Tiada aplikasi Termux, tiada Shizuku dan tiada persediaan CodeGraph berasingan untuk ejen anda."</string>
+    <string name="ui_harness_installs_codegraph_into_its_private_linux">"Harness memasang CodeGraph ke dalam persekitaran Linux peribadinya, kira-kira 170 MB dengan masa jalan Node yang diperlukannya. Tiada aplikasi Termux, tiada Shizuku dan tiada persediaan CodeGraph berasingan untuk ejen anda."</string>
     <string name="ui_no_workspace">"Tiada ruang kerja"</string>
     <string name="ui_this_workspace_does_not_expose_a_real">"Ruang kerja ini tidak mendedahkan laluan filesystem sebenar"</string>
     <string name="ui_indexed">"Diindeks"</string>
     <string name="ui_not_indexed">"Tidak diindeks"</string>
     <string name="ui_codegraph_needs_a_shell_capable_workspace_with">"CodeGraph memerlukan ruang kerja berkemampuan shell dengan laluan peranti sebenar."</string>
     <string name="ui_install_codegraph_first_then_enable_it_for">"Pasang CodeGraph dahulu, kemudian dayakannya untuk ruang kerja ini."</string>
-    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"Apabila ruang kerja ini diindeks, VEXORA mendedahkan CodeGraph teroka, node, kesan, ujian terjejas dan alat penyegerakan kepada ejen pengekodan. Segerakkan pertanyaan menukar fail sebelum membaca graf."</string>
+    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"Apabila ruang kerja ini diindeks, Harness mendedahkan CodeGraph teroka, node, kesan, ujian terjejas dan alat penyegerakan kepada ejen pengekodan. Segerakkan pertanyaan menukar fail sebelum membaca graf."</string>
     <string name="ui_keyless">"Tanpa kunci"</string>
     <string name="ui_public_search_engines_no_setup">"Enjin carian awam, tiada persediaan"</string>
     <string name="ui_key_saved">"%1$s · kunci disimpan"</string>

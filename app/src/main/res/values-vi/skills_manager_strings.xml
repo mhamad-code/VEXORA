@@ -27,7 +27,7 @@
     <string name="sk_copy">"Sao chép"</string>
     <string name="sk_copied">"Đã sao chép kỹ năng"</string>
     <string name="sk_copy_note">"Khi lưu, bản sao của bạn được giữ lại và thay thế kỹ năng đi kèm. Xóa bản sao sau để quay lại bản gốc."</string>
-    <string name="sk_workspace_note">"Kỹ năng này nằm trong thư mục .VEXORA/skills của không gian làm việc. Hãy chỉnh sửa ở đó."</string>
+    <string name="sk_workspace_note">"Kỹ năng này nằm trong thư mục .harness/skills của không gian làm việc. Hãy chỉnh sửa ở đó."</string>
     <string name="sk_preview">"Xem trước"</string>
     <string name="sk_markdown">"Markdown"</string>
     <string name="sk_files">"Tệp (%1$d)"</string>

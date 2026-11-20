@@ -23,7 +23,7 @@
     <string name="tip_memory_off">Ative a memória para o VEXORA lembrar suas preferências e decisões entre chats.</string>
     <string name="tip_memory_on">A memória está ativada. Você pode revisar ou apagar o que o VEXORA lembra a qualquer momento.</string>
     <string name="tip_thinking">Toque no nível de raciocínio no cabeçalho para trocar velocidade por um raciocínio mais profundo.</string>
-    <string name="tip_glass">Experimente o VEXORA Glass para superfícies translúcidas e em camadas em todo o app.</string>
+    <string name="tip_glass">Experimente o Harness Glass para superfícies translúcidas e em camadas em todo o app.</string>
     <string name="tip_compact">Pouco contexto sobrando? Digite /compact para resumir a conversa e continuar.</string>
     <string name="tip_search_depth">Defina no cabeçalho quanta pesquisa na web uma resposta faz, de Instant a Max research.</string>
     <string name="tip_notifications">Ative as notificações para saber quando uma tarefa longa terminar.</string>
@@ -44,7 +44,7 @@
     <string name="tip_repo_map">Ative o mapa do repositório para o agente ter um índice dos símbolos do seu projeto.</string>
     <string name="tip_caveman">O Caveman dá respostas mais curtas e relatórios de tokens, o que economiza tokens de saída.</string>
     <string name="tip_telegram">Pareie um bot do Telegram para continuar chats e editar projetos pelo Telegram.</string>
-    <string name="tip_config">Compartilhe as configurações do projeto com seu repositório pelo VEXORA.json.</string>
+    <string name="tip_config">Compartilhe as configurações do projeto com seu repositório pelo harness.json.</string>
     <string name="tip_shizuku">Configure o Shizuku para o agente usar acesso elevado ao shell no seu aparelho.</string>
     <string name="tip_plugins">Instale pacotes de plugins na página Plugins para adicionar skills e ferramentas.</string>
     <string name="tip_language">O VEXORA está disponível em 11 idiomas. Mude nas configurações de idioma.</string>

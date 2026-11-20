@@ -4,7 +4,7 @@
     <string name="theme_wallpaper_colors">Cores do plano de fundo</string>
     <string name="theme_wallpaper_hint">Segue as cores do Material You do seu telefone.</string>
     <string name="theme_wallpaper_unavailable">As cores do plano de fundo exigem Android 12 ou posterior. Escolha uma paleta abaixo.</string>
-    <string name="theme_palette_blue">Azul VEXORA</string>
+    <string name="theme_palette_blue">Azul Harness</string>
     <string name="theme_palette_ocean">Oceano</string>
     <string name="theme_palette_indigo">Índigo</string>
     <string name="theme_palette_lavender">Lavanda</string>

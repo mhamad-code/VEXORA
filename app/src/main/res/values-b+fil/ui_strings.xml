@@ -494,7 +494,7 @@
     <string name="ui_reasoning_and_thinking_tokens_are_billed_as">"Ang mga token ng pangangatuwiran at pag-iisip ay sinisingil bilang output at hindi muling ipinadala bilang input."</string>
     <string name="ui_scheduled_messages">"Mga naka-iskedyul na mensahe"</string>
     <string name="ui_allow_workspace_mcp_servers">"Payagan ang mga server ng MCP sa workspace?"</string>
-    <string name="ui_this_workspace_ships_a_harness_mcp_json">"Nagpapadala ang workspace na ito ng .VEXORA/mcp.json na gustong kumonekta: %1$s. "</string>
+    <string name="ui_this_workspace_ships_a_harness_mcp_json">"Nagpapadala ang workspace na ito ng .harness/mcp.json na gustong kumonekta: %1$s. "</string>
     <string name="ui_its_servers_can_run_local_commands_and">"Ang mga server nito ay maaaring magpatakbo ng mga lokal na utos at maabot ang network. "</string>
     <string name="ui_only_approve_configs_you_trust">"Aprubahan lang ang mga config na pinagkakatiwalaan mo."</string>
     <string name="ui_approve">"Aprubahan"</string>
@@ -1052,14 +1052,14 @@
     <string name="ui_ready">"handa na"</string>
     <string name="ui_local_semantic_code_graph_for_symbols_callers">"Lokal na semantic code graph para sa mga simbolo, tumatawag, epekto at mga apektadong pagsubok"</string>
     <string name="ui_working">"Nagtatrabaho…"</string>
-    <string name="ui_harness_installs_codegraph_into_its_private_linux">"Ini-install ng VEXORA ang CodeGraph sa pribadong Linux na kapaligiran nito, mga 170 MB kasama ang runtime ng Node na kailangan nito. Walang Termux app, walang Shizuku at walang hiwalay na CodeGraph setup para sa iyong mga ahente."</string>
+    <string name="ui_harness_installs_codegraph_into_its_private_linux">"Ini-install ng Harness ang CodeGraph sa pribadong Linux na kapaligiran nito, mga 170 MB kasama ang runtime ng Node na kailangan nito. Walang Termux app, walang Shizuku at walang hiwalay na CodeGraph setup para sa iyong mga ahente."</string>
     <string name="ui_no_workspace">"Walang workspace"</string>
     <string name="ui_this_workspace_does_not_expose_a_real">"Ang workspace na ito ay hindi naglalantad ng totoong filesystem na landas"</string>
     <string name="ui_indexed">"Na-index"</string>
     <string name="ui_not_indexed">"Hindi na-index"</string>
     <string name="ui_codegraph_needs_a_shell_capable_workspace_with">"Ang CodeGraph ay nangangailangan ng isang shell-capable na workspace na may totoong path ng device."</string>
     <string name="ui_install_codegraph_first_then_enable_it_for">"I-install muna ang CodeGraph, pagkatapos ay paganahin ito para sa workspace na ito."</string>
-    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"Kapag na-index ang workspace na ito, inilalantad ng VEXORA ang CodeGraph na explore, node, epekto, mga apektadong pagsubok, at mga tool sa pag-sync sa ahente ng coding. Binago ng pag-sync ng mga query ang mga file bago basahin ang graph."</string>
+    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"Kapag na-index ang workspace na ito, inilalantad ng Harness ang CodeGraph na explore, node, epekto, mga apektadong pagsubok, at mga tool sa pag-sync sa ahente ng coding. Binago ng pag-sync ng mga query ang mga file bago basahin ang graph."</string>
     <string name="ui_keyless">"Walang susi"</string>
     <string name="ui_public_search_engines_no_setup">"Mga pampublikong search engine, walang setup"</string>
     <string name="ui_key_saved">"%1$s · na-save ang key"</string>
@@ -1266,7 +1266,7 @@
     <string name="ui_optional_keeps_long_runs_alive_on_aggressive">"Opsyonal: pinananatiling buhay ang matagal sa mga agresibong OEM"</string>
     <string name="ui_ready_to_begin">"Handa nang magsimula"</string>
     <string name="ui_allow_storage_access_to_begin">"Payagan ang pag-access sa storage na magsimula"</string>
-    <string name="ui_start_harness">"Simulan ang VEXORA"</string>
+    <string name="ui_start_harness">"Simulan ang harness"</string>
     <string name="ui_optional">"Opsyonal"</string>
     <string name="ui_model_activity_and_ai_code_changes">"Aktibidad ng modelo at mga pagbabago sa AI code"</string>
     <string name="ui_model_activity">"MODELONG GAWAIN"</string>

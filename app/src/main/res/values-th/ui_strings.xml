@@ -494,7 +494,7 @@
     <string name="ui_reasoning_and_thinking_tokens_are_billed_as">"โทเค็นการใช้เหตุผลและการคิดจะถูกเรียกเก็บเงินเป็นเอาต์พุตและจะไม่ส่งซ้ำเป็นอินพุต"</string>
     <string name="ui_scheduled_messages">"ข้อความที่กำหนดเวลาไว้"</string>
     <string name="ui_allow_workspace_mcp_servers">"อนุญาตเซิร์ฟเวอร์พื้นที่ทำงาน MCP หรือไม่"</string>
-    <string name="ui_this_workspace_ships_a_harness_mcp_json">"เวิร์กสเปซนี้จัดส่ง .VEXORA/mcp.json ที่ต้องการเชื่อมต่อ: %1$s "</string>
+    <string name="ui_this_workspace_ships_a_harness_mcp_json">"เวิร์กสเปซนี้จัดส่ง .harness/mcp.json ที่ต้องการเชื่อมต่อ: %1$s "</string>
     <string name="ui_its_servers_can_run_local_commands_and">"เซิร์ฟเวอร์สามารถรันคำสั่งในเครื่องและเข้าถึงเครือข่ายได้ "</string>
     <string name="ui_only_approve_configs_you_trust">"อนุมัติเฉพาะการกำหนดค่าที่คุณเชื่อถือเท่านั้น"</string>
     <string name="ui_approve">"อนุมัติ"</string>
@@ -1052,14 +1052,14 @@
     <string name="ui_ready">"พร้อม"</string>
     <string name="ui_local_semantic_code_graph_for_symbols_callers">"กราฟรหัสความหมายท้องถิ่นสำหรับสัญลักษณ์ ผู้เรียก ผลกระทบ และการทดสอบที่ได้รับผลกระทบ"</string>
     <string name="ui_working">"กำลังทำงาน..."</string>
-    <string name="ui_harness_installs_codegraph_into_its_private_linux">"VEXORA ติดตั้ง CodeGraph ลงในสภาพแวดล้อม Linux ส่วนตัว ซึ่งมีขนาดประมาณ 170 MB พร้อมรันไทม์ของโหนดที่ต้องการ ไม่มีแอป Termux ไม่มี Shizuku และไม่มีการตั้งค่า CodeGraph แยกต่างหากสำหรับเอเจนต์ของคุณ"</string>
+    <string name="ui_harness_installs_codegraph_into_its_private_linux">"Harness ติดตั้ง CodeGraph ลงในสภาพแวดล้อม Linux ส่วนตัว ซึ่งมีขนาดประมาณ 170 MB พร้อมรันไทม์ของโหนดที่ต้องการ ไม่มีแอป Termux ไม่มี Shizuku และไม่มีการตั้งค่า CodeGraph แยกต่างหากสำหรับเอเจนต์ของคุณ"</string>
     <string name="ui_no_workspace">"ไม่มีพื้นที่ทำงาน"</string>
     <string name="ui_this_workspace_does_not_expose_a_real">"เวิร์กสเปซนี้ไม่เปิดเผยพาธ filesystem จริง"</string>
     <string name="ui_indexed">"จัดทำดัชนีแล้ว"</string>
     <string name="ui_not_indexed">"ไม่ได้รับการจัดทำดัชนี"</string>
     <string name="ui_codegraph_needs_a_shell_capable_workspace_with">"CodeGraph ต้องการพื้นที่ทำงานที่มีความสามารถเชลล์พร้อมพาธอุปกรณ์จริง"</string>
     <string name="ui_install_codegraph_first_then_enable_it_for">"ติดตั้ง CodeGraph ก่อน จากนั้นเปิดใช้งานสำหรับพื้นที่ทำงานนี้"</string>
-    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"เมื่อเวิร์กสเปซนี้ถูกจัดทำดัชนี VEXORA จะเปิดเผย CodeGraph explore, node, ผลกระทบ, การทดสอบที่ได้รับผลกระทบ และเครื่องมือการซิงค์ไปยังเอเจนต์การเขียนโค้ด แบบสอบถามการซิงค์ไฟล์ที่เปลี่ยนแปลงก่อนที่จะอ่านกราฟ"</string>
+    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"เมื่อเวิร์กสเปซนี้ถูกจัดทำดัชนี Harness จะเปิดเผย CodeGraph explore, node, ผลกระทบ, การทดสอบที่ได้รับผลกระทบ และเครื่องมือการซิงค์ไปยังเอเจนต์การเขียนโค้ด แบบสอบถามการซิงค์ไฟล์ที่เปลี่ยนแปลงก่อนที่จะอ่านกราฟ"</string>
     <string name="ui_keyless">"ไม่ใช้กุญแจ"</string>
     <string name="ui_public_search_engines_no_setup">"เครื่องมือค้นหาสาธารณะ ไม่มีการตั้งค่า"</string>
     <string name="ui_key_saved">"%1$s · บันทึกคีย์แล้ว"</string>

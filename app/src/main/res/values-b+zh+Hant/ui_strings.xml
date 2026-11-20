@@ -492,7 +492,7 @@
     <string name="ui_reasoning_and_thinking_tokens_are_billed_as">"推理和思考 Token 按輸出計費，不會作為輸入再次傳送。"</string>
     <string name="ui_scheduled_messages">"定時訊息"</string>
     <string name="ui_allow_workspace_mcp_servers">"允許工作區 MCP 伺服器？"</string>
-    <string name="ui_this_workspace_ships_a_harness_mcp_json">"此工作區包含 .VEXORA/mcp.json，希望連線：%1$s。"</string>
+    <string name="ui_this_workspace_ships_a_harness_mcp_json">"此工作區包含 .harness/mcp.json，希望連線：%1$s。"</string>
     <string name="ui_its_servers_can_run_local_commands_and">"這些伺服器可執行本地命令並訪問網路。"</string>
     <string name="ui_only_approve_configs_you_trust">"請僅批准你信任的配置。"</string>
     <string name="ui_approve">"批准"</string>
@@ -1050,14 +1050,14 @@
     <string name="ui_ready">"就緒"</string>
     <string name="ui_local_semantic_code_graph_for_symbols_callers">"用於符號、呼叫關係、影響範圍和受影響測試的本地語義程式碼圖"</string>
     <string name="ui_working">"正在處理…"</string>
-    <string name="ui_harness_installs_codegraph_into_its_private_linux">"VEXORA 將 CodeGraph 安裝到私有 Linux 環境中，包含所需的 Node 執行時，約佔 170 MB。無需 Termux 應用、Shizuku，也無需為智慧體單獨配置 CodeGraph。"</string>
+    <string name="ui_harness_installs_codegraph_into_its_private_linux">"Harness 將 CodeGraph 安裝到私有 Linux 環境中，包含所需的 Node 執行時，約佔 170 MB。無需 Termux 應用、Shizuku，也無需為智慧體單獨配置 CodeGraph。"</string>
     <string name="ui_no_workspace">"無工作區"</string>
     <string name="ui_this_workspace_does_not_expose_a_real">"此工作區未提供真實檔案系統路徑"</string>
     <string name="ui_indexed">"已建立索引"</string>
     <string name="ui_not_indexed">"未建立索引"</string>
     <string name="ui_codegraph_needs_a_shell_capable_workspace_with">"CodeGraph 需要支援 Shell 且有真實裝置路徑的工作區。"</string>
     <string name="ui_install_codegraph_first_then_enable_it_for">"請先安裝 CodeGraph，再為此工作區啟用。"</string>
-    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"此工作區建立索引後，VEXORA 會向程式設計智慧體提供 CodeGraph 的 explore、node、impact、affected-tests 和 sync 工具。查詢會先同步已更改的檔案。"</string>
+    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"此工作區建立索引後，Harness 會向程式設計智慧體提供 CodeGraph 的 explore、node、impact、affected-tests 和 sync 工具。查詢會先同步已更改的檔案。"</string>
     <string name="ui_keyless">"無需金鑰"</string>
     <string name="ui_public_search_engines_no_setup">"公共搜尋引擎，無需配置"</string>
     <string name="ui_key_saved">"%1$s · 已儲存金鑰"</string>
@@ -1264,7 +1264,7 @@
     <string name="ui_optional_keeps_long_runs_alive_on_aggressive">"可選：避免嚴格的廠商後臺限制終止長時間任務"</string>
     <string name="ui_ready_to_begin">"準備就緒"</string>
     <string name="ui_allow_storage_access_to_begin">"允許儲存訪問以開始"</string>
-    <string name="ui_start_harness">"啟動 VEXORA"</string>
+    <string name="ui_start_harness">"啟動 Harness"</string>
     <string name="ui_optional">"可選"</string>
     <string name="ui_model_activity_and_ai_code_changes">"模型活動和 AI 程式碼更改"</string>
     <string name="ui_model_activity">"模型活動"</string>

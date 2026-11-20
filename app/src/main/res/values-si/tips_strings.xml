@@ -23,7 +23,7 @@
     <string name="tip_memory_off">VEXORA ඔබේ මනාපයන් සහ තීරණ සියලු චැට් පුරා මතක තබා ගැනීමට මතකය සක්‍රිය කරන්න.</string>
     <string name="tip_memory_on">මතකය සක්‍රියයි. VEXORA මතක තබාගත් දේ ඕනෑම වේලාවක බැලීමට හෝ මකා දැමීමට ඔබට හැක.</string>
     <string name="tip_thinking">වේගය වෙනුවට ගැඹුරු තර්කනය ලබා ගැනීමට ශීර්ෂයේ සිතීමේ මට්ටම තට්ටු කරන්න.</string>
-    <string name="tip_glass">යෙදුම පුරා විනිවිද පෙනෙන, ස්ථර සහිත මතුපිට සඳහා VEXORA Glass උත්සාහ කරන්න.</string>
+    <string name="tip_glass">යෙදුම පුරා විනිවිද පෙනෙන, ස්ථර සහිත මතුපිට සඳහා Harness Glass උත්සාහ කරන්න.</string>
     <string name="tip_compact">සන්දර්භය අඩු වෙමින්ද? සංවාදය සාරාංශ කර දිගටම යාමට /compact ටයිප් කරන්න.</string>
     <string name="tip_search_depth">පිළිතුරක් කරන වෙබ් පර්යේෂණ ප්‍රමාණය ශීර්ෂයෙන් සකසන්න, Instant සිට Max research දක්වා.</string>
     <string name="tip_notifications">දිගු කාර්යයක් අවසන් වූ විට දැන ගැනීමට දැනුම්දීම් සක්‍රිය කරන්න.</string>
@@ -44,7 +44,7 @@
     <string name="tip_repo_map">නියෝජිතයාට ඔබේ ව්‍යාපෘතියේ සංකේත සූචියක් ලැබීමට repo map සක්‍රිය කරන්න.</string>
     <string name="tip_caveman">Caveman කෙටි පිළිතුරු සහ token වාර්තා ලබා දෙන අතර, ප්‍රතිදාන token ඉතිරි කරයි.</string>
     <string name="tip_telegram">Telegram වෙතින් චැට් දිගටම කරගෙන යාමට සහ ව්‍යාපෘති සංස්කරණය කිරීමට Telegram bot එකක් සම්බන්ධ කරන්න.</string>
-    <string name="tip_config">VEXORA.json හරහා ව්‍යාපෘති සැකසුම් ඔබේ ගබඩාව සමඟ බෙදා ගන්න.</string>
+    <string name="tip_config">harness.json හරහා ව්‍යාපෘති සැකසුම් ඔබේ ගබඩාව සමඟ බෙදා ගන්න.</string>
     <string name="tip_shizuku">නියෝජිතයාට ඔබේ උපාංගයේ ඉහළ shell ප්‍රවේශය භාවිත කිරීමට Shizuku සකසන්න.</string>
     <string name="tip_plugins">skills සහ මෙවලම් එක් කිරීමට Plugins පිටුවෙන් plugin බණ්ඩල ස්ථාපනය කරන්න.</string>
     <string name="tip_language">VEXORA භාෂා 11 කින් ලබා ගත හැක. භාෂා සැකසුම්වල එය වෙනස් කරන්න.</string>

@@ -121,7 +121,7 @@ class AndroidBuildToolchainDeviceTest {
             if (platformJar != null) {
                 assertTrue("Supply an SDK platform jar for the optional full APK smoke test", platformJar.isFile)
                 File(cwd, "AndroidManifest.xml").writeText("""
-                    <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.agent.mhamed.issue56.smoke" android:versionCode="1" android:versionName="1">
+                    <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.androidharness.issue56.smoke" android:versionCode="1" android:versionName="1">
                         <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35" />
                         <application android:label="Harness build smoke" android:hasCode="true" />
                     </manifest>

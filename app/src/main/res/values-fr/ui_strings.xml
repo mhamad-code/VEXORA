@@ -494,7 +494,7 @@
     <string name="ui_reasoning_and_thinking_tokens_are_billed_as">"Les jetons de raisonnement et de réflexion sont facturés en sortie et ne sont pas renvoyés en entrée."</string>
     <string name="ui_scheduled_messages">"Messages programmés"</string>
     <string name="ui_allow_workspace_mcp_servers">"Autoriser les serveurs MCP de l\'espace de travail ?"</string>
-    <string name="ui_this_workspace_ships_a_harness_mcp_json">"Cet espace de travail contient un .VEXORA/mcp.json qui souhaite se connecter : %1$s. "</string>
+    <string name="ui_this_workspace_ships_a_harness_mcp_json">"Cet espace de travail contient un .harness/mcp.json qui souhaite se connecter : %1$s. "</string>
     <string name="ui_its_servers_can_run_local_commands_and">"Ses serveurs peuvent exécuter des commandes locales et accéder au réseau. "</string>
     <string name="ui_only_approve_configs_you_trust">"Approuvez uniquement les configurations auxquelles vous faites confiance."</string>
     <string name="ui_approve">"Approuver"</string>
@@ -1052,14 +1052,14 @@
     <string name="ui_ready">"Prêt"</string>
     <string name="ui_local_semantic_code_graph_for_symbols_callers">"Graphique de code sémantique local pour les symboles, les appelants, les tests d\'impact et concernés"</string>
     <string name="ui_working">"Travailler…"</string>
-    <string name="ui_harness_installs_codegraph_into_its_private_linux">"VEXORA installe CodeGraph dans son environnement privé Linux, environ 170 Mo avec le runtime Node dont il a besoin. Pas d\'application Termux, pas de Shizuku et pas de configuration CodeGraph distincte pour vos agents."</string>
+    <string name="ui_harness_installs_codegraph_into_its_private_linux">"Harness installe CodeGraph dans son environnement privé Linux, environ 170 Mo avec le runtime Node dont il a besoin. Pas d\'application Termux, pas de Shizuku et pas de configuration CodeGraph distincte pour vos agents."</string>
     <string name="ui_no_workspace">"Pas d\'espace de travail"</string>
     <string name="ui_this_workspace_does_not_expose_a_real">"Cet espace de travail n\'expose pas de véritable chemin filesystem"</string>
     <string name="ui_indexed">"Indexé"</string>
     <string name="ui_not_indexed">"Non indexé"</string>
     <string name="ui_codegraph_needs_a_shell_capable_workspace_with">"CodeGraph a besoin d\'un espace de travail compatible avec le shell avec un véritable chemin de périphérique."</string>
     <string name="ui_install_codegraph_first_then_enable_it_for">"Installez d\'abord CodeGraph, puis activez-le pour cet espace de travail."</string>
-    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"Lorsque cet espace de travail est indexé, VEXORA expose les outils d\'exploration CodeGraph, node, d\'impact, de tests concernés et de synchronisation à l\'agent de codage. Les requêtes synchronisent les fichiers modifiés avant de lire le graphique."</string>
+    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"Lorsque cet espace de travail est indexé, Harness expose les outils d\'exploration CodeGraph, node, d\'impact, de tests concernés et de synchronisation à l\'agent de codage. Les requêtes synchronisent les fichiers modifiés avant de lire le graphique."</string>
     <string name="ui_keyless">"Sans clé"</string>
     <string name="ui_public_search_engines_no_setup">"Moteurs de recherche publics, aucune configuration"</string>
     <string name="ui_key_saved">"%1$s · clé enregistrée"</string>

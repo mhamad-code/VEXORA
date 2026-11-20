@@ -335,7 +335,7 @@
     <string name="settings_action_disconnect">"قطع الاتصال"</string>
     <string name="settings_local_models_on_device">"على هذا الهاتف"</string>
     <string name="settings_local_models_system_tools">"تعليمات النظام والأدوات"</string>
-    <string name="settings_local_models_system_tools_desc">"متوقف افتراضياً. تتلقى النماذج المحلية رسائل محادثتك فقط. فعّله للسماح لها باستخدام تعليمات VEXORA وأدواته للعمل على مشروعك."</string>
+    <string name="settings_local_models_system_tools_desc">"متوقف افتراضياً. تتلقى النماذج المحلية رسائل محادثتك فقط. فعّله للسماح لها باستخدام تعليمات Harness وأدواته للعمل على مشروعك."</string>
     <string name="settings_local_models_system_tools_warning">"يضيف التفعيل مدخلات كثيرة ويستخدم ذاكرة وقدرة معالجة أكبر، وقد يستغرق بدء الرد عدة دقائق. تُطبّق التغييرات على الرد التالي."</string>
     <string name="settings_local_models_yours">"نماذجك"</string>
     <string name="settings_local_models_empty_title">"لم تُضف نماذج بعد"</string>
@@ -484,7 +484,7 @@
     <string name="settings_storage_no_manifest">"لا يتضمن هذا التثبيت القديم قائمة ملفات. ملكيته وحجمه واستخدامه في مساحات العمل غير معروفة؛ لذا يبقى محمياً من الإزالة."</string>
     <string name="settings_storage_unverified">"تعذّر التحقّق من بعض الملفات المملوكة للحزمة. تبقى هذه الحزمة محمية."</string>
     <string name="settings_storage_release_confirm">"إزالة المتطلب"</string>
-    <string name="settings_storage_release_note">"قد لا تشمل الاستخدامات المسجّلة الأوامر التي بدأت خارج VEXORA. احتفظ بمتطلب لأي مساحة عمل ما زالت تستخدم هذه الأداة."</string>
+    <string name="settings_storage_release_note">"قد لا تشمل الاستخدامات المسجّلة الأوامر التي بدأت خارج Harness. احتفظ بمتطلب لأي مساحة عمل ما زالت تستخدم هذه الأداة."</string>
     <string name="settings_storage_cleanup_skip_note">"تُتخطّى الملفات المتغيّرة أو المرتبطة. يُحتفظ بمجلدات المصدر والنماذج وبيانات الاستعادة."</string>
     <string name="settings_subagent_choose_model">"اختيار نموذج الوكيل الفرعي"</string>
     <string name="settings_subagent_use_main">"استخدام نموذج الوكيل الرئيسي"</string>
@@ -975,7 +975,7 @@
     <string name="dhizuku_denied">تم رفض الوصول · امنح الإذن في Dhizuku</string>
     <string name="dhizuku_error">فشل الاتصال · تحقق من Dhizuku وحاول مجدداً</string>
     <string name="settings_language_sinhala">සිංහල</string>
-    <string name="glass_title">VEXORA Glass (تجريبي)</string>
+    <string name="glass_title">AHarness Glass (تجريبي)</string>
     <string name="glass_description">تأثيرات زجاجية للتنقل وعناصر التحكم والبطاقات.</string>
     <string name="glass_enable">زجاج مصنفر</string>
     <string name="glass_enable_hint">استخدم أسطحًا شبه شفافة مع خلفيات ضبابية ناعمة.</string>
@@ -1020,9 +1020,9 @@
     <string name="auto_compact_saved">ستضغط هذه المحادثة تلقائيًا عند نحو %1$s من رموز السياق ثم تتابع. تُترك مساحة للرد.</string>
     <string name="auto_compact_reset">اتباع الافتراضي: الضغط التلقائي عند نحو %1$s من رموز السياق.</string>
     <string name="tip_auto_compact">استخدم /autocompact 350K لتلخيص السياق تلقائيًا عند 350,000 رمز ومتابعة هذه المحادثة. يقبل أيضًا 258K أو 1M. يتبع /autocompact default الإعدادات ← برمجة ← سلوك الوكيل.</string>
-    <string name="harness_free_quota_title">تم استهلاك الحصة المجانية من VEXORA</string>
+    <string name="harness_free_quota_title">تم استهلاك الحصة المجانية من Harness</string>
     <string name="harness_free_quota_body">الحصة المجانية مشتركة عبر شبكتك وتتجدد خلال نافذة زمنية كل ساعة. انتظر إعادة تعيينها، أو بدّل المزوّد للمتابعة.</string>
-    <string name="harness_free_rate_title">نماذج VEXORA المجانية محدودة مؤقتًا</string>
+    <string name="harness_free_rate_title">نماذج Harness المجانية محدودة مؤقتًا</string>
     <string name="harness_free_rate_body">هذا النموذج مشغول مؤقتًا أو محدود المعدل. أعد المحاولة قريبًا، أو بدّل المزوّد للمتابعة.</string>
     <string name="harness_switch_provider">تبديل المزوّد</string>
     <string name="harness_free_wait">سأنتظر</string>

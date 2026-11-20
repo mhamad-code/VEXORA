@@ -20,12 +20,12 @@
     <string name="theme_custom_delete">"Paleti sil"</string>
     <string name="theme_custom_delete_message">"Bu kayıtlı palet kaldırılsın mı? Bu palet etkinse uygulama seçilen ön ayara geri döner."</string>
     <string name="theme_custom_preview">"Palet önizlemesi"</string>
-    <string name="theme_canvas_title">"VEXORA Kanvas"</string>
+    <string name="theme_canvas_title">"Harness Kanvas"</string>
     <string name="theme_canvas_description">"Chat ve Code için kendi arka planınız."</string>
     <string name="theme_canvas_add">"Resim ekle"</string>
     <string name="theme_canvas_change">"Resmi değiştir"</string>
     <string name="theme_canvas_remove">"Resmi kaldır"</string>
-    <string name="theme_canvas_enabled">"VEXORA Kanvasını Göster"</string>
+    <string name="theme_canvas_enabled">"Harness Kanvasını Göster"</string>
     <string name="theme_canvas_chat">"Chat"</string>
     <string name="theme_canvas_code">"Code"</string>
     <string name="theme_canvas_dim">"Görüntü karartma"</string>

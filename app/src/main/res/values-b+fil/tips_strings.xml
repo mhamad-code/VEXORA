@@ -23,7 +23,7 @@
     <string name="tip_memory_off">"I-on ang memory para matandaan ng VEXORA ang iyong mga kagustuhan at desisyon sa mga chat."</string>
     <string name="tip_memory_on">"Naka-on ang memorya. Maaari mong suriin o tanggalin ang naaalala ng VEXORA anumang oras."</string>
     <string name="tip_thinking">"I-tap ang antas ng pag-iisip sa header upang i-trade ang bilis para sa mas malalim na pangangatwiran."</string>
-    <string name="tip_glass">"Subukan ang VEXORA Glass para sa translucent, layered na ibabaw sa buong app."</string>
+    <string name="tip_glass">"Subukan ang Harness Glass para sa translucent, layered na ibabaw sa buong app."</string>
     <string name="tip_compact">"Nauubusan na ba ng konteksto? I-type ang /compact upang ibuod ang pag-uusap at magpatuloy."</string>
     <string name="tip_search_depth">"Itakda kung gaano karaming pananaliksik sa web ang ginagawa ng isang tugon mula sa header, mula sa Instant hanggang Max na pananaliksik."</string>
     <string name="tip_notifications">"I-on ang mga notification para malaman kung tapos na ang isang mahabang gawain."</string>
@@ -44,7 +44,7 @@
     <string name="tip_repo_map">"I-on ang repo map para makakuha ang ahente ng index ng mga simbolo ng iyong proyekto."</string>
     <string name="tip_caveman">"Nagbibigay ang Caveman ng mas maikling tugon at mga ulat ng token, na nagse-save ng mga token ng output."</string>
     <string name="tip_telegram">"Magpares ng Telegram bot upang magpatuloy sa mga chat at mag-edit ng mga proyekto mula sa Telegram."</string>
-    <string name="tip_config">"Ibahagi ang mga setting ng proyekto sa iyong repo sa pamamagitan ng VEXORA.json."</string>
+    <string name="tip_config">"Ibahagi ang mga setting ng proyekto sa iyong repo sa pamamagitan ng harness.json."</string>
     <string name="tip_shizuku">"I-set up ang Shizuku para magamit ng ahente ang nakataas na shell access sa iyong device."</string>
     <string name="tip_plugins">"Mag-install ng mga bundle ng plugin mula sa pahina ng Mga Plugin upang magdagdag ng mga kasanayan at tool."</string>
     <string name="tip_language">"Ang VEXORA ay magagamit sa 11 mga wika. Baguhin ito sa mga setting ng Wika."</string>

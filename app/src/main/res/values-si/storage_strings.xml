@@ -91,7 +91,7 @@
     <string name="storage_role_canvas">Canvas</string>
     <string name="storage_role_canvas_note">Canvas පුවරු සහ ඒවායේ රූප</string>
     <string name="storage_role_settings">සැකසුම් සහ වින්‍යාසය</string>
-    <string name="storage_role_settings_note">මනාප සහ VEXORA වින්‍යාසය</string>
+    <string name="storage_role_settings_note">මනාප සහ harness වින්‍යාසය</string>
     <string name="storage_role_scratch">Shell තාවකාලි අවකාශය</string>
     <string name="storage_role_scratch_note">Shell විධාන සඳහා තාවකාලි වැඩ ෆෝල්ඩර</string>
     <string name="storage_role_router">9router</string>

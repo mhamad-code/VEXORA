@@ -23,7 +23,7 @@
     <string name="tip_memory_off">"Activez la mémoire pour que VEXORA se souvienne de vos préférences et décisions lors des discussions."</string>
     <string name="tip_memory_on">"La mémoire est activée. Vous pouvez consulter ou supprimer ce dont VEXORA se souvient à tout moment."</string>
     <string name="tip_thinking">"Appuyez sur le niveau de réflexion dans l’en-tête pour échanger la vitesse contre un raisonnement plus approfondi."</string>
-    <string name="tip_glass">"Essayez VEXORA Glass pour des surfaces translucides en couches dans l\'application."</string>
+    <string name="tip_glass">"Essayez Harness Glass pour des surfaces translucides en couches dans l\'application."</string>
     <string name="tip_compact">"Vous manquez de contexte ? Tapez /compact pour résumer la conversation et continuer."</string>
     <string name="tip_search_depth">"Définissez la quantité de recherche Web effectuée par une réponse à partir de l\'en-tête, de la recherche instantanée à la recherche maximale."</string>
     <string name="tip_notifications">"Activez les notifications pour savoir quand une longue tâche est terminée."</string>

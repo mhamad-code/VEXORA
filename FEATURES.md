@@ -113,16 +113,6 @@ This is the full feature reference. For a short overview, see the [README](READM
 - **Open a pull request** from the chat (one tool, user-approved) or from the Commit & push sheet once a branch is committed and pushed. The branch is compared with its base without moving any refs, unpushed or stale branches are refused with the next step, an already-open pull request is returned instead of a duplicate, and the description is generated from the branch's commits, changed files and the build/test checks recorded in the chat, or written by hand in the sheet.
 - Save a GitHub push preset for a workspace, repository, and branch, then run it manually, hourly, or daily from Automation without an AI model. Presets wait while a task is using that workspace and record blocked or failed runs in history.
 - `doctor --github` checks the token, git transport, and the free plan's hidden protection limits in one command.
-- **Self-development.** VEXORA can build and install a new version of itself from a GitHub Actions run: dispatch `build.yml` on a feature branch, monitor it, download the signed `VEXORA.apk` artifact, and install it through the system installer. Requires GitHub connected with the "Allow editing GitHub Actions workflows" option (or a token with `workflow` scope) and a higher `versionCode` than the installed build. The agent never pushes to `main`, never touches secrets or the keystore, and asks before dispatching or installing.
-
-## Self-development (VEXORA develops itself)
-
-- **Purpose.** Let the in-app agent modify VEXORA's own source, build it in CI, and install the resulting APK — a full closed loop without a computer.
-- **Prerequisites.** GitHub connected with a token carrying `repo` + `workflow`; the repository imported as a workspace (`https://github.com/mhamad-code/VEXORA.git`); the installed app at 3.5 or newer (versionCode 39).
-- **Entry point.** Skill `self-dev-agent` (Settings → Skills, or "use the self-dev-agent skill" in chat). It walks the agent through: import/open the workspace, create branch `self-dev/<topic>`, edit files, bump `versionCode` in `app/build.gradle.kts`, commit and push (approval), dispatch the build (approval), poll runs, download the artifact, install (approval).
-- **Safety.** No push to `main`; no edits to the keystore, secrets, or signing steps; install only through the system installer (user confirms); build runs on GitHub Actions (~17 minutes) rather than on the device.
-- **Note on triggers.** Pushes to a feature branch do not start the workflow (only `main`/`master` do), so the agent must call `github_workflow_dispatch` with `ref=<branch>`.
-- **Files.** `app/src/main/java/com/agent/mhamed/tools/SelfDevTools.kt` (four tools), registered in `HarnessApp.kt`, skill at `assets/skills/self-dev-agent/SKILL.md`, plan in `docs/ARCHITECTURE.md` §8.
 
 ## Remote development over SSH
 

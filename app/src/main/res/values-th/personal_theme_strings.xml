@@ -20,12 +20,12 @@
     <string name="theme_custom_delete">"ลบชุดสี"</string>
     <string name="theme_custom_delete_message">"ลบชุดสีที่บันทึกไว้นี้ไหม แอปจะกลับสู่ค่าที่ตั้งไว้ล่วงหน้าที่เลือกไว้หากชุดสีนี้ทำงานอยู่"</string>
     <string name="theme_custom_preview">"ดูตัวอย่างชุดสี"</string>
-    <string name="theme_canvas_title">"ผ้าใบ VEXORA"</string>
+    <string name="theme_canvas_title">"ผ้าใบ Harness"</string>
     <string name="theme_canvas_description">"ฉากหลังของคุณเองสำหรับ Chat และ Code"</string>
     <string name="theme_canvas_add">"เพิ่มรูปภาพ"</string>
     <string name="theme_canvas_change">"เปลี่ยนภาพ"</string>
     <string name="theme_canvas_remove">"ลบรูปภาพ"</string>
-    <string name="theme_canvas_enabled">"แสดงแคนวาส VEXORA"</string>
+    <string name="theme_canvas_enabled">"แสดงแคนวาส Harness"</string>
     <string name="theme_canvas_chat">"Chat"</string>
     <string name="theme_canvas_code">"Code"</string>
     <string name="theme_canvas_dim">"ภาพลดแสง"</string>

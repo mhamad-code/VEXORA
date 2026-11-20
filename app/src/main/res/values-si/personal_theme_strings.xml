@@ -19,12 +19,12 @@
     <string name="theme_custom_delete">පුවරුව මකන්න</string>
     <string name="theme_custom_delete_message">මෙම සුරැකි පුවරුව ඉවත් කරන්නද? මෙම පුවරුව සක්‍රීය නම් යෙදුම තෝරාගත් පෙර සැකසුමට ආපසු යයි.</string>
     <string name="theme_custom_preview">පුවරු පෙරදසුන</string>
-    <string name="theme_canvas_title">VEXORA Canvas</string>
+    <string name="theme_canvas_title">Harness Canvas</string>
     <string name="theme_canvas_description">චැට් සහ කේත සඳහා ඔබේම පසුබිම.</string>
     <string name="theme_canvas_add">රූපයක් එකතු කරන්න</string>
     <string name="theme_canvas_change">රූපය වෙනස් කරන්න</string>
     <string name="theme_canvas_remove">රූපය ඉවත් කරන්න</string>
-    <string name="theme_canvas_enabled">VEXORA Canvas පෙන්වන්න</string>
+    <string name="theme_canvas_enabled">Harness Canvas පෙන්වන්න</string>
     <string name="theme_canvas_chat">චැට්</string>
     <string name="theme_canvas_code">කේතය</string>
     <string name="theme_canvas_dim">රූපය අඳුරු කිරීම</string>

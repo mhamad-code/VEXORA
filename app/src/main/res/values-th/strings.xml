@@ -335,7 +335,7 @@
     <string name="settings_action_disconnect">"ยกเลิกการเชื่อมต่อ"</string>
     <string name="settings_local_models_on_device">"บนโทรศัพท์เครื่องนี้"</string>
     <string name="settings_local_models_system_tools">"คำแนะนำระบบและเครื่องมือ"</string>
-    <string name="settings_local_models_system_tools_desc">"ปิดโดยค่าเริ่มต้น โมเดลท้องถิ่นจะได้รับเฉพาะข้อความแชทของคุณเท่านั้น เปิดเพื่อให้พวกเขาใช้คำสั่งและเครื่องมือ VEXORA ในการทำงานในโครงการของคุณ"</string>
+    <string name="settings_local_models_system_tools_desc">"ปิดโดยค่าเริ่มต้น โมเดลท้องถิ่นจะได้รับเฉพาะข้อความแชทของคุณเท่านั้น เปิดเพื่อให้พวกเขาใช้คำสั่งและเครื่องมือ Harness ในการทำงานในโครงการของคุณ"</string>
     <string name="settings_local_models_system_tools_warning">"การเปิดใช้งานนี้จะเพิ่มอินพุตจำนวนมาก ใช้หน่วยความจำและพลังการประมวลผลมากขึ้น และอาจใช้เวลาหลายนาทีก่อนที่การตอบกลับจะเริ่มต้น การเปลี่ยนแปลงมีผลกับการตอบกลับครั้งถัดไป"</string>
     <string name="settings_local_models_yours">"โมเดลของคุณ"</string>
     <string name="settings_local_models_empty_title">"ยังไม่มีโมเดลเพิ่ม"</string>
@@ -484,7 +484,7 @@
     <string name="settings_storage_no_manifest">"การติดตั้งแบบเก่านี้ไม่มีไฟล์ Manifest ไม่ทราบความเป็นเจ้าของ ขนาด และการใช้พื้นที่ทำงาน การกำจัดยังคงได้รับการปกป้อง"</string>
     <string name="settings_storage_unverified">"ไม่สามารถตรวจสอบไฟล์ที่เป็นเจ้าของบางไฟล์ได้ แพ็คเกจนี้ยังคงได้รับการคุ้มครอง"</string>
     <string name="settings_storage_release_confirm">"ข้อกำหนดในการเผยแพร่"</string>
-    <string name="settings_storage_release_note">"การใช้งานที่บันทึกไว้อาจไม่รวมคำสั่งที่เริ่มต้นภายนอก VEXORA เก็บข้อกำหนดสำหรับพื้นที่ทำงานใดๆ ที่ยังคงใช้เครื่องมือนี้"</string>
+    <string name="settings_storage_release_note">"การใช้งานที่บันทึกไว้อาจไม่รวมคำสั่งที่เริ่มต้นภายนอก Harness เก็บข้อกำหนดสำหรับพื้นที่ทำงานใดๆ ที่ยังคงใช้เครื่องมือนี้"</string>
     <string name="settings_storage_cleanup_skip_note">"ไฟล์ที่เปลี่ยนแปลงหรือเชื่อมโยงจะถูกข้าม โฟลเดอร์ต้นทาง โมเดล และข้อมูลการกู้คืนจะถูกเก็บไว้"</string>
     <string name="settings_subagent_choose_model">"เลือกรูปแบบเอเจนต์ย่อย"</string>
     <string name="settings_subagent_use_main">"ใช้โมเดลเอเจนต์หลัก"</string>
@@ -979,7 +979,7 @@
     <string name="dhizuku_denied">"การเข้าถึงถูกปฏิเสธ · ให้สิทธิ์การเข้าถึงใน Dhizuku"</string>
     <string name="dhizuku_error">"การเชื่อมต่อล้มเหลว · ตรวจสอบ Dhizuku แล้วลองอีกครั้ง"</string>
     <string name="settings_language_sinhala">"සිංහල"</string>
-    <string name="glass_title">"กระจก VEXORA (ทดลอง)"</string>
+    <string name="glass_title">"กระจก AHarness (ทดลอง)"</string>
     <string name="glass_description">"เอฟเฟกต์กระจกสำหรับการนำทาง การควบคุม และการ์ด"</string>
     <string name="glass_enable">"กระจกฝ้า"</string>
     <string name="glass_enable_hint">"ใช้พื้นผิวโปร่งแสงพร้อมพื้นหลังเบลออย่างนุ่มนวล"</string>
@@ -1015,9 +1015,9 @@
     <string name="auto_compact_saved">แชทนี้จะบีบอัดอัตโนมัติที่ประมาณ %1$s โทเค็นบริบทแล้วดำเนินการต่อ โดยสงวนพื้นที่สำหรับคำตอบ</string>
     <string name="auto_compact_reset">ทำตามค่าเริ่มต้น: บีบอัดอัตโนมัติที่ประมาณ %1$s โทเค็นบริบท</string>
     <string name="tip_auto_compact">ใช้ /autocompact 350K เพื่อสรุปบริบทอัตโนมัติที่ 350,000 โทเค็นและดำเนินแชทนี้ต่อ รองรับ 258K หรือ 1M ด้วย /autocompact default ทำตาม การตั้งค่า → การเขียนโค้ด → พฤติกรรมเอเจนต์</string>
-    <string name="harness_free_quota_title">"โควตาฟรีของ VEXORA หมดแล้ว"</string>
+    <string name="harness_free_quota_title">"โควตาฟรีของ Harness หมดแล้ว"</string>
     <string name="harness_free_quota_body">"โควตาฟรีใช้ร่วมกันในเครือข่ายของคุณและรีเซ็ตเป็นรายชั่วโมง โปรดรอการรีเซ็ต หรือสลับผู้ให้บริการเพื่อดำเนินการต่อ"</string>
-    <string name="harness_free_rate_title">"โมเดลฟรีของ VEXORA ถูกจำกัดชั่วคราว"</string>
+    <string name="harness_free_rate_title">"โมเดลฟรีของ Harness ถูกจำกัดชั่วคราว"</string>
     <string name="harness_free_rate_body">"โมเดลนี้ไม่ว่างหรือถูกจำกัดอัตราชั่วคราว ลองอีกครั้งในไม่ช้า หรือสลับผู้ให้บริการเพื่อดำเนินการต่อ"</string>
     <string name="harness_switch_provider">"สลับผู้ให้บริการ"</string>
     <string name="harness_free_wait">"ฉันจะรอ"</string>

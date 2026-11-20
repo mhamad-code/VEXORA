@@ -27,7 +27,7 @@
     <string name="sk_copy">コピー</string>
     <string name="sk_copied">スキルをコピーしました</string>
     <string name="sk_copy_note">保存すると自分のコピーが保持され、同梱のスキルが置き換わります。元に戻すには後で自分のコピーを削除してください。</string>
-    <string name="sk_workspace_note">このスキルはワークスペースの .VEXORA/skills フォルダーにあります。そこで編集してください。</string>
+    <string name="sk_workspace_note">このスキルはワークスペースの .harness/skills フォルダーにあります。そこで編集してください。</string>
     <string name="sk_preview">プレビュー</string>
     <string name="sk_markdown">Markdown</string>
     <string name="sk_files">ファイル (%1$d)</string>

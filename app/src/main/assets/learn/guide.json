@@ -136,7 +136,7 @@
       "steps": [
         {
           "title": "Choose a model",
-          "body": "Tap the model name. Choose VEXORA if a built-in free model is available, a provider you connected, a signed-in ChatGPT account, or an installed local model."
+          "body": "Tap the model name. Choose Harness if a built-in free model is available, a provider you connected, a signed-in ChatGPT account, or an installed local model."
         },
         {
           "title": "Start with a small request",
@@ -153,7 +153,7 @@
       ],
       "outcome": "A reply appears in your conversation, and you can ask a follow-up.",
       "limits": [
-        "VEXORA free-model availability and limits are controlled by its upstream services; free access is not guaranteed.",
+        "Harness free-model availability and limits are controlled by its upstream services; free access is not guaranteed.",
         "Regular Chat does not require Linux, GitHub, root, or wireless debugging. Hosted replies still require a working connection and provider access."
       ],
       "fixes": [
@@ -4830,7 +4830,7 @@
           "body": "Use wallpaper-derived colors where supported, a built-in palette, or a custom palette. In custom palettes, save the intended colors, select the palette, and review the preview."
         },
         {
-          "title": "Add a VEXORA Canvas",
+          "title": "Add a Harness Canvas",
           "body": "Add a photo/artwork, choose whether it appears in Chat and Code, adjust image dimming for readability, and optionally match app colors to it. Change/remove the image from the same section."
         },
         {

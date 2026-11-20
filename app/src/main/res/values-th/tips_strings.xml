@@ -23,7 +23,7 @@
     <string name="tip_memory_off">"เปิดหน่วยความจำเพื่อให้ VEXORA จดจำการตั้งค่าและการตัดสินใจของคุณในการแชท"</string>
     <string name="tip_memory_on">"หน่วยความจำเปิดอยู่ คุณสามารถตรวจสอบหรือลบสิ่งที่ VEXORA จดจำได้ตลอดเวลา"</string>
     <string name="tip_thinking">"แตะระดับการคิดในส่วนหัวเพื่อความเร็วในการซื้อขายเพื่อเหตุผลเชิงลึก"</string>
-    <string name="tip_glass">"ลองใช้ VEXORA Glass สำหรับพื้นผิวโปร่งแสงเป็นชั้นทั่วทั้งแอป"</string>
+    <string name="tip_glass">"ลองใช้ Harness Glass สำหรับพื้นผิวโปร่งแสงเป็นชั้นทั่วทั้งแอป"</string>
     <string name="tip_compact">"เหลือบริบทน้อยใช่ไหม? พิมพ์ /compact เพื่อสรุปการสนทนาและดำเนินการต่อ"</string>
     <string name="tip_search_depth">"กำหนดจำนวนการตอบกลับจากการค้นคว้าเว็บจากส่วนหัว ตั้งแต่การค้นคว้าทันใจไปจนถึงการค้นคว้าสูงสุด"</string>
     <string name="tip_notifications">"เปิดการแจ้งเตือนเพื่อทราบเมื่องานที่ยาวนานเสร็จสิ้น"</string>
@@ -44,7 +44,7 @@
     <string name="tip_repo_map">"เปิดแผนที่ซื้อคืนเพื่อให้เอเจนต์ได้รับดัชนีสัญลักษณ์ของโครงการของคุณ"</string>
     <string name="tip_caveman">"Caveman ให้การตอบกลับที่สั้นกว่าและรายงานโทเค็น ซึ่งบันทึกโทเค็นเอาต์พุต"</string>
     <string name="tip_telegram">"จับคู่บอต Telegram เพื่อแชทต่อและแก้ไขโปรเจ็กต์จาก Telegram"</string>
-    <string name="tip_config">"แชร์การตั้งค่าโปรเจ็กต์กับ repo ของคุณผ่าน VEXORA.json"</string>
+    <string name="tip_config">"แชร์การตั้งค่าโปรเจ็กต์กับ repo ของคุณผ่าน harness.json"</string>
     <string name="tip_shizuku">"ตั้งค่า Shizuku เพื่อให้เอเจนต์ใช้การเข้าถึงเชลล์แบบยกระดับบนอุปกรณ์ของคุณได้"</string>
     <string name="tip_plugins">"ติดตั้งชุดปลั๊กอินจากหน้าปลั๊กอินเพื่อเพิ่มทักษะและเครื่องมือ"</string>
     <string name="tip_language">"VEXORA ให้บริการใน 11 ภาษา เปลี่ยนในการตั้งค่าภาษา"</string>

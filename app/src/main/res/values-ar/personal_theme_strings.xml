@@ -19,12 +19,12 @@
     <string name="theme_custom_delete">حذف لوحة</string>
     <string name="theme_custom_delete_message">إزالة هذه اللوحة المحفوظة؟ سيعود التطبيق إلى المجموعة المحددة إذا كانت هذه اللوحة نشطة.</string>
     <string name="theme_custom_preview">معاينة اللوحة</string>
-    <string name="theme_canvas_title">VEXORA Canvas</string>
+    <string name="theme_canvas_title">Harness Canvas</string>
     <string name="theme_canvas_description">خلفيتك الخاصة للدردشة والرمز.</string>
     <string name="theme_canvas_add">إضافة صورة</string>
     <string name="theme_canvas_change">تغيير الصورة</string>
     <string name="theme_canvas_remove">إزالة الصورة</string>
-    <string name="theme_canvas_enabled">إظهار VEXORA Canvas</string>
+    <string name="theme_canvas_enabled">إظهار Harness Canvas</string>
     <string name="theme_canvas_chat">الدردشة</string>
     <string name="theme_canvas_code">الرمز</string>
     <string name="theme_canvas_dim">تعتيم الصورة</string>

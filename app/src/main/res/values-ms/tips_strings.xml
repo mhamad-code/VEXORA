@@ -23,7 +23,7 @@
     <string name="tip_memory_off">"Hidupkan memori supaya VEXORA mengingati pilihan dan keputusan anda merentas sembang."</string>
     <string name="tip_memory_on">"Memori dihidupkan. Anda boleh menyemak atau memadam perkara yang VEXORA ingat pada bila-bila masa."</string>
     <string name="tip_thinking">"Ketik tahap pemikiran dalam pengepala untuk menukar kelajuan untuk alasan yang lebih mendalam."</string>
-    <string name="tip_glass">"Cuba VEXORA Glass untuk permukaan lut sinar dan berlapis di seluruh apl."</string>
+    <string name="tip_glass">"Cuba Harness Glass untuk permukaan lut sinar dan berlapis di seluruh apl."</string>
     <string name="tip_compact">"Kehabisan konteks? Taip /compact untuk meringkaskan perbualan dan teruskan."</string>
     <string name="tip_search_depth">"Tetapkan jumlah penyelidikan web yang dilakukan oleh balasan daripada pengepala, daripada penyelidikan Semerta kepada Max."</string>
     <string name="tip_notifications">"Hidupkan pemberitahuan untuk mengetahui apabila tugas yang panjang selesai."</string>
@@ -44,7 +44,7 @@
     <string name="tip_repo_map">"Hidupkan peta repo supaya ejen mendapat indeks simbol projek anda."</string>
     <string name="tip_caveman">"Caveman memberikan balasan yang lebih pendek dan laporan token, yang menjimatkan token output."</string>
     <string name="tip_telegram">"Gandingkan bot Telegram untuk meneruskan sembang dan mengedit projek daripada Telegram."</string>
-    <string name="tip_config">"Kongsi tetapan projek dengan repo anda melalui VEXORA.json."</string>
+    <string name="tip_config">"Kongsi tetapan projek dengan repo anda melalui harness.json."</string>
     <string name="tip_shizuku">"Sediakan Shizuku supaya ejen boleh menggunakan akses cengkerang tinggi pada peranti anda."</string>
     <string name="tip_plugins">"Pasang himpunan pemalam daripada halaman Pemalam untuk menambah kemahiran dan alatan."</string>
     <string name="tip_language">"VEXORA tersedia dalam 11 bahasa. Tukar dalam tetapan Bahasa."</string>

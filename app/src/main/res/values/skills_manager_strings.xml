@@ -27,7 +27,7 @@
     <string name="sk_copy">Copy</string>
     <string name="sk_copied">Skill copied</string>
     <string name="sk_copy_note">Saving keeps your own copy, which replaces the bundled skill. Delete your copy later to go back to the original.</string>
-    <string name="sk_workspace_note">This skill lives in the workspace\'s .VEXORA/skills folder. Edit it there.</string>
+    <string name="sk_workspace_note">This skill lives in the workspace\'s .harness/skills folder. Edit it there.</string>
     <string name="sk_preview">Preview</string>
     <string name="sk_markdown">Markdown</string>
     <string name="sk_files">Files (%1$d)</string>

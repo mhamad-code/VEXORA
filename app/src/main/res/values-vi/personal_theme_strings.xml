@@ -20,12 +20,12 @@
     <string name="theme_custom_delete">"Xóa bảng màu"</string>
     <string name="theme_custom_delete_message">"Xóa bảng màu đã lưu này? Ứng dụng sẽ trở về cài đặt trước đã chọn nếu bảng màu này được kích hoạt."</string>
     <string name="theme_custom_preview">"Xem trước bảng màu"</string>
-    <string name="theme_canvas_title">"Vải VEXORA"</string>
+    <string name="theme_canvas_title">"Vải Harness"</string>
     <string name="theme_canvas_description">"Phông nền của riêng bạn cho Chat và Code."</string>
     <string name="theme_canvas_add">"Thêm hình ảnh"</string>
     <string name="theme_canvas_change">"Thay đổi hình ảnh"</string>
     <string name="theme_canvas_remove">"Xóa hình ảnh"</string>
-    <string name="theme_canvas_enabled">"Hiển thị Canvas VEXORA"</string>
+    <string name="theme_canvas_enabled">"Hiển thị Canvas Harness"</string>
     <string name="theme_canvas_chat">"Chat"</string>
     <string name="theme_canvas_code">"Code"</string>
     <string name="theme_canvas_dim">"Làm mờ hình ảnh"</string>

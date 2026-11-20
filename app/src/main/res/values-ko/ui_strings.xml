@@ -494,7 +494,7 @@
     <string name="ui_reasoning_and_thinking_tokens_are_billed_as">"추론 및 사고 토큰은 출력으로 청구되며 입력으로 다시 전송되지 않습니다."</string>
     <string name="ui_scheduled_messages">"예약된 메시지"</string>
     <string name="ui_allow_workspace_mcp_servers">"작업 공간 MCP 서버를 허용하시겠습니까?"</string>
-    <string name="ui_this_workspace_ships_a_harness_mcp_json">"이 작업공간은 연결하려는 .VEXORA/mcp.json: %1$s를 제공합니다. "</string>
+    <string name="ui_this_workspace_ships_a_harness_mcp_json">"이 작업공간은 연결하려는 .harness/mcp.json: %1$s를 제공합니다. "</string>
     <string name="ui_its_servers_can_run_local_commands_and">"해당 서버는 로컬 명령을 실행하고 네트워크에 연결할 수 있습니다. "</string>
     <string name="ui_only_approve_configs_you_trust">"신뢰할 수 있는 구성만 승인하세요."</string>
     <string name="ui_approve">"승인하다"</string>
@@ -1052,14 +1052,14 @@
     <string name="ui_ready">"준비"</string>
     <string name="ui_local_semantic_code_graph_for_symbols_callers">"기호, 호출자, 영향 및 영향을 받는 테스트에 대한 로컬 의미 코드 그래프"</string>
     <string name="ui_working">"일하는 중…"</string>
-    <string name="ui_harness_installs_codegraph_into_its_private_linux">"VEXORA는 필요한 노드 런타임과 함께 약 170MB의 프라이빗 Linux 환경에 CodeGraph를 설치합니다. 에이전트를 위한 Termux 앱, Shizuku 및 별도의 CodeGraph 설정이 없습니다."</string>
+    <string name="ui_harness_installs_codegraph_into_its_private_linux">"Harness는 필요한 노드 런타임과 함께 약 170MB의 프라이빗 Linux 환경에 CodeGraph를 설치합니다. 에이전트를 위한 Termux 앱, Shizuku 및 별도의 CodeGraph 설정이 없습니다."</string>
     <string name="ui_no_workspace">"작업공간 없음"</string>
     <string name="ui_this_workspace_does_not_expose_a_real">"이 작업공간은 실제 filesystem 경로를 노출하지 않습니다."</string>
     <string name="ui_indexed">"색인이 생성됨"</string>
     <string name="ui_not_indexed">"색인이 생성되지 않음"</string>
     <string name="ui_codegraph_needs_a_shell_capable_workspace_with">"CodeGraph에는 실제 장치 경로가 있는 셸 가능 작업 공간이 필요합니다."</string>
     <string name="ui_install_codegraph_first_then_enable_it_for">"먼저 CodeGraph를 설치한 다음 이 작업 공간에 대해 활성화하세요."</string>
-    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"이 작업 영역이 인덱싱되면 VEXORA는 CodeGraph 탐색, node, 영향, 영향을 받는 테스트 및 동기화 도구를 코딩 에이전트에 노출합니다. 그래프를 읽기 전에 동기화된 변경된 파일을 쿼리합니다."</string>
+    <string name="ui_when_this_workspace_is_indexed_harness_exposes">"이 작업 영역이 인덱싱되면 Harness는 CodeGraph 탐색, node, 영향, 영향을 받는 테스트 및 동기화 도구를 코딩 에이전트에 노출합니다. 그래프를 읽기 전에 동기화된 변경된 파일을 쿼리합니다."</string>
     <string name="ui_keyless">"열쇠가 없는"</string>
     <string name="ui_public_search_engines_no_setup">"공개 검색 엔진, 설정 없음"</string>
     <string name="ui_key_saved">"%1$s · 키 저장됨"</string>

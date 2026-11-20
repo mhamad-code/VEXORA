@@ -23,7 +23,7 @@
     <string name="tip_memory_off">"VEXORA가 채팅 전반에 걸쳐 귀하의 선호 사항과 결정을 기억할 수 있도록 메모리를 켜십시오."</string>
     <string name="tip_memory_on">"메모리가 켜져 있습니다. VEXORA가 기억하는 내용은 언제든지 검토하거나 삭제할 수 있습니다."</string>
     <string name="tip_thinking">"더 깊은 추론을 위해 속도를 바꾸려면 헤더의 사고 수준을 탭하세요."</string>
-    <string name="tip_glass">"앱 전체에 걸쳐 반투명하고 층이 있는 표면을 구현하려면 VEXORA Glass를 사용해 보세요."</string>
+    <string name="tip_glass">"앱 전체에 걸쳐 반투명하고 층이 있는 표면을 구현하려면 Harness Glass를 사용해 보세요."</string>
     <string name="tip_compact">"맥락이 부족합니까? 대화를 요약하고 계속하려면 /compact를 입력하세요."</string>
     <string name="tip_search_depth">"인스턴트부터 최대 조사까지 응답이 헤더에서 수행하는 웹 조사의 양을 설정합니다."</string>
     <string name="tip_notifications">"긴 작업이 언제 완료되는지 알려면 알림을 켜세요."</string>
@@ -44,7 +44,7 @@
     <string name="tip_repo_map">"에이전트가 프로젝트 기호의 색인을 얻을 수 있도록 저장소 맵을 켜십시오."</string>
     <string name="tip_caveman">"Caveman는 더 짧은 응답과 토큰 보고서를 제공하여 출력 토큰을 저장합니다."</string>
     <string name="tip_telegram">"Telegram 봇을 페어링하여 Telegram에서 채팅을 계속하고 프로젝트를 편집하세요."</string>
-    <string name="tip_config">"VEXORA.json을 통해 프로젝트 설정을 리포지토리와 공유하세요."</string>
+    <string name="tip_config">"Harness.json을 통해 프로젝트 설정을 리포지토리와 공유하세요."</string>
     <string name="tip_shizuku">"에이전트가 장치에서 향상된 셸 액세스를 사용할 수 있도록 Shizuku를 설정합니다."</string>
     <string name="tip_plugins">"기술과 도구를 추가하려면 플러그인 페이지에서 플러그인 번들을 설치하세요."</string>
     <string name="tip_language">"VEXORA는 11개 언어로 제공됩니다. 언어 설정에서 변경하세요."</string>

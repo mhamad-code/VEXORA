@@ -19,12 +19,12 @@
     <string name="theme_custom_delete">删除调色板</string>
     <string name="theme_custom_delete_message">移除这个已保存的调色板？如果它正在使用中，应用会回到所选预设。</string>
     <string name="theme_custom_preview">调色板预览</string>
-    <string name="theme_canvas_title">VEXORA Canvas</string>
+    <string name="theme_canvas_title">Harness Canvas</string>
     <string name="theme_canvas_description">专属于你的聊天和代码背景。</string>
     <string name="theme_canvas_add">添加图片</string>
     <string name="theme_canvas_change">更换图片</string>
     <string name="theme_canvas_remove">移除图片</string>
-    <string name="theme_canvas_enabled">显示 VEXORA Canvas</string>
+    <string name="theme_canvas_enabled">显示 Harness Canvas</string>
     <string name="theme_canvas_chat">聊天</string>
     <string name="theme_canvas_code">代码</string>
     <string name="theme_canvas_dim">图片压暗</string>

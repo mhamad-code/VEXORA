@@ -27,7 +27,7 @@
     <string name="sk_copy">نسخ</string>
     <string name="sk_copied">تم نسخ المهارة</string>
     <string name="sk_copy_note">عند الحفظ تبقى نسختك الخاصة، وهي تحل محل المهارة المضمّنة. احذف نسختك لاحقًا للعودة إلى الأصل.</string>
-    <string name="sk_workspace_note">توجد هذه المهارة في مجلد .VEXORA/skills بمساحة العمل. عدّلها هناك.</string>
+    <string name="sk_workspace_note">توجد هذه المهارة في مجلد .harness/skills بمساحة العمل. عدّلها هناك.</string>
     <string name="sk_preview">معاينة</string>
     <string name="sk_markdown">Markdown</string>
     <string name="sk_files">الملفات (%1$d)</string>

@@ -335,7 +335,7 @@
     <string name="settings_action_disconnect">"斷開連線"</string>
     <string name="settings_local_models_on_device">"本機"</string>
     <string name="settings_local_models_system_tools">"系統指令與工具"</string>
-    <string name="settings_local_models_system_tools_desc">"預設關閉。本地模型只接收你的對話訊息。開啟後它們可以使用 VEXORA 的指令和工具來處理你的專案。"</string>
+    <string name="settings_local_models_system_tools_desc">"預設關閉。本地模型只接收你的對話訊息。開啟後它們可以使用 Harness 的指令和工具來處理你的專案。"</string>
     <string name="settings_local_models_system_tools_warning">"開啟後會大幅增加輸入量，佔用更多記憶體和算力，並且可能需要數分鐘才開始回覆。更改在下一次回覆時生效。"</string>
     <string name="settings_local_models_yours">"你的模型"</string>
     <string name="settings_local_models_empty_title">"尚未新增模型"</string>
@@ -484,7 +484,7 @@
     <string name="settings_storage_no_manifest">"這個較早的安裝沒有檔案清單。歸屬、大小和工作區佔用情況未知；因此保持刪除保護。"</string>
     <string name="settings_storage_unverified">"部分歸屬檔案無法校驗。此軟體包保持保護狀態。"</string>
     <string name="settings_storage_release_confirm">"釋放需求"</string>
-    <string name="settings_storage_release_note">"記錄的用途可能不包含在 VEXORA 之外啟動的命令。仍在使用此工具的工作區請保留需求。"</string>
+    <string name="settings_storage_release_note">"記錄的用途可能不包含在 Harness 之外啟動的命令。仍在使用此工具的工作區請保留需求。"</string>
     <string name="settings_storage_cleanup_skip_note">"已更改或連結的檔案會被跳過。原始碼目錄、模型和恢復資料會保留。"</string>
     <string name="settings_subagent_choose_model">"選擇子代理模型"</string>
     <string name="settings_subagent_use_main">"使用主代理模型"</string>
@@ -970,7 +970,7 @@
     <string name="dhizuku_denied">"訪問被拒絕 · 請在 Dhizuku 中授權"</string>
     <string name="dhizuku_error">"連線失敗 · 請檢查 Dhizuku 後重試"</string>
     <string name="settings_language_sinhala">"සිංහල"</string>
-    <string name="glass_title">"VEXORA Glass(實驗性)"</string>
+    <string name="glass_title">"AHarness Glass(實驗性)"</string>
     <string name="glass_description">"為導航、控制元件和卡片新增玻璃效果。"</string>
     <string name="glass_enable">"毛玻璃"</string>
     <string name="glass_enable_hint">"使用半透明表面和柔和的模糊背景。"</string>
@@ -1015,9 +1015,9 @@
     <string name="auto_compact_saved">"此對話將在約 %1$s 個上下文 Token 時自動壓縮後繼續。已保留回覆空間。"</string>
     <string name="auto_compact_reset">"跟隨預設值：在約 %1$s 個上下文 Token 時自動壓縮。"</string>
     <string name="tip_auto_compact">"使用 /autocompact 350K 可在 350,000 個 Token 時自動總結上下文並繼續此對話。也接受 258K 或 1M。/autocompact default 跟隨設定 → 程式設計 → 代理程式行為。"</string>
-    <string name="harness_free_quota_title">"VEXORA 免費額度已用完"</string>
+    <string name="harness_free_quota_title">"Harness 免費額度已用完"</string>
     <string name="harness_free_quota_body">"免費額度由你的網路共用，並按小時重置。請等待重置，或切換供應商以繼續。"</string>
-    <string name="harness_free_rate_title">"VEXORA 免費模型暫時受限"</string>
+    <string name="harness_free_rate_title">"Harness 免費模型暫時受限"</string>
     <string name="harness_free_rate_body">"此模型暫時繁忙或受到速率限制。請稍後重試，或切換供應商以繼續。"</string>
     <string name="harness_switch_provider">"切換供應商"</string>
     <string name="harness_free_wait">"我會等待"</string>

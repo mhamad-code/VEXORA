@@ -335,7 +335,7 @@
     <string name="settings_action_disconnect">"연결 끊기"</string>
     <string name="settings_local_models_on_device">"이 전화에서"</string>
     <string name="settings_local_models_system_tools">"시스템 지침 및 도구"</string>
-    <string name="settings_local_models_system_tools_desc">"기본적으로 꺼져 있습니다. 로컬 모델은 채팅 메시지만 받습니다. VEXORA 지침과 도구를 사용하여 프로젝트 작업을 수행할 수 있도록 하려면 켜십시오."</string>
+    <string name="settings_local_models_system_tools_desc">"기본적으로 꺼져 있습니다. 로컬 모델은 채팅 메시지만 받습니다. Harness 지침과 도구를 사용하여 프로젝트 작업을 수행할 수 있도록 하려면 켜십시오."</string>
     <string name="settings_local_models_system_tools_warning">"이 기능을 활성화하면 많은 입력이 추가되고 더 많은 메모리와 처리 능력이 사용되며 응답이 시작되기까지 몇 분이 걸릴 수 있습니다. 변경사항은 다음 답변에 적용됩니다."</string>
     <string name="settings_local_models_yours">"귀하의 모델"</string>
     <string name="settings_local_models_empty_title">"아직 추가된 모델이 없습니다."</string>
@@ -484,7 +484,7 @@
     <string name="settings_storage_no_manifest">"이 이전 설치에는 파일 매니페스트가 없습니다. 소유권, 규모, 작업공간 사용량은 알 수 없습니다. 제거는 보호된 상태로 유지됩니다."</string>
     <string name="settings_storage_unverified">"소유한 일부 파일을 확인할 수 없습니다. 이 패키지는 보호된 상태로 유지됩니다."</string>
     <string name="settings_storage_release_confirm">"릴리스 요구 사항"</string>
-    <string name="settings_storage_release_note">"기록된 사용에는 VEXORA 외부에서 시작된 명령이 포함되지 않을 수 있습니다. 이 도구를 계속 사용하는 작업공간에 대한 요구사항을 유지하세요."</string>
+    <string name="settings_storage_release_note">"기록된 사용에는 Harness 외부에서 시작된 명령이 포함되지 않을 수 있습니다. 이 도구를 계속 사용하는 작업공간에 대한 요구사항을 유지하세요."</string>
     <string name="settings_storage_cleanup_skip_note">"변경되거나 링크된 파일은 건너뜁니다. 소스 폴더, 모델 및 복구 데이터는 그대로 유지됩니다."</string>
     <string name="settings_subagent_choose_model">"하위 에이전트 모델 선택"</string>
     <string name="settings_subagent_use_main">"주체 모델 사용"</string>
@@ -1015,9 +1015,9 @@
     <string name="auto_compact_saved">"이 채팅은 약 %1$s 컨텍스트 토큰에서 자동 압축한 후 계속합니다. 답변 공간은 남겨 둡니다."</string>
     <string name="auto_compact_reset">"기본값을 따릅니다: 약 %1$s 컨텍스트 토큰에서 자동 압축."</string>
     <string name="tip_auto_compact">"/autocompact 350K를 사용하면 350,000 토큰에서 컨텍스트를 자동 요약하고 이 채팅을 계속합니다. 258K 또는 1M도 사용할 수 있습니다. /autocompact default는 설정 → 코딩 → 에이전트 동작을 따릅니다."</string>
-    <string name="harness_free_quota_title">"VEXORA 무료 한도가 소진되었습니다"</string>
+    <string name="harness_free_quota_title">"Harness 무료 한도가 소진되었습니다"</string>
     <string name="harness_free_quota_body">"무료 허용량은 네트워크 전체가 공유하며 매시간 갱신됩니다. 초기화될 때까지 기다리거나 공급자를 전환해 계속하세요."</string>
-    <string name="harness_free_rate_title">"VEXORA 무료 모델이 일시적으로 제한되었습니다"</string>
+    <string name="harness_free_rate_title">"Harness 무료 모델이 일시적으로 제한되었습니다"</string>
     <string name="harness_free_rate_body">"이 모델은 일시적으로 혼잡하거나 속도가 제한되었습니다. 잠시 후 다시 시도하거나 공급자를 전환해 계속하세요."</string>
     <string name="harness_switch_provider">"공급자 전환"</string>
     <string name="harness_free_wait">"기다릴게요"</string>

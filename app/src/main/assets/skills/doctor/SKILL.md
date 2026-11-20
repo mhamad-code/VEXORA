@@ -4,7 +4,7 @@ description: Run a self-test battery of every harness tool family and report pas
 category: software-development
 ---
 
-# VEXORA Doctor
+# Harness Doctor
 
 Self-test battery verifying every tool family, sandbox bounds, regressions, and subagents.
 

@@ -27,7 +27,7 @@
     <string name="sk_copy">Копировать</string>
     <string name="sk_copied">Навык скопирован</string>
     <string name="sk_copy_note">При сохранении остаётся ваша копия, которая заменяет встроенный навык. Удалите свою копию позже, чтобы вернуться к оригиналу.</string>
-    <string name="sk_workspace_note">Этот навык находится в папке .VEXORA/skills рабочей области. Измените его там.</string>
+    <string name="sk_workspace_note">Этот навык находится в папке .harness/skills рабочей области. Измените его там.</string>
     <string name="sk_preview">Предпросмотр</string>
     <string name="sk_markdown">Markdown</string>
     <string name="sk_files">Файлы (%1$d)</string>
