@@ -4,6 +4,8 @@ import android.content.Context
 import com.agent.mhamed.tools.ToolResult
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.io.File
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
@@ -20,6 +22,8 @@ internal class AccessRequest(
 internal class VerifiedDeviceAccess(val backend: DeviceBackend, val uid: Int?) : AbstractCoroutineContextElement(Key) {
     companion object Key : CoroutineContext.Key<VerifiedDeviceAccess>
 }
+
+private val ROOT_MODES = setOf(AccessMode.AUTO, AccessMode.ROOT, AccessMode.BOTH)
 
 class DeviceAccessManager(
     private val context: Context,
@@ -43,6 +47,61 @@ class DeviceAccessManager(
     private val temporaryRoot = TemporaryRootAllowance()
     private val active = MutableStateFlow(0)
     val activeCommands = active.asStateFlow()
+    private val phoneLocks = java.util.concurrent.ConcurrentHashMap<String, Mutex>()
+    /** Runs where the user refused phone control; they are not asked again until the next message. */
+    private val refusedTurns = java.util.Collections.synchronizedSet(LinkedHashSet<String>())
+
+    /**
+     * Null when an agent may use [backend] now. Otherwise the reason it may
+     * not: the user refused, in this run, to let the agent control the phone.
+     * Only agent tool calls carry a [PhoneControlGate]; the user's own
+     * terminal and app features pass straight through.
+     */
+    internal suspend fun clearPhoneControl(backend: DeviceBackend, command: String?): String? {
+        if (backend == DeviceBackend.NORMAL) return null
+        val gate = currentCoroutineContext()[PhoneControlGate] ?: return null
+        if (currentCoroutineContext()[AccessRequest]?.manual == true) return null
+        val askingOn = store.preferences.first().askPhoneControl
+        if (!askingOn) return null
+        val risk = PhoneCommandRisk.of(command)
+        // Reading device state (battery, properties, installed apps) never needs a card.
+        if (risk == PhoneCommandRisk.READ) return null
+        if (risk == PhoneCommandRisk.DESTRUCTIVE) {
+            // Never covered by an earlier Allow: each one is shown to the user on its own.
+            return phoneLocks.getOrPut(gate.sessionId) { Mutex() }.withLock {
+                if (gate.ask(backend, command, risk)) null
+                else "The user declined this command. It can uninstall apps, erase data or restart the phone, so it was not run. " +
+                    "Do not retry it or reach the same result another way; tell the user what you wanted to do instead."
+            }
+        }
+        fun allowed(prefs: AccessPreferences) = !prefs.askPhoneControl || gate.sessionId in prefs.phoneControlChats
+        if (allowed(store.preferences.first())) return null
+        val refusal = "The user has not allowed phone control in this chat. Commands that control the phone are off for the rest of this run; " +
+            "read-only device checks (dumpsys, getprop, pm list, settings get) still work. " +
+            "Do not retry other privileged commands; continue with the app shell, or tell the user what needs phone access."
+        if (gate.turnId in refusedTurns) return refusal
+        // Parallel tool calls wait here, so one card covers them all.
+        return phoneLocks.getOrPut(gate.sessionId) { Mutex() }.withLock {
+            when {
+                allowed(store.preferences.first()) -> null
+                gate.turnId in refusedTurns -> refusal
+                gate.ask(backend, command, risk) -> { store.allowPhoneControl(gate.sessionId, true); null }
+                else -> {
+                    synchronized(refusedTurns) {
+                        refusedTurns += gate.turnId
+                        if (refusedTurns.size > 64) refusedTurns.remove(refusedTurns.first())
+                    }
+                    refusal
+                }
+            }
+        }
+    }
+
+    /** Whether phone control is already allowed for [sessionId]; true when the question is off. */
+    fun phoneControlAllowed(sessionId: String?): Boolean {
+        val prefs = preferences.value
+        return !prefs.askPhoneControl || (sessionId != null && sessionId in prefs.phoneControlChats)
+    }
 
     init {
         scope.launch {
@@ -50,7 +109,11 @@ class DeviceAccessManager(
                 .collect { if (!it) szUid.value = null }
         }
         // Package-only; never invokes su. The full check runs after a grant.
-        scope.launch { root.refreshManagerDetection() }
+        scope.launch {
+            root.refreshManagerDetection()
+            // A runner bound before an app restart is gone; re-bind it when root was granted earlier.
+            if (store.preferences.first().mode in ROOT_MODES) reconnectRoot()
+        }
     }
 
     suspend fun grantRoot(projectId: String?, sessionId: String?): Boolean {
@@ -78,6 +141,10 @@ class DeviceAccessManager(
         }
     }
     fun disableRootUse() { temporaryRoot.revoke(); allowance.value = "Root use is disabled" }
+
+    /** Re-binds the root runner after it was lost; a no-op until root has been granted once. */
+    suspend fun reconnectRoot(force: Boolean = false): Boolean =
+        root.ensureConnected(resumeCommands = !stopped.value, force = force)
 
     /** True when the current chat/session may use the connected root service right now. */
     fun rootUseActive(sessionId: String?, prefs: AccessPreferences): Boolean =
@@ -128,8 +195,8 @@ class DeviceAccessManager(
         val prefs = store.preferences.first()
         if (appWorkspace && !request.forceDevice && !request.requireRoot && !request.requireShizuku) return AccessDecision(DeviceBackend.NORMAL)
         val allowed = rootAllowed(request, prefs)
-        val rootReady = !request.requireShizuku && prefs.mode in setOf(AccessMode.AUTO, AccessMode.ROOT, AccessMode.BOTH) && allowed &&
-            DeviceBackend.ROOT !in excluded && root.service != null && root.verify()
+        val rootReady = !request.requireShizuku && prefs.mode in ROOT_MODES && allowed &&
+            DeviceBackend.ROOT !in excluded && reconnectRoot()
         val uid = if (prefs.mode == AccessMode.NORMAL || DeviceBackend.SHIZUKU in excluded) null else probeShizuku()
         return DeviceAccessPolicy.choose(prefs.mode, prefs.autoFallback, rootReady, uid,
             allowed, stopped.value, appWorkspace && !request.forceDevice, request.requireRoot, request.requireShizuku)
@@ -138,15 +205,25 @@ class DeviceAccessManager(
     /** A null callback result means dispatch never began. Exceptions/results are never replayed. */
     internal suspend fun execute(
         appWorkspace: Boolean = false,
+        /** The command about to run, shown on the phone-control approval card. */
+        command: String? = null,
         normal: suspend () -> ShellRunResult,
         shizukuRun: suspend () -> ShellRunResult?,
         rootRun: suspend () -> ShellRunResult?,
     ): ShellRunResult {
         val request = currentCoroutineContext()[AccessRequest] ?: AccessRequest(null, null)
         val excluded = mutableSetOf<DeviceBackend>()
+        var refused: String? = null
         while (true) {
             val decision = select(appWorkspace, excluded)
-            val backend = decision.backend ?: return ShellRunResult(-1, false, "", decision.reason ?: "Selected access is unavailable.", ExecutionTier.TOYBOX, null)
+            val backend = decision.backend ?: return ShellRunResult(-1, false, "", refused ?: decision.reason ?: "Selected access is unavailable.", ExecutionTier.TOYBOX, null)
+            if (refused == null) clearPhoneControl(backend, command)?.let { reason ->
+                refused = reason
+                // A pinned backend has nothing to fall back to; anything else runs in the app shell.
+                if (request.requireRoot || request.requireShizuku) return ShellRunResult(-1, false, "", reason, ExecutionTier.TOYBOX, null)
+                excluded += setOf(DeviceBackend.ROOT, DeviceBackend.SHIZUKU)
+                continue
+            }
             if ((backend == DeviceBackend.ROOT || request.requireRoot) && !claimRoot(request)) {
                 excluded += backend
                 continue
@@ -165,7 +242,8 @@ class DeviceAccessManager(
             }
             synchronized(request.receipts) { request.receipts += receipt }
             last.value = receipt.label + (decision.reason?.let { " · $it" } ?: "")
-            return result.copy(note = listOfNotNull(result.note, decision.reason?.let { "[Access fallback: $it; using ${receipt.label}]" }).joinToString("\n").ifBlank { null })
+            return result.copy(note = listOfNotNull(result.note, decision.reason?.let { "[Access fallback: $it; using ${receipt.label}]" },
+                refused?.let { "[Ran in the app shell. $it]" }).joinToString("\n").ifBlank { null })
         }
     }
 
@@ -202,7 +280,8 @@ class DeviceAccessManager(
             shizukuUid = if (shizuku.wirelessTransportActive) shizuku.liveUid ?: szUid.value
                 else szUid.value ?: shizuku.liveUid,
             paused = stopped.value, wirelessPaired = shizuku.wirelessPaired,
-            wirelessConnected = shizuku.wirelessConnected, wirelessActive = shizuku.wirelessTransportActive)
+            wirelessConnected = shizuku.wirelessConnected, wirelessActive = shizuku.wirelessTransportActive,
+            phoneControlAllowed = !prefs.askPhoneControl || (sessionId != null && sessionId in prefs.phoneControlChats))
     }
 
     internal suspend fun runRoot(command: String, cwd: File, timeoutMs: Int, maxOutput: Int): ShellRunResult? {
@@ -278,7 +357,7 @@ class DeviceAccessManager(
 
     suspend fun checkConnections(): String {
         dhizuku?.checkConnection()
-        root.verify()
+        reconnectRoot(force = true)
         probeShizuku()
         return report()
     }

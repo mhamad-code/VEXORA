@@ -57,4 +57,4 @@ change will be reflected in the app's store listing.
 ## Contact
 
 Questions or concerns: open an issue at
-https://github.com/Sanuu7/VEXORA/issues
+https://github.com/mhamad-code/VEXORA/issues

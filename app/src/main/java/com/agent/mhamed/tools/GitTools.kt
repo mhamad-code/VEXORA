@@ -89,6 +89,12 @@ internal fun gitLogResult(result: ToolResult, path: String?): ToolResult {
     return result.copy(output = result.output.removeSuffix("(no output)") + message)
 }
 
+/** Replaces a bare "(no output)" success with what the command actually did. */
+internal fun gitQuietSuccess(result: ToolResult, message: String): ToolResult {
+    if (!result.ok || !result.output.endsWith("(no output)")) return result
+    return result.copy(output = result.output.removeSuffix("(no output)") + message)
+}
+
 internal fun gitShowCmd(hash: String, noPatch: Boolean): String =
     gitCmd(
         buildString {
@@ -251,6 +257,9 @@ internal fun buildGitResult(
                 append("--- stderr ---\n").append(err)
             }
             if (text.isEmpty() && err.isEmpty()) append("(no output)")
+            // Same shape as the shell tool, so a failed git call never reads like a success.
+            if (res.timedOut) append("\nexit code: killed (timeout)")
+            else if (res.exitCode != 0) append("\nexit code: ").append(res.exitCode)
         }.trimEnd(),
     )
 }
@@ -338,12 +347,12 @@ class GitCommitTool(
                     linuxEnv,
                     ctx,
                     gitCmd(
-                        "config user.name 'Android Harness'",
+                        "config user.name 'VEXORA'",
                         "config user.email 'harness@android.local'",
                     ),
                 )
                 var note =
-                    "[note: auto-configured repository git identity 'Android Harness <harness@android.local>']"
+                    "[note: auto-configured repository git identity 'VEXORA <harness@android.local>']"
                 if (!repoConfig.ok) {
                     // Repo-local config failed (read-only .git/config etc.),
                     // fall back to the global ~/.gitconfig identity.
@@ -352,12 +361,12 @@ class GitCommitTool(
                         linuxEnv,
                         ctx,
                         gitCmd(
-                            "config --global user.name 'Android Harness'",
+                            "config --global user.name 'VEXORA'",
                             "config --global user.email 'harness@android.local'",
                         ),
                     )
                     if (globalConfig.ok) {
-                        note = "[note: auto-configured global git identity 'Android Harness <harness@android.local>' in ~/.gitconfig]"
+                        note = "[note: auto-configured global git identity 'VEXORA <harness@android.local>' in ~/.gitconfig]"
                     }
                 }
                 val retryRes = runGitWithRetry(router, linuxEnv, ctx, commitCommand)
@@ -475,7 +484,9 @@ class GitBranchManageTool(
                 "delete" -> gitCmd("branch ${if (force) "-D" else "-d"} ${name.shellQuote()}")
                 else -> throw ToolFailure("Unknown action '$action' (use create or delete)")
             }
-            runGitWithRetry(router, linuxEnv, ctx, command)
+            val result = runGitWithRetry(router, linuxEnv, ctx, command)
+            if (action == "create") gitQuietSuccess(result, "Created branch '$name' at HEAD. It is not checked out; use git_checkout to switch to it.")
+            else result
         }
 }
 
@@ -512,7 +523,13 @@ class GitCheckoutTool(
             if (branch.isNullOrBlank() && paths.isEmpty()) {
                 throw ToolFailure("checkout needs a branch, paths, or both")
             }
-            runGitWithRetry(router, linuxEnv, ctx, gitCheckoutCmd(branch, create, paths))
+            val result = runGitWithRetry(router, linuxEnv, ctx, gitCheckoutCmd(branch, create, paths))
+            val cleanPaths = paths.map { it.trim() }.filter { it.isNotEmpty() }
+            val restored = branch?.trim()?.takeIf { it.isNotEmpty() }
+                ?.let { "Restored ${cleanPaths.size} path(s) from '$it'" }
+                ?: "Discarded unstaged changes in ${cleanPaths.size} path(s)"
+            if (cleanPaths.isEmpty()) result
+            else gitQuietSuccess(result, "$restored: ${cleanPaths.joinToString(", ")}.")
         }
 }
 

@@ -111,10 +111,30 @@ class SearchSourceBudgetTest {
     @Test fun depthCopiesExposeTheirLimitAndAutoHasNone() {
         val client = okhttp3.OkHttpClient()
         val base = WebSearchTool(client)
-        assertTrue(base.forDepth(com.agent.mhamed.data.SearchDepth.AUTO) === base)
+        assertTrue(base.forDepth(com.agent.mhamed.data.SearchDepth.AUTO).budget() == null)
         val instant = base.forDepth(com.agent.mhamed.data.SearchDepth.INSTANT)
         assertTrue(instant.description.contains("at most 5 distinct sources"))
         val max = base.forDepth(com.agent.mhamed.data.SearchDepth.MAX_RESEARCH)
         assertTrue(max.description.contains("at most 100 distinct sources"))
+    }
+
+    @Test fun autoReportsRepeatedResultsWithoutLimitingTheSearch() {
+        val base = WebSearchTool(okhttp3.OkHttpClient())
+        val auto = base.forDepth(com.agent.mhamed.data.SearchDepth.AUTO)
+        assertEquals("", auto.repeatNote((1..4).map { hit("https://example.com/$it") }))
+        // One repeat out of four is normal overlap and stays quiet.
+        assertEquals("", auto.repeatNote(listOf(hit("https://example.com/1/"), hit("https://a.test"), hit("https://b.test"), hit("https://c.test"))))
+        assertTrue(auto.repeatNote(listOf(hit("https://example.com/2"), hit("https://a.test"), hit("https://new.test"), hit("https://x.test")))
+            .contains("2 of 4 results were already returned"))
+        assertTrue(auto.repeatNote(listOf(hit("https://example.com/3"), hit("https://b.test#top")))
+            .contains("All 2 results were already returned"))
+
+        // A new turn starts clean, and budgeted depths and Code report repeats their own way.
+        assertEquals("", base.forDepth(com.agent.mhamed.data.SearchDepth.AUTO).repeatNote(listOf(hit("https://example.com/1"))))
+        val deep = base.forDepth(com.agent.mhamed.data.SearchDepth.DEEP)
+        deep.repeatNote(listOf(hit("https://example.com/1")))
+        assertEquals("", deep.repeatNote(listOf(hit("https://example.com/1"))))
+        base.repeatNote(listOf(hit("https://example.com/1")))
+        assertEquals("", base.repeatNote(listOf(hit("https://example.com/1"))))
     }
 }

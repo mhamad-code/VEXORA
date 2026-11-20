@@ -63,10 +63,11 @@ class WorkspaceManager(
 
     suspend fun workProjectChats(id: String) = dao.workProjectSessions(id)
 
-    suspend fun createWorkProject(name: String, selection: ChatWorkspaceSelection): WorkProjectEntity {
+    suspend fun createWorkProject(name: String, selection: ChatWorkspaceSelection, chatNamePattern: String? = null): WorkProjectEntity {
         val label = projectLabel(name)
         validateSelection(selection)
-        val project = WorkProjectEntity(UUID.randomUUID().toString(), label, ChatWorkspaceSelection.encode(selection), System.currentTimeMillis())
+        val project = WorkProjectEntity(UUID.randomUUID().toString(), label, ChatWorkspaceSelection.encode(selection), System.currentTimeMillis(),
+            com.agent.mhamed.core.ChatSeries.normalize(chatNamePattern))
         dao.insertWorkProject(project)
         return project
     }
@@ -74,6 +75,11 @@ class WorkspaceManager(
     suspend fun renameWorkProject(id: String, name: String) {
         requireNotNull(dao.workProject(id)) { "This project is no longer available." }
         dao.renameWorkProject(id, projectLabel(name))
+    }
+
+    suspend fun setWorkProjectChatNames(id: String, pattern: String?) {
+        requireNotNull(dao.workProject(id)) { "This project is no longer available." }
+        dao.setWorkProjectChatNames(id, com.agent.mhamed.core.ChatSeries.normalize(pattern))
     }
 
     private fun projectLabel(name: String): String = name.trim().also {
@@ -330,6 +336,21 @@ class WorkspaceManager(
         if (project.kind == KIND_SAF && project.uri != null) releaseSafPermission(project.uri)
         releaseProjectResources(project)
     }
+
+    /**
+     * Empties the app workspace (issue #106): its chats and every file under the
+     * app-private folder, which is the closest thing to deleting it. The row stays
+     * because every chat needs a default workspace to fall back on.
+     */
+    suspend fun resetAppWorkspace(projectId: String, expectedChatIds: Set<String>) {
+        val project = requireNotNull(dao.project(projectId)) { "This workspace is no longer available." }
+        require(project.kind == KIND_APP) { "Only the app workspace can be reset." }
+        dao.deleteAppWorkspaceChats(projectId, expectedChatIds)
+        AppWorkspaceReset.clear(appPrivateRoot)
+    }
+
+    /** Size of the app workspace folder, shown before a reset. */
+    fun appWorkspaceBytes(): Long = AppWorkspaceReset.bytes(appPrivateRoot)
 
     private suspend fun releaseProjectResources(project: ProjectEntity) {
         if (project.kind == KIND_SSH) {

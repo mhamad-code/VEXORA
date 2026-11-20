@@ -17,6 +17,8 @@ internal data class AgentDeviceEnvironment(
     val wirelessConnected: Boolean = false,
     /** The live privileged route is the built-in ADB shell rather than the Shizuku app. */
     val wirelessActive: Boolean = false,
+    /** The user already allowed phone control in this chat, or the question is turned off. */
+    val phoneControlAllowed: Boolean = true,
 ) {
     /**
      * [appWorkspace] is true when ordinary commands here are pinned to the app
@@ -36,7 +38,7 @@ internal data class AgentDeviceEnvironment(
             append(if (wirelessConnected) "connected" else "paired but not connected (it connects on the first privileged command)")
             append("; UID: ${shizukuUid ?: "checked before the first command"}.\n")
             append("The Wireless ADB shell is this app's own ADB transport and uses the same privileged route as Shizuku. ")
-            append("Commands run as the ADB shell user (normally UID 2000), never as root and never as the app UID. ")
+            append("Commands run as the ADB shell user (normally UID 2000, or UID 0 when adbd itself runs as root; a UID 0 shell does not grant direct-root permission), never as the app UID. ")
             append("Use shell access=\"shizuku\" to pin Android system commands to it; /system/bin/am, pm, cmd, settings, dumpsys and appops work there, su and sudo do not. ")
             append("The user must keep Android's Wireless debugging toggle on; pairing survives a reboot, the toggle does not. Settings > Coding > Terminal > Wireless ADB shows the live state and can reconnect or forget the pairing.\n")
         }
@@ -59,6 +61,25 @@ internal data class AgentDeviceEnvironment(
         if (appWorkspace) append("The app-owned workspace uses the app UID for ordinary development even when root, Shizuku or Wireless ADB is connected. The user can change this with Settings > Environment > Advanced device access > Privileged shell in app workspace.\n")
         else if (appOwned) append("The user turned on Privileged shell in app workspace, so ordinary commands in this app-owned workspace follow the access mode above instead of the app UID.\n")
         append("Use shell access=\"shizuku\" to pin Android system commands to the privileged shell (Shizuku or built-in Wireless ADB); it never falls back to root or the app UID. Use access=\"root\" only for a task that needs UID 0 and an allowed root grant. Never invoke su/sudo to bypass access routing. A root-started Shizuku server can itself have UID 0; that does not grant direct-root permission.\n")
+        append("Phone control: anything that acts on the phone itself rather than the workspace goes through shell access=\"shizuku\" or access=\"root\", or device_owner_shell. " +
+            "Commands are sorted by what they can do to the phone:\n" +
+            "- Read-only checks run without asking: dumpsys (without set/reset), getprop, pm list/path/dump, settings get/list, " +
+            "service list, wm size, logcat -d, and cat/ls/grep on /proc, /sys or /system. Use these freely for phone status such as battery, storage, " +
+            "network or installed apps. Keep them read-only: a redirect to a file, $(...) or an unlisted program makes the whole command count as control.\n" +
+            "- Control commands act on the phone: touch and key input (input tap, swipe, text, keyevent), opening or stopping apps (am start, monkey, am force-stop), " +
+            "installing apps, settings put, reading the screen (screencap, uiautomator dump) and reading or changing personal files outside the workspace. ")
+        when {
+            !preferences.askPhoneControl -> append("The user turned off the phone control question, so these commands run without a permission card.\n")
+            phoneControlAllowed -> append("The user already allowed phone control in this chat, so these commands run without asking again.\n")
+            else -> append("The user has not allowed phone control in this chat yet. The first such command shows them a \"Let the agent control your phone?\" card and waits; " +
+                "one Allow covers the rest of this chat. Before that first command, say in one line what you are about to do on the phone and why, so the request makes sense. " +
+                "If they deny it, stop using control commands for this run and tell them what needed phone access; read-only checks still work.\n")
+        }
+        if (preferences.askPhoneControl) append("- Destructive commands ask every time, even in a chat where phone control is allowed: uninstalling apps or their updates, " +
+            "pm clear, disabling, hiding or suspending apps, rm or any other file deletion, reboot or power off, settings delete or reset, factory reset and lock-screen changes. " +
+            "Run them only when the user asked for that exact outcome, one at a time, and say what will be removed before the card appears. " +
+            "A declined destructive command is final for that action.\n")
+        append("Never work around a card or a refusal through the app UID, adb to localhost, run-as, a script file or any other route.\n")
         if (!rootReady && !shizukuReady) append("Neither privileged runner is ready. Ordinary app-UID work remains available where Android storage permissions permit; privilege is not required for every coding task.\n")
     }
 }

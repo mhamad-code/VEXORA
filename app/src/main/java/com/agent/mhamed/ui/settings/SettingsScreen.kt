@@ -28,6 +28,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
@@ -64,7 +66,6 @@ import androidx.compose.material.icons.rounded.RecordVoiceOver
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
-import androidx.compose.material.icons.rounded.BatteryFull
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Archive
@@ -260,7 +261,7 @@ private fun SettingsScreenContent(
         }
     }
     var query by rememberSaveable { mutableStateOf("") }
-    val homeScroll = rememberScrollState()
+    val homeList = androidx.compose.foundation.lazy.rememberLazyListState()
     // A custom section shows over whatever page is selected. Its path is the
     // ids from a top-level section down to the open sub-section.
     var customPath by rememberSaveable { mutableStateOf(listOf<String>()) }
@@ -424,7 +425,8 @@ private fun SettingsScreenContent(
                 query = query,
                 onQueryChange = { query = it },
                 onOpen = ::openPage,
-                modifier = Modifier.motionBlur().fillMaxSize().verticalScroll(homeScroll),
+                modifier = Modifier.fillMaxSize(),
+                state = homeList,
                 customSections = settings.customSections,
                 onOpenSection = { customReturn = emptyList(); customPath = listOf(it) },
                 onAddSection = ::startNewSection,
@@ -437,7 +439,7 @@ private fun SettingsScreenContent(
                 val reveal = remember(highlight) { settingsRevealFor(highlight) }
                 SettingsHighlightScope(highlight, reveal, scroller.takeUnless { lazyPage }) {
                     Column(
-                        modifier = Modifier.motionBlur().then(if (desktop) Modifier.widthIn(max = 880.dp) else Modifier)
+                        modifier = (if (lazyPage) Modifier.motionBlur() else Modifier.motionBlur(pageScroll)).then(if (desktop) Modifier.widthIn(max = 880.dp) else Modifier)
                             .fillMaxSize().then(if (lazyPage) Modifier else Modifier.onGloballyPositioned { scroller.viewport = it }.verticalScroll(pageScroll))
                             .then(if (page == SettingsPage.LEARN) Modifier else Modifier.padding(horizontal = 16.dp, vertical = 16.dp)),
                         verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -466,6 +468,8 @@ private fun SettingsScreenContent(
                             agentCount = settings.chatAgents.size,
                             onManageAgents = { showChatAgents = true },
                             onSearchCodeChats = { value -> scope.launch { container.settings.setChatSearchCodeChats(value) } },
+                            reminders = container.reminders,
+                            onRemindersEnabled = { value -> scope.launch { container.settings.setChatRemindersEnabled(value) } },
                         )
                         SettingsPage.MEMORY -> {
                             MemoryOptionsSection(
@@ -484,6 +488,12 @@ private fun SettingsScreenContent(
                                 onSearchChatChats = { value -> scope.launch { container.settings.setCodeSearchChatChats(value) } },
                             )
                             CodingSection { page -> openPage(page) }
+                            ActivityDisplaySettingsCard(settings) { display ->
+                                scope.launch { container.settings.setActivityDisplay(display) }
+                            }
+                            CodeReviewSettingsCard(settings) { level ->
+                                scope.launch { container.settings.setCodeReviewBeforeCommit(level) }
+                            }
                         }
                         SettingsPage.NINE_ROUTER -> NineRouterSection(container)
                         SettingsPage.CONNECTED_ACCOUNTS -> ConnectedAccountsSection(container)
@@ -532,7 +542,7 @@ private fun SettingsScreenContent(
                         SettingsPage.RUMBLE -> RumbleSection(settings, container.settings)
                         SettingsPage.PRIVACY -> PrivacySection(container, settings, scope)
                         SettingsPage.GITHUB -> GitHubIntegrationSection(container)
-                        SettingsPage.SEARCH -> WebSearchSection(container)
+                        SettingsPage.SEARCH -> WebSearchSettingsSection(container)
                         SettingsPage.MCP -> McpSection(container, onOpenPlugins = { openPage(SettingsPage.PLUGINS) },
                             onOpenConfiguration = { openPage(SettingsPage.CONFIGURATION) })
                         SettingsPage.TELEGRAM -> TelegramSection(container)
@@ -547,7 +557,12 @@ private fun SettingsScreenContent(
                         }
                         SettingsPage.BACKGROUND -> BackgroundSettingsSection(container, settings)
                         SettingsPage.STORAGE -> StorageSection(container)
-                        SettingsPage.ENVIRONMENT -> TerminalSection(container, envState, shizukuState, serviceState)
+                        SettingsPage.ENVIRONMENT -> {
+                            TerminalSection(container, envState, shizukuState, serviceState)
+                            DeviceControlSettingsCard(settings) { enabled ->
+                                scope.launch { container.settings.setDeviceControlEnabled(enabled) }
+                            }
+                        }
                         SettingsPage.TROUBLESHOOTING -> TroubleshootingSection(container, ::openPage)
                         SettingsPage.PROVIDER_DEBUG -> ProviderDebugSection(container)
                         SettingsPage.BACKUP -> {
@@ -803,9 +818,6 @@ private fun TerminalSection(
         RootAccessSection(container)
         DhizukuCard(container.dhizuku)
     }
-    SettingsDisclosure(Icons.Rounded.BatteryFull, stringResource(R.string.settings_device_background), stringResource(R.string.settings_device_background_summary)) {
-        BatteryCard(container = container)
-    }
 }
 
 // ---------------------------------------------------------------------------
@@ -1050,245 +1062,6 @@ private fun CodeIntelligenceSection(
             )
         }
     }
-}
-
-// ---------------------------------------------------------------------------
-// Web search
-// ---------------------------------------------------------------------------
-
-@Composable
-private fun WebSearchSection(container: AppContainer) {
-    val uiContext = androidx.compose.ui.platform.LocalContext.current
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-    val settings by container.settings.settings.collectAsStateWithLifecycle(initialValue = AppSettings())
-    val provider = settings.webSearchProvider
-    val providerName = when (provider) {
-        "brave" -> "Brave Search API"
-        "tavily" -> "Tavily API"
-        else -> uiContext.getString(R.string.ui_keyless)
-    }
-    // Null while the key list is closed; the pasted keys are only on screen while it is open.
-    var draft by remember { mutableStateOf<com.agent.mhamed.llm.ProviderKeyPool?>(null) }
-    var keyEpoch by remember { mutableStateOf(0) }
-    var checking by remember { mutableStateOf(false) }
-    var status by remember { mutableStateOf<String?>(null) }
-    val saved = remember(provider, keyEpoch) {
-        runCatching { container.keys.searchKeyPool(provider) }.getOrDefault(com.agent.mhamed.llm.ProviderKeyPool())
-    }
-    val enabledKeys = saved.keys.count { it.enabled }
-    val hasKey = enabledKeys > 0
-    val expanded = draft != null
-    val keyUrl = if (provider == "brave") "https://brave.com/search/api/" else "https://app.tavily.com/home"
-
-    // The pasted key is only on screen while the entry form is open.
-    SecureScreenEffect(container, expanded)
-
-    SettingsHeader(uiContext.getString(R.string.settings_page_search_title))
-    SettingsPanel(Modifier.fillMaxWidth().settingsAnchor(R.string.settings_search_web_backend_label)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Rounded.Key,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp),
-                )
-                Spacer(Modifier.width(10.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.settings_search_web_backend_label), style = MaterialTheme.typography.titleSmall)
-                    Text(
-                        when {
-                            provider == "keyless" -> uiContext.getString(R.string.ui_public_search_engines_no_setup)
-                            enabledKeys > 1 -> pluralStringResource(R.plurals.search_keys_saved, enabledKeys, enabledKeys, providerName)
-                            hasKey -> uiContext.getString(R.string.ui_key_saved, (providerName).toString())
-                            else -> uiContext.getString(R.string.ui_no_key_yet_keyless_fallback, (providerName).toString())
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                StatusText(
-                    when {
-                        provider == "keyless" -> uiContext.getString(R.string.ui_keyless)
-                        hasKey -> uiContext.getString(R.string.ui_on)
-                        else -> uiContext.getString(R.string.ui_no_key)
-                    },
-                    ok = provider == "keyless" || hasKey,
-                )
-            }
-
-            SettingsChoiceGroup(
-                options = listOf("keyless" to uiContext.getString(R.string.ui_keyless), "brave" to "Brave", "tavily" to "Tavily"),
-                selected = { it == provider },
-                onSelect = { value ->
-                    draft = null
-                    status = null
-                    scope.launch { container.settings.setWebSearchProvider(value) }
-                },
-            )
-
-            when {
-                provider == "keyless" -> Text(
-                    uiContext.getString(R.string.ui_the_agent_searches_public_engines_with_zero) +
-                        uiContext.getString(R.string.ui_give_cleaner_higher_quality_results),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-                expanded -> {
-                    Text(
-                        (if (provider == "brave") {
-                            uiContext.getString(R.string.ui_free_key_at_brave_com_search_api)
-                        } else {
-                            uiContext.getString(R.string.ui_free_key_at_app_tavily_com_1)
-                        }) + "The key is checked with the provider before it is saved, and it " +
-                            uiContext.getString(R.string.ui_lives_only_in_the_app_s_encrypted),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    OutlinedButton(
-                        onClick = {
-                            runCatching {
-                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(keyUrl)))
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Icon(
-                            Icons.Rounded.OpenInNew,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text(stringResource(R.string.settings_provider_get_api_key))
-                    }
-                    Text(
-                        stringResource(R.string.search_keys_rotation_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    draft?.let { pool -> ProviderKeysEditor(pool, onChange = { draft = it; status = null }, enabled = !checking) }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(
-                            enabled = !checking,
-                            onClick = {
-                                val pool = draft ?: return@Button
-                                pool.error()?.let { status = it; return@Button }
-                                checking = true
-                                status = uiContext.getString(R.string.ui_checking_that_key_with, (providerName).toString())
-                                scope.launch {
-                                    // Only keys that are new or changed cost a check request.
-                                    val error = withContext(Dispatchers.IO) {
-                                        pool.keys.withIndex().firstNotNullOfOrNull { (index, key) ->
-                                            if (!key.enabled || saved.keys.any { it.value == key.value }) null
-                                            else checkSearchKey(provider, key.value)?.let { uiContext.getString(R.string.search_key_check_failed, index + 1, it) }
-                                        }
-                                    }
-                                    if (error == null) {
-                                        val stored = runCatching { withContext(Dispatchers.IO) { container.keys.putSearchKeyPool(provider, pool) } }
-                                        if (stored.isSuccess) {
-                                            draft = null
-                                            status = uiContext.getString(R.string.search_keys_verified_and_saved)
-                                            keyEpoch++
-                                        } else status = stored.exceptionOrNull()?.message
-                                    } else {
-                                        status = error
-                                    }
-                                    checking = false
-                                }
-                            },
-                        ) { Text(if (checking) uiContext.getString(R.string.ui_checking) else uiContext.getString(R.string.ui_save_and_check)) }
-                        TextButton(onClick = {
-                            draft = null
-                            status = null
-                        }) { Text(stringResource(R.string.settings_action_cancel)) }
-                    }
-                    status?.let {
-                        Text(
-                            it,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-
-                saved.keys.isNotEmpty() -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = {
-                        draft = saved
-                        status = null
-                    }) { Text(stringResource(R.string.search_manage_keys)) }
-                    OutlinedButton(onClick = {
-                        scope.launch {
-                            withContext(Dispatchers.IO) { container.keys.removeSearchApiKey(provider) }
-                            keyEpoch++
-                        }
-                    }) { Text(stringResource(R.string.settings_action_remove), color = MaterialTheme.colorScheme.error) }
-                }
-
-                else -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = {
-                        runCatching {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(keyUrl)))
-                        }
-                    }) { Text(stringResource(R.string.settings_provider_get_api_key)) }
-                    OutlinedButton(onClick = {
-                        draft = com.agent.mhamed.llm.ProviderKeyPool(listOf(com.agent.mhamed.llm.ProviderApiKey(value = "")))
-                        status = null
-                    }) { Text(stringResource(R.string.settings_provider_have_key)) }
-                }
-            }
-        }
-    }
-}
-
-/**
- * Asks the provider to accept a search API key before it is saved, so an
- * invalid paste never becomes the stored credential.
- * Returns null when the key works, or a human-readable reason why not.
- */
-private fun checkSearchKey(provider: String, key: String): String? {
-    return runCatching {
-        val req = when (provider) {
-            "brave" -> okhttp3.Request.Builder()
-                .url("https://api.search.brave.com/res/v1/web/search?q=android&count=1")
-                .header("X-Subscription-Token", key)
-                .header("Accept", "application/json")
-                .build()
-            else -> okhttp3.Request.Builder()
-                .url("https://api.tavily.com/search")
-                .header("Authorization", "Bearer $key")
-                .post(
-                    """{"query":"android","max_results":1}"""
-                        .toRequestBody("application/json".toMediaTypeOrNull()),
-                )
-                .build()
-        }
-        val name = if (provider == "brave") "Brave" else "Tavily"
-        okhttp3.OkHttpClient.Builder()
-            .callTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
-            .build()
-            .newCall(req).execute().use { resp ->
-                val body = resp.body?.string().orEmpty()
-                val detail = Regex("\"(?:message|detail|error)\"\\s*:\\s*\"([^\"]+)\"")
-                    .find(body)?.groupValues?.get(1)
-                when {
-                    resp.code == 401 || resp.code == 403 ->
-                        "$name rejected that key" + (detail?.let { " ($it)" } ?: "") +
-                            ". Make sure the whole key was copied, that it belongs to $name, " +
-                            "and that it has not been deactivated."
-                    resp.code in setOf(402, 432, 433) ->
-                        "$name has no available credits or the plan limit was reached. Check the provider dashboard."
-                    resp.code == 429 ->
-                        "$name is temporarily rate-limiting requests. Wait" +
-                            (resp.header("Retry-After")?.toLongOrNull()?.let { " $it seconds" } ?: " before checking again") + "."
-                    !resp.isSuccessful ->
-                        "$name returned HTTP ${resp.code}" + (detail?.let { ": $it" } ?: "") +
-                            ". Try again shortly."
-                    else -> null
-                }
-            }
-    }.getOrElse { "Could not reach the provider. Check your connection and try again." }
 }
 
 // ---------------------------------------------------------------------------
@@ -2240,16 +2013,17 @@ private fun SetupLine(label: String, value: String) {
 
 @Composable
 internal fun CodingSection(onOpen: (SettingsPage) -> Unit) {
-    val groups = listOf(
-        R.string.settings_coding_workflow to listOf(SettingsPage.AGENT, SettingsPage.CONFIGURATION, SettingsPage.SUBAGENT, SettingsPage.CHAT),
-        R.string.settings_coding_intelligence to listOf(SettingsPage.PLUGINS, SettingsPage.SKILLS, SettingsPage.CODE_INTELLIGENCE, SettingsPage.CAVEMAN),
-        R.string.settings_coding_execution to listOf(SettingsPage.WORKSPACE, SettingsPage.ENVIRONMENT),
-    )
-    groups.forEach { (title, pages) ->
-        SettingsGroupHeading(title)
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            pages.forEach { destination ->
-                SettingsFeatureRow(settingsIcon(destination), stringResource(destination.title), stringResource(destination.description), { onOpen(destination) })
+    settingsCodingGroups.forEachIndexed { groupIndex, (title, pages) ->
+        Column(Modifier.settingsEntrance(groupIndex + 1), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SettingsGroupHeading(title)
+            val titles = pages.map { stringResource(it.title) }
+            val descriptions = pages.map { stringResource(it.description) }
+            SettingsGroup {
+                pages.forEachIndexed { i, destination ->
+                    navItem(destination.ordinal, SettingsTone.entries[groupIndex % 3], titles[i], descriptions[i], { onOpen(destination) }) { tint ->
+                        SettingsPageIcon(destination, tint, Modifier.size(22.dp))
+                    }
+                }
             }
         }
     }
@@ -2276,6 +2050,8 @@ private fun AgentSection(
         onRunTips = { scope.launch { container.settings.setRunTipsEnabled(it) } },
         onAutoContinueQuestions = { scope.launch { container.settings.setAutoContinueQuestions(it) } },
         onAgentSettingsAccess = { scope.launch { container.settings.setAgentSettingsAccess(it) } },
+        onStallTimeout = { scope.launch { container.settings.setStreamStallTimeoutSeconds(it) } },
+        onStreamFileWrites = { scope.launch { container.settings.setStreamFileWritesAsText(it) } },
     )
     if (showAgentsDialog) {
         AgentsInstructionsDialog(container, onDismiss = { showAgentsDialog = false })
@@ -2384,8 +2160,9 @@ private fun AgentsInstructionsDialog(container: AppContainer, onDismiss: () -> U
 @Composable
 private fun AppearanceSection(container: AppContainer, settings: AppSettings, scope: kotlinx.coroutines.CoroutineScope) {
     val uiContext = androidx.compose.ui.platform.LocalContext.current
-    SettingsHeader(uiContext.getString(R.string.settings_page_appearance_title))
-    WorkspaceLayoutSection(settings.workspaceLayout) { scope.launch { container.settings.setWorkspaceLayout(it) } }
+    WorkspaceLayoutSection(settings.workspaceLayout, extra = {
+        SettingsAnchor(R.string.motion_blur_title) { MotionBlurSection(settings, container.settings) }
+    }) { scope.launch { container.settings.setWorkspaceLayout(it) } }
     SettingsPanel(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SettingsAnchor(R.string.settings_anchor_theme) {
@@ -2432,9 +2209,6 @@ private fun AppearanceSection(container: AppContainer, settings: AppSettings, sc
     SettingsAnchor(R.string.theme_canvas_title) {
         HarnessCanvasSection(settings.harnessCanvas, container.settings)
     }
-    SettingsAnchor(R.string.motion_blur_title) {
-        MotionBlurSection(settings, container.settings)
-    }
     if (com.agent.mhamed.data.FeatureAvailability.HARNESS_GLASS) {
         SettingsAnchor(R.string.glass_title) {
             HarnessGlassSection(settings, container.settings)
@@ -2445,7 +2219,6 @@ private fun AppearanceSection(container: AppContainer, settings: AppSettings, sc
 @Composable
 private fun ChatBehaviorSection(container: AppContainer, settings: AppSettings, scope: kotlinx.coroutines.CoroutineScope) {
     val uiContext = androidx.compose.ui.platform.LocalContext.current
-    SettingsHeader(stringResource(R.string.settings_page_chat_title))
     SettingsGroup {
         item(onClick = { scope.launch { container.settings.setShowLiveCode(!settings.showLiveCode) } }) {
             SettingsItemRow(
@@ -2491,7 +2264,6 @@ private fun ChatBehaviorSection(container: AppContainer, settings: AppSettings, 
 private fun PrivacySection(container: AppContainer, settings: AppSettings, scope: kotlinx.coroutines.CoroutineScope) {
     val uiContext = androidx.compose.ui.platform.LocalContext.current
     val context = LocalContext.current
-    SettingsHeader(uiContext.getString(R.string.ui_privacy))
     val biometricTitle = if (settings.biometricLockEnabled)
         stringResource(R.string.settings_privacy_lock_disable_title)
     else stringResource(R.string.settings_privacy_lock_enable_title)
@@ -2765,7 +2537,7 @@ private fun SlashCommandsSection(container: AppContainer) {
 }
 
 @Composable
-private fun BatteryCard(container: AppContainer) {
+internal fun BatteryCard(container: AppContainer) {
     val uiContext = androidx.compose.ui.platform.LocalContext.current
     val context = androidx.compose.ui.platform.LocalContext.current
     val settings by container.settings.settings.collectAsStateWithLifecycle(initialValue = AppSettings())
@@ -2822,14 +2594,7 @@ private fun requestBatteryExemption(context: android.content.Context) =
 // ---------------------------------------------------------------------------
 
 @Composable
-internal fun SettingsHeader(title: String) {
-    Text(
-        title,
-        style = MaterialTheme.typography.labelLargeEmphasized,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 0.dp),
-    )
-}
+internal fun SettingsHeader(title: String) = SettingsSectionLabel(title, top = 12.dp)
 
 @Composable
 internal fun SettingRow(
@@ -2840,8 +2605,11 @@ internal fun SettingRow(
     divider: Boolean = false,
     trailing: @Composable RowScope.() -> Unit = {},
 ) = SettingsRow(
-    leading = {
-        SettingsIconBadge(icon, SettingsTone.SECONDARY, 40.dp)
+    leading = { pressed ->
+        // Rests in a soft polygon and rounds into a circle under the finger, like the home list.
+        SettingsMorphBadge(title.hashCode(), pressed, tone = SettingsTone.SECONDARY, size = 40.dp) { tint ->
+            Icon(icon, null, Modifier.size(20.dp), tint = tint)
+        }
     },
     title = title,
     subtitle = subtitle,
@@ -2853,23 +2621,25 @@ internal fun SettingRow(
 /** Same row, for the places that need something other than a themed icon up front. */
 @Composable
 private fun SettingsRow(
-    leading: @Composable () -> Unit,
+    leading: @Composable (pressed: Boolean) -> Unit,
     title: String,
     subtitle: String,
     onClick: (() -> Unit)? = null,
     divider: Boolean = false,
     trailing: @Composable RowScope.() -> Unit = {},
 ) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
             .settingsAnchor(title)
-            .clickable(enabled = onClick != null) { onClick?.invoke() }
+            .clickable(interactionSource = interaction, indication = androidx.compose.material3.ripple(), enabled = onClick != null) { onClick?.invoke() }
             .heightIn(min = 64.dp)
             .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
-        leading()
+        leading(pressed)
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f).padding(end = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(title, style = MaterialTheme.typography.titleMedium)
@@ -3012,9 +2782,9 @@ private fun UpdatesCard(container: AppContainer) {
 // About
 // ---------------------------------------------------------------------------
 
-private const val AUTHOR_URL = "https://github.com/Sanuu7"
-private const val REPO_URL = "https://github.com/Sanuu7/AndroidHarness"
-private const val LICENSE_URL = "https://github.com/Sanuu7/AndroidHarness/blob/main/LICENSE"
+private const val AUTHOR_URL = "https://github.com/mhamad-code"
+private const val REPO_URL = "https://github.com/mhamad-code/VEXORA"
+private const val LICENSE_URL = "https://github.com/mhamad-code/VEXORA/blob/main/LICENSE"
 
 /** Installed version, shared by the About page and the update card. */
 private fun appVersionLabel(context: Context): String = runCatching {
@@ -3087,7 +2857,7 @@ private fun AboutSection(container: AppContainer) {
         SettingsRow(
             leading = { GitHubMark() },
             title = "Sanuu",
-            subtitle = "github.com/Sanuu7",
+            subtitle = "github.com/mhamad-code",
             onClick = { open(AUTHOR_URL) },
             divider = true,
             trailing = { ExternalLinkIcon() },
@@ -3097,7 +2867,7 @@ private fun AboutSection(container: AppContainer) {
                 Icon(Icons.Rounded.Code, contentDescription = null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
             },
             title = stringResource(R.string.settings_about_source),
-            subtitle = "github.com/Sanuu7/AndroidHarness",
+            subtitle = "github.com/mhamad-code/VEXORA",
             onClick = { open(REPO_URL) },
             trailing = { ExternalLinkIcon() },
         )

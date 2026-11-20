@@ -152,33 +152,33 @@ The comments state the reasons: the keystore-wrapped credentials, plaintext MCP 
 - The app lock falls back to unlocked when the device has no enrolled biometric or credential. That is intentional lockout protection, but it means the lock is not a hard boundary on a device with no screen lock.
 - The manifest declares `MANAGE_EXTERNAL_STORAGE`, Shizuku, install-packages and local-network permissions. The app's runtime behaviour is gated by user actions, but the platform permission surface is broad by design.
 
-Sources: [agent/AgentEngine.kt](../app/src/main/java/com/androidharness/app/agent/AgentEngine.kt)#L42-L68), [agent/AgentEngine.kt](../app/src/main/java/com/androidharness/app/agent/AgentEngine.kt)#L1187-L1382), [agent/RunManager.kt](../app/src/main/java/com/androidharness/app/agent/RunManager.kt)#L1017-L1040), [agent/RememberedGrants.kt](../app/src/main/java/com/androidharness/app/agent/RememberedGrants.kt)#L7-L42), [tools/ShellPolicy.kt](../app/src/main/java/com/androidharness/app/tools/ShellPolicy.kt)#L8-L47), [ui/common/BiometricAuth.kt](../app/src/main/java/com/androidharness/app/ui/common/BiometricAuth.kt)#L12-L113), [data/KeyStoreManager.kt](../app/src/main/java/com/androidharness/app/data/KeyStoreManager.kt)#L9-L42), [data/ScreenshotPolicy.kt](../app/src/main/java/com/androidharness/app/data/ScreenshotPolicy.kt)#L6-L45), [MainActivity.kt](../app/src/main/java/com/androidharness/app/MainActivity.kt)#L116-L283), [AndroidManifest.xml](../app/src/main/AndroidManifest.xml)#L66-L78), [res/xml/backup_rules.xml](../app/src/main/res/xml/backup_rules.xml)#L1-L20), [res/xml/data_extraction_rules.xml](../app/src/main/res/xml/data_extraction_rules.xml)#L1-L38), [artifacts/ArtifactSandbox.kt](../app/src/main/java/com/androidharness/app/artifacts/ArtifactSandbox.kt)#L5-L44), [artifacts/ArtifactWebView.kt](../app/src/main/java/com/androidharness/app/artifacts/ArtifactWebView.kt)#L25-L96), [workspace/WorkspaceFs.kt](../app/src/main/java/com/androidharness/app/workspace/WorkspaceFs.kt)#L95-L108), [tools/PublicHttpAddresses.kt](../app/src/main/java/com/androidharness/app/tools/PublicHttpAddresses.kt)#L7-L38)
+Sources: [agent/AgentEngine.kt](../app/src/main/java/com/agent/mhamed/agent/AgentEngine.kt)#L42-L68), [agent/AgentEngine.kt](../app/src/main/java/com/agent/mhamed/agent/AgentEngine.kt)#L1187-L1382), [agent/RunManager.kt](../app/src/main/java/com/agent/mhamed/agent/RunManager.kt)#L1017-L1040), [agent/RememberedGrants.kt](../app/src/main/java/com/agent/mhamed/agent/RememberedGrants.kt)#L7-L42), [tools/ShellPolicy.kt](../app/src/main/java/com/agent/mhamed/tools/ShellPolicy.kt)#L8-L47), [ui/common/BiometricAuth.kt](../app/src/main/java/com/agent/mhamed/ui/common/BiometricAuth.kt)#L12-L113), [data/KeyStoreManager.kt](../app/src/main/java/com/agent/mhamed/data/KeyStoreManager.kt)#L9-L42), [data/ScreenshotPolicy.kt](../app/src/main/java/com/agent/mhamed/data/ScreenshotPolicy.kt)#L6-L45), [MainActivity.kt](../app/src/main/java/com/agent/mhamed/MainActivity.kt)#L116-L283), [AndroidManifest.xml](../app/src/main/AndroidManifest.xml)#L66-L78), [res/xml/backup_rules.xml](../app/src/main/res/xml/backup_rules.xml)#L1-L20), [res/xml/data_extraction_rules.xml](../app/src/main/res/xml/data_extraction_rules.xml)#L1-L38), [artifacts/ArtifactSandbox.kt](../app/src/main/java/com/agent/mhamed/artifacts/ArtifactSandbox.kt)#L5-L44), [artifacts/ArtifactWebView.kt](../app/src/main/java/com/agent/mhamed/artifacts/ArtifactWebView.kt)#L25-L96), [workspace/WorkspaceFs.kt](../app/src/main/java/com/agent/mhamed/workspace/WorkspaceFs.kt)#L95-L108), [tools/PublicHttpAddresses.kt](../app/src/main/java/com/agent/mhamed/tools/PublicHttpAddresses.kt)#L7-L38)
 
 ## Source files
 
-- `app/src/main/java/com/androidharness/app/agent/AgentEngine.kt`
-- `app/src/main/java/com/androidharness/app/agent/RunManager.kt`
-- `app/src/main/java/com/androidharness/app/agent/RememberedGrants.kt`
-- `app/src/main/java/com/androidharness/app/tools/ShellPolicy.kt`
-- `app/src/main/java/com/androidharness/app/tools/InteractiveTools.kt`
-- `app/src/main/java/com/androidharness/app/tools/WorkspaceToolRouting.kt`
-- `app/src/main/java/com/androidharness/app/tools/PublicHttpAddresses.kt`
-- `app/src/main/java/com/androidharness/app/tools/NetTools.kt`
-- `app/src/main/java/com/androidharness/app/ui/common/BiometricAuth.kt`
-- `app/src/main/java/com/androidharness/app/ui/common/SecureScreenEffect.kt`
-- `app/src/main/java/com/androidharness/app/ui/settings/AgentBehaviorSection.kt`
-- `app/src/main/java/com/androidharness/app/ui/settings/RememberedPermissionsSection.kt`
-- `app/src/main/java/com/androidharness/app/ui/settings/SettingsBackupSection.kt`
-- `app/src/main/java/com/androidharness/app/ui/ChatWorkspaceScreen.kt`
-- `app/src/main/java/com/androidharness/app/ui/chat/components/ActionCards.kt`
-- `app/src/main/java/com/androidharness/app/data/KeyStoreManager.kt`
-- `app/src/main/java/com/androidharness/app/data/ScreenshotPolicy.kt`
-- `app/src/main/java/com/androidharness/app/workspace/WorkspaceFs.kt`
-- `app/src/main/java/com/androidharness/app/workspace/ChatWorkspaces.kt`
-- `app/src/main/java/com/androidharness/app/artifacts/ArtifactSandbox.kt`
-- `app/src/main/java/com/androidharness/app/artifacts/ArtifactWebView.kt`
-- `app/src/main/java/com/androidharness/app/browser/BrowserController.kt`
-- `app/src/main/java/com/androidharness/app/MainActivity.kt`
+- `app/src/main/java/com/agent/mhamed/agent/AgentEngine.kt`
+- `app/src/main/java/com/agent/mhamed/agent/RunManager.kt`
+- `app/src/main/java/com/agent/mhamed/agent/RememberedGrants.kt`
+- `app/src/main/java/com/agent/mhamed/tools/ShellPolicy.kt`
+- `app/src/main/java/com/agent/mhamed/tools/InteractiveTools.kt`
+- `app/src/main/java/com/agent/mhamed/tools/WorkspaceToolRouting.kt`
+- `app/src/main/java/com/agent/mhamed/tools/PublicHttpAddresses.kt`
+- `app/src/main/java/com/agent/mhamed/tools/NetTools.kt`
+- `app/src/main/java/com/agent/mhamed/ui/common/BiometricAuth.kt`
+- `app/src/main/java/com/agent/mhamed/ui/common/SecureScreenEffect.kt`
+- `app/src/main/java/com/agent/mhamed/ui/settings/AgentBehaviorSection.kt`
+- `app/src/main/java/com/agent/mhamed/ui/settings/RememberedPermissionsSection.kt`
+- `app/src/main/java/com/agent/mhamed/ui/settings/SettingsBackupSection.kt`
+- `app/src/main/java/com/agent/mhamed/ui/ChatWorkspaceScreen.kt`
+- `app/src/main/java/com/agent/mhamed/ui/chat/components/ActionCards.kt`
+- `app/src/main/java/com/agent/mhamed/data/KeyStoreManager.kt`
+- `app/src/main/java/com/agent/mhamed/data/ScreenshotPolicy.kt`
+- `app/src/main/java/com/agent/mhamed/workspace/WorkspaceFs.kt`
+- `app/src/main/java/com/agent/mhamed/workspace/ChatWorkspaces.kt`
+- `app/src/main/java/com/agent/mhamed/artifacts/ArtifactSandbox.kt`
+- `app/src/main/java/com/agent/mhamed/artifacts/ArtifactWebView.kt`
+- `app/src/main/java/com/agent/mhamed/browser/BrowserController.kt`
+- `app/src/main/java/com/agent/mhamed/MainActivity.kt`
 - `app/src/main/AndroidManifest.xml`
 - `app/src/main/res/xml/backup_rules.xml`
 - `app/src/main/res/xml/data_extraction_rules.xml`

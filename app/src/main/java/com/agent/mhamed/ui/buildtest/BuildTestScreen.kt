@@ -1,5 +1,6 @@
 package com.agent.mhamed.ui.buildtest
 
+import com.agent.mhamed.ui.theme.motionBlur
 import com.agent.mhamed.R
 import android.content.Context
 import android.os.SystemClock
@@ -269,7 +270,8 @@ fun BuildTestScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
+                .padding(padding)
+                .motionBlur(),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {

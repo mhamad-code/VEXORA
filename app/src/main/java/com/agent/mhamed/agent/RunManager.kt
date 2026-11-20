@@ -167,6 +167,8 @@ class RunManager(
 
     suspend fun assignWorkspaces(sessionId: String, selection: ChatWorkspaceSelection) = workspaceGuard.withLock {
         if (selectionChange(sessionId, selection)) applySelection(sessionId, selection)
+        // A chat's own primary pick is the latest choice; project chats follow their project instead.
+        if (sessions.session(sessionId)?.workProjectId == null) workspace.setActiveProject(selection.primaryId)
     }
 
     /** Checks that [sessionId] may take [selection]. False when nothing would change. */
@@ -208,10 +210,24 @@ class RunManager(
         workspace.setChatWorkProject(sessionId, workProjectId)
     }
 
-    suspend fun createProjectChat(workProjectId: String, title: String): String = workspaceGuard.withLock {
+    /** The name the next chat in this project's series gets, for prefilling a name field. */
+    suspend fun nextProjectChatTitle(workProjectId: String): String? =
+        workspace.workProject(workProjectId)?.chatNamePattern?.let { nextProjectChatTitle(it, workProjectId) }
+
+    private suspend fun nextProjectChatTitle(pattern: String, workProjectId: String): String =
+        com.agent.mhamed.core.ChatSeries.next(pattern, workspace.workProjectChats(workProjectId).map { it.title })
+
+    /**
+     * [customTitle] names this one chat; otherwise the project's chat name series picks the
+     * next number, and a project without one uses [defaultTitle].
+     */
+    suspend fun createProjectChat(workProjectId: String, defaultTitle: String, customTitle: String? = null): String = workspaceGuard.withLock {
         val project = requireNotNull(workspace.workProject(workProjectId)) { "This project is no longer available." }
         val selection = ChatWorkspaceSelection.decode(project.selectionJson)
         workspace.validateSelection(selection)
+        val title = customTitle?.trim()?.take(200)?.takeIf { it.isNotEmpty() }
+            ?: project.chatNamePattern?.let { nextProjectChatTitle(it, workProjectId) }
+            ?: defaultTitle
         val id = sessions.createSession(title, selection.primaryId)
         workspace.assignSelection(id, selection)
         workspace.setChatWorkProject(id, workProjectId)
@@ -430,11 +446,14 @@ class RunManager(
         onlyIfIdle: Boolean = false,
         automationRunId: String? = null,
         allowModelFallback: Boolean = true,
+        /** Research depth for this run only, instead of the saved setting (Chat's "Dig deeper"). */
+        searchDepthOverride: com.agent.mhamed.data.SearchDepth? = null,
     ): String = kotlinx.coroutines.withContext(Dispatchers.IO) { workspaceGuard.withLock {
         startRunLocked(sessionId, text, imageRefs, config, apiKey, permissionMode, mode,
             maxOutputTokens, maxContextTokens, thinking, maxIterations, workspaceOverride,
             notifyOnFinish, resume, queuedPromptId, replacementMessageId,
-            onlyIfIdle = onlyIfIdle, automationRunId = automationRunId, allowModelFallback = allowModelFallback)
+            onlyIfIdle = onlyIfIdle, automationRunId = automationRunId, allowModelFallback = allowModelFallback,
+            searchDepthOverride = searchDepthOverride)
     } }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -460,6 +479,7 @@ class RunManager(
         automationRunId: String? = null,
         allowModelFallback: Boolean = true,
         subagentContinuation: Boolean = false,
+        searchDepthOverride: com.agent.mhamed.data.SearchDepth? = null,
     ): String {
         check(canRun()) { context.getString(com.agent.mhamed.R.string.background_run_blocked) }
         val sid = sessionId ?: sessions.createSession(
@@ -486,15 +506,25 @@ class RunManager(
             "This chat's model is no longer available. Choose another model in the picker."
         }
         val conversation = com.agent.mhamed.data.ConversationConfig.decode(sessions.session(sid)?.conversationJson)
+        // A llama.cpp server holds only what it was started with, whatever the settings say.
+        val serverContext = com.agent.mhamed.llm.ServerContext.tokens(runConfig, apiKey)
+        val catalogContext = providers.catalogs.first()[runConfig.id]?.firstOrNull { it.id == runConfig.model }?.contextTokens
+        // A gateway can serve a model with less than its own window; its rejection told us how much.
+        val learnedContext = reasoningPrefs.learnedContextLimits[TextFileWrites.modelKey(runConfig.id, runConfig.model)]
         val contextLimit = if (conversation.isChat) ChatContextPolicy.limit(maxContextTokens,
-            providers.catalogs.first()[runConfig.id]?.firstOrNull { it.id == runConfig.model }?.contextTokens,
-            com.agent.mhamed.local.LocalModelCatalog.isLocal(runConfig.id)) else maxContextTokens
+            serverContext ?: ChatContextPolicy.modelLimit(catalogContext, learnedContext),
+            com.agent.mhamed.local.LocalModelCatalog.isLocal(runConfig.id))
+            else ChatContextPolicy.codeLimit(maxContextTokens, serverContext, catalogContext, learnedContext)
         val assignedWorkspace = workspace.forSession(sid)
         require(workspaceOverride == null || workspaceOverride.displayPath == assignedWorkspace.displayPath) {
             "This chat's workspace changed while preparing the request. Send the message again."
         }
         val runWorkspace = workspaceOverride ?: assignedWorkspace
-        checkpoints.history?.takeUnless { conversation.isChat }?.missingFiles(sid, runWorkspace)?.takeIf { it.isNotEmpty() }?.let { missing ->
+        // Advisory only: a failed history scan must never stop the message from sending.
+        try { checkpoints.history?.takeUnless { conversation.isChat }?.missingFiles(sid, runWorkspace) }
+        catch (e: kotlinx.coroutines.CancellationException) { throw e }
+        catch (e: Exception) { null }
+            ?.takeIf { it.isNotEmpty() }?.let { missing ->
             sessions.addMessage(sid, ChatMessage(role = Role.SYSTEM,
                 text = "Saved workspace files are missing: ${missing.take(20).joinToString()}. " +
                     "Durable copies are available through file_history and file_restore. Inspect prior tool results and recover saved versions if the deletion was unintended. Do not replay completed edits.",
@@ -502,8 +532,8 @@ class RunManager(
         }
         if (replacementMessageId != null) {
             check(!resume) { "Cannot replace a message while resuming" }
-            check(!workspaceBusy(runWorkspace, except = sid)) {
-                "Pause other tasks in this workspace before editing or retrying a message"
+            check(!rewindRestoresFiles(sid, replacementMessageId) || !workspaceBusy(runWorkspace, except = sid)) {
+                "Another task is working in this chat's workspace. Pause it before editing or retrying this message, since that undoes file changes."
             }
             if (conversation.isChat) {
                 val rows = sessions.messages(sid)
@@ -667,7 +697,7 @@ class RunManager(
                         ?: settings.settings.first().autoCompactTokens },
                     mode = if (conversation.isChat) AgentMode.ACT else mode,
                     conversation = conversation,
-                    searchDepth = reasoningPrefs.searchDepth,
+                    searchDepth = searchDepthOverride ?: reasoningPrefs.searchDepth,
                     chatImageFrequency = reasoningPrefs.chatImageFrequency,
                     chatInstructions = reasoningPrefs.chatInstructions,
                     maxIterations = maxIterations,
@@ -888,6 +918,11 @@ class RunManager(
                 st.copy(codeDrafts = (current + (event.draft.id to event.draft)).entries.toList().takeLast(8).associate { it.toPair() },
                     thinkingTiming = st.thinkingTiming.stop(ThinkingTiming.now()), retryStatus = null)
             }
+            AgentEvent.DraftDiscarded -> {
+                buffer(sessionId)?.let { buf -> synchronized(buf) { buf.text.setLength(0) } }
+                live.update { it.copy(streamingText = null) }
+            }
+            is AgentEvent.CodeDraftRemoved -> live.update { st -> st.copy(codeDrafts = st.codeDrafts - event.id) }
             AgentEvent.CodeDraftsCleared -> live.update { st -> st.copy(codeDrafts = st.codeDrafts.filterValues {
                 it.stage == CodeDraftStage.SAVED || it.stage == CodeDraftStage.FAILED
             }) }
@@ -1029,6 +1064,11 @@ class RunManager(
             }
 
             is AgentEvent.ProviderUsed -> controls.update(sessionId) { it.copy(usedProviderIds = it.usedProviderIds + event.providerId) }
+
+            is AgentEvent.Notice -> {
+                val noticeId = sessions.addMessage(sessionId, ChatMessage(role = Role.SYSTEM, text = event.text, turnId = turnId))
+                compactionSnapshots[sessionId]?.let { snapshot -> compactionSnapshots[sessionId] = snapshot.copy(messageIds = snapshot.messageIds + noticeId) }
+            }
 
             is AgentEvent.Retrying -> {
                 val seconds = (event.delayMs / 1000.0).let { if (it < 1) "<1" else "%.0f".format(it) }
@@ -1270,11 +1310,13 @@ class RunManager(
      * is saved to the chat before it leaves the queue. If the process dies in
      * between, [dropDeliveredSteering] finds the saved copy, so it is never
      * sent twice. After task leaves the queue alone for the next turn.
+     * A message's own pick from holding send wins over the Settings mode.
      */
     private fun steeringInbox(sessionId: String, turnId: String) = SteeringInbox {
-        if (settings.settings.first().steeringMode != com.agent.mhamed.data.SteeringMode.AH_AUTO) return@SteeringInbox emptyList()
+        val fallback = settings.settings.first().steeringMode
         synchronized(lock) { queueWrites[sessionId]?.toList() }.orEmpty().forEach { it.join() }
         val queue = controls.flow(sessionId).value.queue
+            .filter { (it.steering ?: fallback) == com.agent.mhamed.data.SteeringMode.AH_AUTO }
         if (queue.isEmpty()) return@SteeringInbox emptyList()
         val saved = sessions.messages(sessionId).mapNotNullTo(HashSet()) { it.id }
         val messages = queue.map { prompt ->
@@ -1295,9 +1337,9 @@ class RunManager(
         controls.update(sessionId) { record -> record.copy(queue = record.queue.filterNot { Steering.messageId(it.id) in saved }) }
     }
 
-    fun inject(sessionId: String, text: String) {
+    fun inject(sessionId: String, text: String, steering: com.agent.mhamed.data.SteeringMode? = null) {
         val job = appScope.launch(Dispatchers.IO, start = kotlinx.coroutines.CoroutineStart.LAZY) {
-            controls.update(sessionId) { it.copy(queue = it.queue + QueuedPrompt(text = text)) }
+            controls.update(sessionId) { it.copy(queue = it.queue + QueuedPrompt(text = text, steering = steering)) }
         }
         synchronized(lock) { queueWrites.getOrPut(sessionId) { mutableSetOf() }.add(job) }
         job.invokeOnCompletion { synchronized(lock) {
@@ -1368,6 +1410,23 @@ class RunManager(
             allowModelFallback = saved.allowModelFallback)
     }
 
+    /**
+     * Leaves a paused or interrupted task the user chose not to continue (issue #102).
+     * History, usage and settings stay saved; the saved task stops blocking the chat,
+     * and the next message starts a fresh run.
+     */
+    suspend fun dismissPausedTask(sessionId: String) = kotlinx.coroutines.withContext(Dispatchers.IO) {
+        check(!isRunning(sessionId)) { "Stop the running task before dismissing it" }
+        // A pending auto-continue or queued send would otherwise start a new run
+        // and put the same failure back on screen.
+        followUps.stop(sessionId)
+        synchronized(lock) {
+            followUpJobs[sessionId]?.cancel()
+            jobs[sessionId]?.cancel()
+        }
+        controls.update(sessionId) { it.copy(status = "idle", reason = null) }
+    }
+
     // ------------------------------------------------------------------
     // Edit / rewind
     // ------------------------------------------------------------------
@@ -1377,6 +1436,15 @@ class RunManager(
      * deletes that message and everything after it. The caller then re-sends
      * the edited text as a fresh run.
      */
+    /** Whether resending from [messageId] would restore saved file versions, not just trim the conversation. */
+    private suspend fun rewindRestoresFiles(sessionId: String, messageId: String): Boolean {
+        val msgs = sessions.messages(sessionId)
+        val index = msgs.indexOfFirst { it.id == messageId }
+        if (index < 0) return false
+        val withFiles = checkpoints.turnsWithCheckpoints(sessionId)
+        return msgs.drop(index).any { it.turnId != null && it.turnId in withFiles }
+    }
+
     suspend fun rewindAndTruncate(sessionId: String, messageId: String) {
         stopAndJoin(sessionId)
         engine.sideContexts.clear(sessionId)
@@ -1387,7 +1455,11 @@ class RunManager(
         // distinct turns from the edited message onward, newest first
         val turnIds = msgs.drop(index).mapNotNull { it.turnId }.distinct().reversed()
         val fs = workspace.forSession(sessionId)
-        check(!workspaceBusy(fs, except = sessionId)) { "Pause other tasks in these workspaces before editing or retrying a message." }
+        // Only a rewind that puts files back can collide with another task in the same folder.
+        val restoresFiles = checkpoints.turnsWithCheckpoints(sessionId).let { saved -> turnIds.any { it in saved } }
+        check(!restoresFiles || !workspaceBusy(fs, except = sessionId)) {
+            "Another task is working in this chat's workspace. Pause it before editing or retrying this message, since that undoes file changes."
+        }
         kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
             for (tid in turnIds) {
                 val result = checkpoints.rewind(sessionId, tid, fs)
@@ -1536,7 +1608,7 @@ class RunManager(
      * own turn id, so it never moves a main turn's cache footer, and nothing
      * else about the exchange is written anywhere.
      */
-    fun askAside(context: SideContext, question: String): kotlinx.coroutines.flow.Flow<SideEvent> {
+    fun askAside(context: SideContext, question: String, history: List<SideTurn> = emptyList()): kotlinx.coroutines.flow.Flow<SideEvent> {
         val sid = context.sessionId
         check(!(com.agent.mhamed.local.LocalModelCatalog.isLocal(context.config.id) && isRunning(sid))) {
             this.context.getString(com.agent.mhamed.R.string.btw_error_local_busy)
@@ -1546,7 +1618,7 @@ class RunManager(
             val chat = controls.flow(sid).value
             com.agent.mhamed.llm.effectiveFallback(settings.settings.first().fallbackPolicy, chat.fallbackMode, chat.fallbackOverride)
         }
-        return engine.askAside(context, question).onEach { event ->
+        return engine.askAside(context, question, history).onEach { event ->
             if (event is SideEvent.Usage) with(event.usage) {
                 sessions.addUsage(sid, inputTokens.toLong(), outputTokens.toLong(), cachedInputTokens.toLong(), cacheWriteTokens.toLong())
                 sessions.recordUsage(sid, providerName, model, inputTokens.toLong(), outputTokens.toLong(),

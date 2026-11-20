@@ -1,5 +1,6 @@
 package com.agent.mhamed.ui.subagent
 
+import com.agent.mhamed.ui.theme.motionBlur
 import com.agent.mhamed.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -191,7 +192,8 @@ fun SubagentScreen(
             state = listState,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
+                .padding(padding)
+                .motionBlur(listState),
             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {

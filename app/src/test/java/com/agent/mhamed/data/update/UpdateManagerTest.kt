@@ -9,7 +9,7 @@ import kotlinx.serialization.json.jsonArray
 
 class UpdateManagerTest {
     @Test fun `release tag wins over marketing name and trailing dates`() {
-        assertEquals("v3.2-release", UpdateManager.releaseVersion("v3.2-release", "AndroidHarness October 31 2026"))
+        assertEquals("v3.2-release", UpdateManager.releaseVersion("v3.2-release", "VEXORA October 31 2026"))
         assertTrue(UpdateManager.isNewer("3.2 (build 2026-10-31)", "3.1"))
         assertFalse(UpdateManager.isNewer("3.1 (build 2026-10-31)", "3.2"))
     }

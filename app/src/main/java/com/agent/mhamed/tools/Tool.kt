@@ -95,11 +95,15 @@ class ToolRegistry(private val tools: List<Tool>) {
             fileHistory: com.agent.mhamed.data.WorkspaceFileHistory? = null,
             memory: com.agent.mhamed.data.MemoryRepository? = null,
             searchApiRefresh: suspend () -> SearchApiConfig? = { searchApi() },
+            searchSetup: () -> SearchSetup = { SearchSetup.single(searchApi()) },
+            searchSetupRefresh: suspend () -> SearchSetup = { SearchSetup.single(searchApiRefresh()) },
             dhizuku: com.agent.mhamed.data.env.DhizukuManager? = null,
             deviceAccess: com.agent.mhamed.data.env.DeviceAccessManager? = null,
             pullRequests: (() -> com.agent.mhamed.github.PullRequestPublisher?)? = null,
             sessionMessages: suspend (String) -> List<com.agent.mhamed.core.ChatMessage> = { emptyList() },
             appSettings: com.agent.mhamed.data.SettingsRepository? = null,
+            automations: AutomationToolHost? = null,
+            plugins: com.agent.mhamed.plugins.PluginManager? = null,
         ): ToolRegistry {
             val baseTools = mutableListOf<Tool>(
                 ListDirTool(),
@@ -137,7 +141,10 @@ class ToolRegistry(private val tools: List<Tool>) {
                 MoveFileTool(),
                 WebFetchTool(httpClient, searchApi = searchApi, refreshApi = searchApiRefresh,
                     renderedReader = browserController?.let { browser -> { budget -> BrowserReadTool(browser, budget) } }),
-                WebSearchTool(httpClient, searchApi, refreshApi = searchApiRefresh),
+                WebFetchTool(httpClient, searchApi = searchApi, refreshApi = searchApiRefresh).let { pages ->
+                    WebSearchTool(httpClient, searchApi, refreshApi = searchApiRefresh,
+                        pageReader = SearchPageReader(pages::readText), setup = searchSetup, refreshSetup = searchSetupRefresh)
+                },
                 HttpRequestTool(httpClient) { linuxEnv.githubToken() },
                 AskUserTool(),
                 StorageAccessTool { shellRouter.isAllFilesAccess() },
@@ -158,8 +165,15 @@ class ToolRegistry(private val tools: List<Tool>) {
             )
             if (appSettings != null) {
                 val read: suspend () -> com.agent.mhamed.data.AppSettings = { appSettings.settings.first() }
-                baseTools += AppSettingsFindTool(read)
-                baseTools += AppSettingsChangeTool(appSettings, read)
+                val skillNames: suspend () -> List<String> = { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { skills.list().map { it.name } } }
+                baseTools += AppSettingsFindTool(skillNames, read)
+                baseTools += AppSettingsChangeTool(appSettings, skillNames, read)
+                if (plugins != null) baseTools += AppPluginsTool(plugins, read)
+            }
+            if (automations != null) {
+                baseTools += AutomationCreateTool(automations)
+                baseTools += AutomationListTool(automations)
+                baseTools += AutomationManageTool(automations)
             }
             if (dhizuku != null && deviceAccess != null) baseTools += DeviceOwnerShellTool(dhizuku, deviceAccess)
             if (pullRequests != null) baseTools += GitHubCreatePullRequestTool(pullRequests, sessionMessages)

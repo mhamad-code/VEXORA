@@ -58,7 +58,7 @@ class ShellTool(
 
             // Full access skips the denylist re-check; the engine already
             // gated this call against the same policy.
-            val deny = if (ctx.sandboxOff) null else ShellPolicy.denyReason(rawCommand, root, cwd)
+            val deny = if (ctx.sandboxOff) null else ShellPolicy.denyReason(rawCommand, root, cwd, ctx.skills?.folders().orEmpty())
             if (deny != null) {
                 return@withContext ToolResult(false, deny)
             }
@@ -76,7 +76,7 @@ class ShellTool(
             }
 
             val res = if (remote != null) remote.run(command, cwd.path, timeoutSec * 1000, MAX_OUTPUT_CHARS * 2)
-                else router.run(command, cwd, timeoutSec * 1000, MAX_OUTPUT_CHARS * 2)
+                else router.run(PluginBinPath.prefix(ctx, command), cwd, timeoutSec * 1000, MAX_OUTPUT_CHARS * 2)
 
             val isSymlink = rawCommand.contains("ln ") && (rawCommand.contains("-s") || rawCommand.contains("--symbolic"))
             val hasSymlinkError = isSymlink && (res.exitCode != 0 || res.rawOutput.contains("Permission denied", true) || res.rawStderr.contains("Permission denied", true) || res.rawOutput.contains("Operation not permitted", true) || res.rawStderr.contains("Operation not permitted", true))
@@ -99,7 +99,10 @@ class ShellTool(
             if (hasSymlinkError) {
                 sb.append("[note: symlink creation failed: symlink not supported/allowed on this filesystem]\n")
             }
-            if (res.tier == ExecutionTier.TOYBOX && linuxEnv.bashExecutable() != null) {
+            // Access refusals come back as an unstarted toybox result (exit -1, nothing on stdout);
+            // they are policy, not a broken bash, so they get no fallback note.
+            val refused = res.exitCode == -1 && res.rawOutput.isEmpty() && !res.timedOut
+            if (res.tier == ExecutionTier.TOYBOX && !refused && linuxEnv.bashExecutable() != null) {
                 sb.append("[note: fell back to toybox sh, launching the Linux bash failed on this device]\n")
             }
             if (res.tier == ExecutionTier.PRIVILEGED) {

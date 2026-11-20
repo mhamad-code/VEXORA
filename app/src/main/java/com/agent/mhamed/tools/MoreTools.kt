@@ -32,6 +32,7 @@ class CreateDirTool : Tool {
         withContext(Dispatchers.IO) {
             val path = args["path"]?.jsonPrimitive?.content
                 ?: throw ToolFailure("Missing required argument: path")
+            if (path.isBlank()) throw ToolFailure("path must not be empty. Give the directory to create, relative to the workspace root.")
             val node = ctx.workspace.resolve(path)
             if (node.exists && node.isFile) {
                 throw ToolFailure("Cannot create directory: $path already exists and is a file")
@@ -87,6 +88,9 @@ class DeleteFileTool : Tool {
                 )
             }
             if (!node.exists) throw ToolFailure("Path does not exist: $path")
+            (node as? com.agent.mhamed.workspace.FileFsNode)?.let { local ->
+                protectedDeleteReason(local.file, ctx.workspace.shellRoot)?.let { throw ToolFailure("Refusing to delete $path: $it") }
+            }
             if (node.isDirectory) {
                 val childCount = node.list().size
                 if (childCount > 0 && !recursive) {
@@ -104,6 +108,25 @@ class DeleteFileTool : Tool {
                 ToolResult(false, "Failed to delete $path")
             }
         }
+}
+
+/**
+ * Full access mode lets `..` and absolute paths through, so the workspace-root
+ * check alone would still allow wiping the folder that holds the workspace, all
+ * of shared storage, or a system directory. Those are never a sensible target.
+ */
+internal fun protectedDeleteReason(target: java.io.File, workspaceRoot: java.io.File?): String? {
+    val path = runCatching { target.canonicalFile }.getOrDefault(target.absoluteFile)
+    val root = workspaceRoot?.let { runCatching { it.canonicalFile }.getOrDefault(it.absoluteFile) }
+    if (root != null && root.toPath().startsWith(path.toPath())) {
+        return if (root == path) "it is the workspace root." else "it contains the workspace (${root.path})."
+    }
+    val text = path.path.trimEnd('/').ifEmpty { "/" }
+    val storage = setOf("/storage", "/storage/emulated", "/storage/emulated/0", "/storage/self", "/storage/self/primary", "/sdcard", "/mnt", "/mnt/sdcard")
+    if (text == "/" || path.parentFile?.path in setOf("/", "/storage") || text in storage) {
+        return "$text is a system or storage root. Delete the specific files or folders inside it instead."
+    }
+    return null
 }
 
 class MoveFileTool : Tool {
@@ -243,7 +266,33 @@ class WebFetchTool(
 
     internal fun forBudget(budget: SearchSourceBudget?): WebFetchTool = WebFetchTool(client, budget, searchApi, refreshApi, renderedReader)
 
-    override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult = withContext(Dispatchers.IO) {
+    /**
+     * A page's full readable text for web_search's parallel reads, or null when
+     * it is blocked, JavaScript-only, or not text. Never opens the browser: a
+     * search must not wait on rendering, and the model can still ask for it.
+     */
+    internal suspend fun readText(url: String): String? = withContext(Dispatchers.IO) {
+        if (url.toHttpUrlOrNull() == null) return@withContext null
+        val args = kotlinx.serialization.json.buildJsonObject {
+            put("url", kotlinx.serialization.json.JsonPrimitive(url))
+            put("max_chars", kotlinx.serialization.json.JsonPrimitive(1000))
+        }
+        val result = try { ResearchHttp.page(url) { readPage(url, args) } }
+            catch (ce: kotlinx.coroutines.CancellationException) { throw ce }
+            catch (_: Exception) { return@withContext null }
+        if (!result.ok || result.research?.pageRead != true) return@withContext null
+        WebResultCache.getPage(url)?.takeIf { ReadableWebPage.problem(it) == null }
+    }
+
+    override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult {
+        val started = System.nanoTime()
+        val result = fetch(args, ctx)
+        researchTiming("web_fetch ${args["url"]?.jsonPrimitive?.contentOrNull?.toHttpUrlOrNull()?.host}: " +
+            "${(System.nanoTime() - started) / 1_000_000}ms ok=${result.ok} chars=${result.output.length}")
+        return result
+    }
+
+    private suspend fun fetch(args: JsonObject, ctx: ToolContext): ToolResult = withContext(Dispatchers.IO) {
         val url = args["url"]?.jsonPrimitive?.content ?: throw ToolFailure("Missing required argument: url")
         if (url.toHttpUrlOrNull() == null) throw ToolFailure("Only http(s) URLs are supported.")
         try {

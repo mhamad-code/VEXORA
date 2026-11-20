@@ -114,6 +114,8 @@
     <string name="ui_authentication_failed">"Pengesahan gagal"</string>
     <string name="ui_run_results">"Jalankan keputusan"</string>
     <string name="ui_notified_when_a_background_agent_run_finishes">"Dimaklumkan apabila ejen latar belakang dijalankan selesai"</string>
+    <string name="ui_run_errors">"Ralat larian"</string>
+    <string name="ui_notified_when_a_background_agent_run_fails">"Dimaklumkan apabila larian ejen latar belakang berhenti dengan ralat"</string>
     <string name="ui_run_finished">"Larian selesai"</string>
     <string name="ui_run_needs_attention">"Larian perlukan perhatian"</string>
     <string name="ui_agent_runs">"Ejen berjalan"</string>
@@ -141,7 +143,6 @@
     <string name="ui_could_not_load_that_image">"Tidak dapat memuatkan imej itu."</string>
     <string name="ui_pages">"halaman %1$s"</string>
     <string name="ui_could_not_attach_that_file">"Tidak dapat melampirkan fail itu: %1$s"</string>
-    <string name="ui_file_is_larger_than">"fail lebih besar daripada %1$s"</string>
     <string name="ui_model_selection_is_being_saved_try_sending">"Pemilihan model sedang disimpan. Cuba hantar sekali lagi."</string>
     <string name="ui_this_chat_s_provider_is_unavailable_choose">"Pembekal sembang ini tidak tersedia. Pilih pembekal lain dalam pemilih model."</string>
     <string name="ui_the_selected_local_model_was_removed_download">"Model tempatan yang dipilih telah dialih keluar. Muat turun sekali lagi atau pilih pembekal lain secara eksplisit."</string>
@@ -275,6 +276,13 @@
     <string name="provider_use_key">"Gunakan kunci %1$d"</string>
     <string name="provider_remove_key">"Keluarkan kunci %1$d"</string>
     <string name="provider_add_key">"Tambah kunci API"</string>
+    <string name="provider_test_key">Test</string>
+    <string name="provider_test_key_description">Test key %1$d</string>
+    <string name="provider_testing_key">Testing…</string>
+    <string name="provider_key_works">Key works (%1$d ms)</string>
+    <string name="provider_key_works_model">Key works with %1$s (%2$d ms)</string>
+    <string name="provider_key_failed">Key failed: %1$s</string>
+    <string name="provider_test_key_hint">Sends one short message capped at a few tokens.</string>
     <string name="provider_proxy_title">"proksi"</string>
     <string name="provider_proxy_system">"Sambungan sistem"</string>
     <string name="provider_proxy_inherit">"Gunakan tetapan global"</string>
@@ -543,4 +551,13 @@
     <string name="settings_voice_preview_play">Listen to %1$s</string>
     <string name="settings_voice_preview_stop">Stop the sample</string>
     <string name="settings_voice_preview_hint">Tap the speaker to hear a voice before you pick it.</string>
+    <string name="sidebar_workspace_other">"Sembang lain"</string>
+    <plurals name="subagents_finished_title">
+        <item quantity="other">"%1$d subejen selesai"</item>
+    </plurals>
+    <string name="subagents_finished_with_failures">"%1$d selesai, %2$d tidak selesai"</string>
+    <string name="subagents_show_result">"Tunjuk hasil"</string>
+    <string name="subagents_hide_result">"Sembunyikan hasil"</string>
+    <string name="subagents_no_output">"Tiada hasil dipulangkan."</string>
+    <string name="subagents_took">"Mengambil %1$s"</string>
 </resources>

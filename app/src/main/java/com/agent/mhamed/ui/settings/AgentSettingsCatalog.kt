@@ -32,18 +32,29 @@ internal sealed interface SettingKind {
     data class Choice(
         val options: (AppSettings) -> List<String>,
         val labels: Map<String, Int> = emptyMap(),
+        /** Other spellings the model may use, mapped to an option, like a saved palette's name to its custom: id. */
+        val aliases: (AppSettings) -> Map<String, String> = { emptyMap() },
     ) : SettingKind
     data class Text(val maxLength: Int) : SettingKind
 }
 
-internal enum class RangeUnit(val suffix: String) { PERCENT("%"), MS(" ms"), MINUTES(" min"), SPEED("x"), COUNT(""), TOKENS(" tokens") }
+internal enum class RangeUnit(val suffix: String) { PERCENT("%"), MS(" ms"), SECONDS(" s"), MINUTES(" min"), SPEED("x"), COUNT(""), TOKENS(" tokens") }
 
 /**
  * One app setting the agent can read and change from a conversation.
  *
  * [key] is the stable name the model uses. [about] is English for the model;
- * [title] is what the change card shows, next to the page title for context.
- * [sensitive] changes always wait for the user's approval, in every mode.
+ * [title] is what the change card shows, next to the page title for context,
+ * unless [name] gives one for an entry made at runtime, like a skill.
+ *
+ * Every setting sits in one of three tiers:
+ * - ordinary: applies at once when the user allows settings changes, with Undo on the card;
+ * - [sensitive]: anything that widens what the agent may do, shares data between
+ *   areas or sends it off the phone, or weakens privacy. It waits for the user's
+ *   approval in every mode, Full access included;
+ * - [userOnlyValues]: values the agent may never pick, even with approval, such as
+ *   raising its own permissions or switching on something behind a warning dialog.
+ *   The card links the user to the setting instead.
  */
 internal class AgentSetting(
     val key: String,
@@ -57,10 +68,11 @@ internal class AgentSetting(
     /** Another setting (key to value) that must also be set when this one is turned on, or it has no effect. */
     val requires: Pair<String, String>? = null,
     /**
-     * A value only the user may choose. The agent can read it and can leave it
-     * alone, but a request to set it is refused and sent to the user instead.
+     * Values only the user may choose. The agent can read them and can leave them
+     * alone, but a request to set one is refused and sent to the user instead.
      */
-    val userOnlyValue: String? = null,
+    val userOnlyValues: Set<String> = emptySet(),
+    val name: String? = null,
     val read: (AppSettings) -> String,
     val write: suspend (SettingsRepository, String) -> Unit,
 ) {
@@ -81,9 +93,15 @@ internal class AgentSetting(
             }
             is SettingKind.Choice -> {
                 val options = kind.options(settings)
+                val aliases = kind.aliases(settings).filterValues { it in options }
                 fun norm(value: String) = value.lowercase(Locale.ROOT).replace(' ', '_').replace('-', '_')
                 options.firstOrNull { norm(it) == norm(raw) }?.let { Result.success(it) }
-                    ?: fail("$key must be one of: ${options.joinToString()}.")
+                    ?: aliases.entries.firstOrNull { norm(it.key) == norm(raw) }?.let { Result.success(it.value) }
+                    ?: run {
+                        // Name saved palettes and other aliased options the way the user knows them, not by id.
+                        val named = aliases.entries.associate { it.value to "\"${it.key}\"" }
+                        fail("$key must be one of: ${options.joinToString { named[it] ?: it }}.")
+                    }
             }
             is SettingKind.Text -> if (input.length > kind.maxLength) fail("$key is limited to ${kind.maxLength} characters.") else Result.success(input.trim())
         }
@@ -94,11 +112,14 @@ internal class AgentSetting(
         val allowed = when (kind) {
             SettingKind.Toggle -> "true|false"
             is SettingKind.Range -> "${format(kind.min)}..${format(kind.max)}${kind.unit.suffix}"
-            is SettingKind.Choice -> kind.options(settings).joinToString("|")
+            is SettingKind.Choice -> kind.options(settings).let { options ->
+                val named = kind.aliases(settings).entries.associate { it.value to it.key }
+                options.joinToString("|") { option -> named[option]?.let { "$option \"$it\"" } ?: option }
+            }
             is SettingKind.Text -> "text up to ${kind.maxLength} chars"
         }
         val current = read(settings).let { if (kind is SettingKind.Text) "\"${it.take(80)}${if (it.length > 80) "…" else ""}\"" else it }
-        val limit = if (userOnlyValue != null) " · only the user can set it to $userOnlyValue" else ""
+        val limit = if (userOnlyValues.isNotEmpty()) " · only the user can set it to ${userOnlyValues.joinToString(" or ")}" else ""
         return "$key = $current ($allowed) · ${page.name}${if (sensitive) " · needs approval" else ""}$limit · $about"
     }
 
@@ -131,8 +152,10 @@ internal object AgentSettingsCatalog {
             read = { it.themeMode.name }, write = { r, v -> r.setThemeMode(ThemeMode.valueOf(v)) }),
         AgentSetting(PALETTE, R.string.theme_color_palette, SettingsPage.APPEARANCE,
             SettingKind.Choice({ s -> listOf("WALLPAPER") + ThemePalette.entries.map { it.name } + s.customPalettes.map { "custom:${it.id}" } },
-                mapOf("WALLPAPER" to R.string.theme_wallpaper_colors) + ThemePalette.entries.associate { it.name to it.labelRes() }),
-            "App accent colors: WALLPAPER (dynamic), a preset, or a saved custom palette. Create new ones with create_palette.",
+                mapOf("WALLPAPER" to R.string.theme_wallpaper_colors) + ThemePalette.entries.associate { it.name to it.labelRes() },
+                aliases = { s -> s.customPalettes.associate { it.name to "custom:${it.id}" } }),
+            "App accent colors: WALLPAPER (dynamic), a preset, or a saved custom palette by its custom: id or name. " +
+                "To make and apply a new one, use create_palette alone; it is applied as soon as it is saved.",
             R.string.settings_anchor_dynamic_color, "color colour accent dynamic material you wallpaper custom palette",
             read = ::paletteChoice, write = { r, v -> when {
                 v == "WALLPAPER" -> r.setDynamicColor(true)
@@ -218,6 +241,10 @@ internal object AgentSettingsCatalog {
             mapOf("NEW_CODE" to R.string.settings_start_code_new, "LAST_CODE" to R.string.settings_start_code_last)),
             "Code opens a new conversation or continues the last one.", R.string.settings_start_code, "resume continue code",
             read = { it.codeStart.name }, write = { r, v -> r.setCodeStart(CodeStartMode.valueOf(v)) }),
+        AgentSetting("code_search_chat_chats", R.string.code_search_chat_chats, SettingsPage.CODING, SettingKind.Toggle,
+            "Let Code find and read past Chat conversations when the user asks about them.",
+            R.string.code_search_chat_chats, "history past conversations search chat chats cross share recall",
+            sensitive = true, read = { it.codeSearchChatChats.toString() }, write = { r, v -> r.setCodeSearchChatChats(bool(v)) }),
         AgentSetting("chat_instructions", R.string.chat_global_instructions, SettingsPage.CHAT_OPTIONS, SettingKind.Text(4_000),
             "Custom instructions added to every Chat conversation.", R.string.chat_global_instructions, "custom instructions persona system prompt",
             sensitive = true, read = { it.chatInstructions }, write = { r, v -> r.setChatInstructions(v) }),
@@ -231,6 +258,13 @@ internal object AgentSettingsCatalog {
                 "MORE" to R.string.chat_image_frequency_more, "ALWAYS" to R.string.chat_image_frequency_always)),
             "How often Chat answers include pictures.", keywords = "images pictures photos",
             read = { it.chatImageFrequency.name }, write = { r, v -> r.setChatImageFrequency(ImageFrequency.valueOf(v)) }),
+        AgentSetting("chat_reminders", R.string.reminders_title, SettingsPage.CHAT_OPTIONS, SettingKind.Toggle,
+            "Lets Chat set reminders that show as notifications.", keywords = "reminders remind alarm notification",
+            read = { it.chatRemindersEnabled.toString() }, write = { r, v -> r.setChatRemindersEnabled(bool(v)) }),
+        AgentSetting("chat_search_code_chats", R.string.chat_search_code_chats, SettingsPage.CHAT_OPTIONS, SettingKind.Toggle,
+            "Let Chat find and read past Code conversations across projects when the user asks about them.",
+            R.string.chat_search_code_chats, "history past conversations search code chats cross share recall",
+            sensitive = true, read = { it.chatSearchCodeChats.toString() }, write = { r, v -> r.setChatSearchCodeChats(bool(v)) }),
         AgentSetting("keep_thinking_collapsed", R.string.chat_keep_thinking_collapsed, SettingsPage.CHAT_OPTIONS, SettingKind.Toggle,
             "Keep the model's thinking folded away while it streams.", keywords = "reasoning thoughts expand",
             read = { it.chatKeepThinkingCollapsed.toString() }, write = { r, v -> r.setChatKeepThinkingCollapsed(bool(v)) }),
@@ -263,8 +297,9 @@ internal object AgentSettingsCatalog {
             read = { it.memoryEntryMaxChars.toString() }, write = { r, v -> r.setMemoryEntryMaxChars(v.toInt()) }),
         // Agent
         AgentSetting("permission_mode", R.string.settings_search_permission_mode_title, SettingsPage.AGENT, enumChoice(PermissionMode.entries.toTypedArray()),
-            "Default approvals for Code: CONFIRM_ALL, CONFIRM_RISKY, FULL_AUTO, FULL_ACCESS.", R.string.settings_anchor_default_permission,
-            "approvals permissions full access auto", sensitive = true,
+            "Default approvals for Code: CONFIRM_ALL, CONFIRM_RISKY, FULL_AUTO, FULL_ACCESS. You can make it stricter with the user's approval; " +
+                "only the user can loosen it to FULL_AUTO or FULL_ACCESS.", R.string.settings_anchor_default_permission,
+            "approvals permissions full access auto", sensitive = true, userOnlyValues = setOf("FULL_AUTO", "FULL_ACCESS"),
             read = { it.permissionMode.name }, write = { r, v -> r.setPermissionMode(PermissionMode.valueOf(v)) }),
         AgentSetting("max_iterations", R.string.settings_search_tool_iterations_title, SettingsPage.AGENT, SettingKind.Range(0.0, 1_000.0, RangeUnit.COUNT),
             "Tool steps per run; 0 is unlimited.", R.string.settings_anchor_tool_iterations, "steps limit loops",
@@ -289,6 +324,18 @@ internal object AgentSettingsCatalog {
             enumChoice(SteeringMode.entries.toTypedArray(), mapOf("AH_AUTO" to R.string.steering_mode_auto, "AFTER_TASK" to R.string.steering_mode_after_task)),
             "AH_AUTO reads messages sent mid-task at the next step; AFTER_TASK waits for the task to end.", R.string.settings_anchor_steering, "steer queue messages",
             read = { it.steeringMode.name }, write = { r, v -> r.setSteeringMode(SteeringMode.valueOf(v)) }),
+        AgentSetting("stream_stall_timeout", R.string.stall_timeout_title, SettingsPage.AGENT,
+            SettingKind.Range(0.0, com.agent.mhamed.agent.StreamRetrier.MAX_STALL_TIMEOUT_SECONDS.toDouble(), RangeUnit.SECONDS, wholeNumber = true),
+            "Seconds a reply may send nothing before the task pauses. 0 never pauses; values from 1 to " +
+                "${com.agent.mhamed.agent.StreamRetrier.MIN_STALL_TIMEOUT_SECONDS - 1} are raised to ${com.agent.mhamed.agent.StreamRetrier.MIN_STALL_TIMEOUT_SECONDS}.",
+            R.string.stall_timeout_title, "stream stall timeout slow model silent pause wait longer stuck",
+            read = { it.streamStallTimeoutSeconds.toString() },
+            write = { r, v -> r.setStreamStallTimeoutSeconds(v.toInt().let { n ->
+                if (n == com.agent.mhamed.agent.StreamRetrier.STALL_TIMEOUT_NEVER) n else n.coerceAtLeast(com.agent.mhamed.agent.StreamRetrier.MIN_STALL_TIMEOUT_SECONDS) }) }),
+        AgentSetting("stream_file_writes_as_text", R.string.stream_writes_title, SettingsPage.AGENT, SettingKind.Toggle,
+            "Ask models to stream large file writes as text so they show up live and do not stall.",
+            R.string.stream_writes_title, "stream file writes text large files live stall",
+            read = { it.streamFileWritesAsText.toString() }, write = { r, v -> r.setStreamFileWritesAsText(bool(v)) }),
         AgentSetting("tips", R.string.tips_setting_title, SettingsPage.AGENT, SettingKind.Toggle,
             "Occasional tips while the agent works.", R.string.tips_setting_title, "hints tips help",
             read = { it.runTipsEnabled.toString() }, write = { r, v -> r.setRunTipsEnabled(bool(v)) }),
@@ -308,7 +355,7 @@ internal object AgentSettingsCatalog {
         // Sub-agents
         AgentSetting("subagents_enabled", R.string.subagents_enable_title, SettingsPage.SUBAGENT, SettingKind.Toggle,
             "Master switch for subagents. Off removes the subagent tools and stops running subagents. You can turn it off for the user but never back on.",
-            R.string.subagents_enable_title, "subagent sub-agent subagents disable off turn off delegate task parallel", userOnlyValue = "true",
+            R.string.subagents_enable_title, "subagent sub-agent subagents disable off turn off delegate task parallel", userOnlyValues = setOf("true"),
             read = { it.subagentsEnabled.toString() }, write = { r, v -> r.setSubagentsEnabled(bool(v)) }),
         AgentSetting("subagent_action_tools", R.string.settings_search_subagent_tools_title, SettingsPage.SUBAGENT, SettingKind.Toggle,
             "Let subagents edit files and run commands in Act mode.", R.string.settings_anchor_subagent_tools, "subagent edit commands", sensitive = true,
@@ -329,15 +376,38 @@ internal object AgentSettingsCatalog {
         AgentSetting("caveman_classical_chinese", R.string.settings_caveman_classical_chinese, SettingsPage.CAVEMAN, SettingKind.Toggle,
             "Caveman in classical Chinese (wenyan).", keywords = "caveman wenyan chinese",
             read = { it.cavemanWenyan.toString() }, write = { r, v -> r.setCavemanWenyan(bool(v)) }),
+        AgentSetting("activity_display", R.string.settings_activity_display, SettingsPage.CODING, SettingKind.Choice({ listOf("NEW", "CLASSIC") }),
+            "How thinking and tool calls are drawn: grouped lines (new) or classic cards.", keywords = "activity display thinking tools grouped classic cards",
+            read = { it.activityDisplay.name }, write = { r, v -> r.setActivityDisplay(com.agent.mhamed.data.ActivityDisplay.valueOf(v)) }),
+        // Code review before commit
+        AgentSetting("code_review_before_commit", R.string.settings_code_review_before_commit, SettingsPage.CODING, SettingKind.Choice({ listOf("OFF", "SECRETS_ONLY", "FULL") }),
+            "Review changes before commit/push: Off, Secrets only, or Full (deterministic + AI).", keywords = "code review commit push secrets blocker",
+            read = { it.codeReviewBeforeCommit.name }, write = { r, v -> r.setCodeReviewBeforeCommit(com.agent.mhamed.data.CodeReviewLevel.valueOf(v)) }),
+        AgentSetting("code_review_min_diff_lines", R.string.settings_code_review_min_diff_lines, SettingsPage.CODING, SettingKind.Range(1.0, 200.0, RangeUnit.COUNT, true),
+            "Minimum changed lines before the AI review runs.", keywords = "code review diff lines threshold",
+            read = { it.codeReviewMinDiffLines.toString() }, write = { r, v -> r.setCodeReviewMinDiffLines(v.toInt()) }),
+        // Device control
+        AgentSetting("device_control_enabled", R.string.settings_device_control_enabled, SettingsPage.CODING, SettingKind.Toggle,
+            "Let the agent control Android apps on the device (disabled by default).", keywords = "device control android tap swipe screenshot ui automator",
+            sensitive = true, userOnlyValues = setOf("true"),
+            read = { it.deviceControlEnabled.toString() }, write = { r, v -> r.setDeviceControlEnabled(bool(v)) }),
+        AgentSetting("device_control_max_steps", R.string.settings_device_control_max_steps, SettingsPage.CODING, SettingKind.Range(1.0, 500.0, RangeUnit.COUNT, true),
+            "Maximum steps per device-control task.", keywords = "device control steps limit",
+            read = { it.deviceControlMaxSteps.toString() }, write = { r, v -> r.setDeviceControlMaxSteps(v.toInt()) }),
+        AgentSetting("device_control_max_duration", R.string.settings_device_control_max_duration, SettingsPage.CODING, SettingKind.Range(30.0, 3600.0, RangeUnit.COUNT, true),
+            "Maximum duration (seconds) per device-control task.", keywords = "device control duration limit",
+            read = { it.deviceControlMaxDurationSeconds.toString() }, write = { r, v -> r.setDeviceControlMaxDurationSeconds(v.toInt()) }),
         // Voice
         AgentSetting("speech_to_text", R.string.settings_search_stt_title, SettingsPage.VOICE,
             SettingKind.Choice({ listOf(AppSettings.VOICE_ENGINE_INBUILT) + com.agent.mhamed.data.audio.VoicePresets.presets.map { it.id } }),
-            "Voice input engine: inbuilt Android, or a configured voice provider id (groq, openai, elevenlabs, deepgram, assemblyai, or a custom endpoint).", R.string.settings_anchor_stt, "voice dictation whisper microphone transcript provider",
-            read = { it.voiceEngine }, write = { r, v -> r.setVoiceEngine(v) }),
+            "Voice input engine: inbuilt Android, or a configured voice provider id (groq, openai, elevenlabs, deepgram, assemblyai, or a custom endpoint). " +
+                "A provider sends the user's recordings to that service.", R.string.settings_anchor_stt, "voice dictation whisper microphone transcript provider",
+            sensitive = true, read = { it.voiceEngine }, write = { r, v -> r.setVoiceEngine(v) }),
         AgentSetting("text_to_speech", R.string.settings_search_tts_title, SettingsPage.VOICE,
             SettingKind.Choice({ listOf(AppSettings.TTS_ENGINE_SYSTEM) + com.agent.mhamed.data.audio.VoicePresets.presets.filter { it.supportsTts }.map { it.id } }),
-            "Read-aloud engine: system Android voice, or a configured voice provider id (groq, openai, elevenlabs, deepgram, cartesia, or a custom endpoint).", R.string.settings_anchor_tts, "read aloud voice speech provider",
-            read = { it.ttsEngine }, write = { r, v -> r.setTtsEngine(v) }),
+            "Read-aloud engine: system Android voice, or a configured voice provider id (groq, openai, elevenlabs, deepgram, cartesia, or a custom endpoint). " +
+                "A provider receives the text it reads.", R.string.settings_anchor_tts, "read aloud voice speech provider",
+            sensitive = true, read = { it.ttsEngine }, write = { r, v -> r.setTtsEngine(v) }),
         AgentSetting("speech_speed", R.string.settings_tts_speed, SettingsPage.VOICE, SettingKind.Range(0.5, 2.0, RangeUnit.SPEED),
             "Read-aloud speed multiplier.", R.string.settings_anchor_tts, "read aloud rate fast slow",
             read = { format(it.ttsSpeed.toDouble()) }, write = { r, v -> r.setTtsSpeed(v.toFloat()) }),
@@ -360,6 +430,17 @@ internal object AgentSettingsCatalog {
             "Offer the Auto Send switch inside the + button menu of the composer for a quick toggle.", R.string.settings_anchor_auto_send, "voice auto send plus menu shortcut composer",
             read = { it.voiceAutoSendShowInPlus.toString() }, write = { r, v -> r.setVoiceAutoSendShowInPlus(bool(v)) }),
         // Live Mode
+        AgentSetting("live_mode", R.string.live_settings_enable, SettingsPage.LIVE_MODE, SettingKind.Toggle,
+            "Experimental hands-free voice conversation in Chat. Off by default.", R.string.live_settings_enable,
+            "live mode voice conversation hands free talk experimental",
+            read = { it.liveMode.enabled.toString() }, write = { r, v -> r.updateLiveMode { m -> m.copy(enabled = bool(v)) } }),
+        AgentSetting("live_mode_abilities", R.string.live_settings_access, SettingsPage.LIVE_MODE,
+            enumChoice(com.agent.mhamed.data.LiveModeAccess.entries.toTypedArray(), mapOf("TALK" to R.string.live_access_talk,
+                "READ" to R.string.live_access_read, "START_TASKS" to R.string.live_access_tasks)),
+            "What Live Mode may do: TALK (no tools), READ (read files and search), START_TASKS (also hand tasks to the main agent).",
+            R.string.live_settings_access, "live mode tools read start tasks talk only abilities",
+            sensitive = true, read = { it.liveMode.access.name },
+            write = { r, v -> r.updateLiveMode { m -> m.copy(access = com.agent.mhamed.data.LiveModeAccess.valueOf(v)) } }),
         AgentSetting("live_speak_replies", R.string.live_settings_speak, SettingsPage.LIVE_MODE, SettingKind.Toggle,
             "Read each Live Mode reply aloud.", R.string.live_settings_speak, "live voice conversation speak read aloud reply",
             read = { it.liveMode.speakReplies.toString() }, write = { r, v -> r.updateLiveMode { m -> m.copy(speakReplies = bool(v)) } }),
@@ -372,11 +453,29 @@ internal object AgentSettingsCatalog {
             "Give on-device models the Harness instructions and tools. Slower and heavier; off by default.",
             keywords = "local model on device offline instructions tools slow memory",
             sensitive = true, read = { it.localModelAgentContext.toString() }, write = { r, v -> r.setLocalModelAgentContext(bool(v)) }),
+        AgentSetting("local_model_experimental", R.string.local_experimental_title, SettingsPage.LOCAL_MODELS, SettingKind.Toggle,
+            "Experimental on-device model features. Turning them on shows a warning only the user can accept, so you can only turn them off.",
+            R.string.local_experimental_title, "local model on device experimental acceleration gpu npu",
+            userOnlyValues = setOf("true"),
+            read = { it.localModelExperimental.toString() }, write = { r, v -> r.setLocalModelExperimental(bool(v)) }),
         // Web search
-        AgentSetting("web_search_provider", R.string.settings_search_web_title, SettingsPage.SEARCH,
-            SettingKind.Choice({ listOf("keyless", "brave", "tavily") }),
-            "Web search backend; brave and tavily need an API key on the page.", keywords = "search engine brave tavily",
-            read = { it.webSearchProvider }, write = { r, v -> r.setWebSearchProvider(v) }),
+        // Web search: one switch per provider. Every one that is on and has a key (or needs none) takes part.
+        *com.agent.mhamed.tools.SearchProviders.ids.map { id ->
+            val name = com.agent.mhamed.tools.SearchProviders.name(id) ?: "the keyless public engines"
+            AgentSetting("web_search_$id", R.string.settings_search_web_title, SettingsPage.SEARCH, SettingKind.Toggle,
+                "Lets web_search use $name. On by default; " +
+                    (if (id == com.agent.mhamed.tools.SearchProviders.KEYLESS || com.agent.mhamed.tools.SearchProviders.info(id)?.sharedKey != null)
+                        "it needs no key." else "it only works once a key is saved on the Web search page.") +
+                    " Every provider that is on and ready can be used, and web_search picks between them.",
+                keywords = "search engine provider $id ${name.lowercase()}",
+                read = { (id !in it.disabledSearchProviders).toString() },
+                write = { r, v -> r.setSearchProviderEnabled(id, bool(v)) })
+        }.toTypedArray(),
+        // Terminal and device
+        AgentSetting("storage_cards", R.string.settings_storage_cards_title, SettingsPage.ENVIRONMENT, SettingKind.Toggle,
+            "Let the agent show a card with buttons to Android's storage pages when a task needs file access. It never grants anything itself.",
+            R.string.settings_anchor_shared_storage, "storage access files permission card all files",
+            read = { it.storageAccessCards.toString() }, write = { r, v -> r.setStorageAccessCards(bool(v)) }),
         // Background
         AgentSetting("run_in_background", R.string.background_run_title, SettingsPage.BACKGROUND, SettingKind.Toggle,
             "Keep runs going when the app is in the background.", R.string.background_run_title, "background minimize screen off",
@@ -404,7 +503,15 @@ internal object AgentSettingsCatalog {
 
     private val byKey = all.associateBy { it.key }
 
+    /** Skills are switched on and off as "skill:<name>"; the names come from the skill store at run time. */
+    const val SKILL_PREFIX = "skill:"
+
+    fun skill(name: String): AgentSetting = AgentSetting(SKILL_PREFIX + name, R.string.settings_page_skills_title, SettingsPage.SKILLS,
+        SettingKind.Toggle, "Whether the agent may use the skill \"$name\".", keywords = "skill skills playbook $name", name = name,
+        read = { (name !in it.disabledSkills).toString() }, write = { r, v -> r.setSkillEnabled(name, bool(v)) })
+
     operator fun get(key: String): AgentSetting? = byKey[key]
+        ?: key.takeIf { it.startsWith(SKILL_PREFIX) }?.removePrefix(SKILL_PREFIX)?.takeIf { it.isNotBlank() }?.let(::skill)
 
     /** Settings matching any word of [query], best first; everything when blank. */
     fun search(query: String): List<AgentSetting> {

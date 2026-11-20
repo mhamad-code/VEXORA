@@ -1,14 +1,13 @@
 package com.agent.mhamed.llm
 
 import com.agent.mhamed.agent.RetryPolicy
+import com.agent.mhamed.agent.StreamRetrier
 import com.agent.mhamed.agent.TaskBudget
 import com.agent.mhamed.agent.ThinkingSpecs
 import com.agent.mhamed.agent.stallGuard
 import com.agent.mhamed.core.ChatMessage
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
@@ -39,7 +38,9 @@ class FallbackProvider(
     private val keyFor: suspend (ProviderConfig) -> String,
     private val destination: (ProviderConfig) -> String = { it.baseUrl.trimEnd('/').lowercase() },
     private val sleep: suspend (Long) -> Unit = { delay(it) },
-    private val stallTimeoutMs: Long = 90_000,
+    private val stallTimeoutMs: Long = com.agent.mhamed.agent.StreamRetrier.DEFAULT_STALL_TIMEOUT_MS,
+    /** The live Settings value; read per attempt so a change applies on the next request. */
+    private val currentStallTimeoutMs: (suspend () -> Long)? = null,
 ) : LlmProvider {
     private var primary: ProviderConfig? = null
     private var managedChanged = false
@@ -109,18 +110,20 @@ class FallbackProvider(
                 emit(StreamEvent.Failure("Fallback routing changed. Review Fallbacks before continuing.", retryable = false))
                 return@flow
             }
-            val timeout = if (com.agent.mhamed.local.LocalModelCatalog.isLocal(current.id)) 600_000 else stallTimeoutMs
+            val timeout = if (com.agent.mhamed.local.LocalModelCatalog.isLocal(current.id)) 600_000 else currentStallTimeoutMs?.invoke() ?: stallTimeoutMs
+            // What this attempt actually asks the model to reason with, so the
+            // stall guard's first-output window matches the work requested.
+            val attemptThinking = ThinkingSpecs.resolvedForModel(current.model, options.thinking,
+                ModelsDev.providerKeyFor(current.baseUrl)).level
             flow {
                 factory(current).streamChat(current, key, systemPrompt, messages, tools,
-                    options.copy(thinking = ThinkingSpecs.resolvedForModel(current.model, options.thinking, ModelsDev.providerKeyFor(current.baseUrl)).level,
+                    options.copy(thinking = attemptThinking,
                         debugGroup = debugGroup, debugAttempt = ++debugAttempts))
                     .collect { emit(it) }
-            }.flattenEvents().stallGuard(timeout).catch { e ->
+            }.flattenEvents().stallGuard(timeout, StreamRetrier.firstOutputWindow(timeout, attemptThinking, current)).catch { e ->
                 when (e) {
-                    is TimeoutCancellationException -> {
-                        coroutineContext.ensureActive()
-                        emit(StreamEvent.Failure("Generation stalled (timed out)"))
-                    }
+                    is com.agent.mhamed.agent.StreamStalledException ->
+                        emit(StreamEvent.Failure(com.agent.mhamed.agent.stalledMessage(e.silentMs)))
                     is CancellationException -> throw e
                     is com.agent.mhamed.agent.TaskPaused -> throw e
                     else -> {

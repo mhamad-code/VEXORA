@@ -3,8 +3,7 @@
     <!-- The product name is a brand, not UI copy, so it is never translated. -->
     <string name="app_name" translatable="false">VEXORA</string>
 
-    <!-- ================================================================
-         Settings · page titles, descriptions and groups.
+    <!-- =========================================================         Settings · page titles, descriptions and groups.
          A page title is also the sidebar label and the landing target of
          search results and deep links, so the title and the anchor it points
          at must come from the same resource id, never from two literals that
@@ -68,7 +67,7 @@
     <string name="settings_page_storage_title">Storage</string>
     <string name="settings_page_storage_desc">Shared tools, file usage and safe cleanup</string>
     <string name="settings_page_environment_title">Terminal &amp; device</string>
-    <string name="settings_page_environment_desc">Linux tools, storage permissions and background access</string>
+    <string name="settings_page_environment_desc">Linux tools, shell access and storage permissions</string>
     <string name="settings_page_troubleshooting_title">Troubleshooting</string>
     <string name="settings_page_troubleshooting_desc">Check connections, permissions and device tools</string>
     <string name="settings_page_backup_title">Backups</string>
@@ -140,7 +139,7 @@
     <string name="settings_search_github_title">GitHub sign in</string>
     <string name="settings_search_github_desc">GitHub · Connect account access for repositories</string>
     <string name="settings_search_web_title">Web search backend</string>
-    <string name="settings_search_web_desc">Web search · Choose Keyless, Brave or Tavily</string>
+    <string name="settings_search_web_desc">Web search · Public engines and nine search APIs, used together</string>
     <string name="settings_search_mcp_title">MCP servers</string>
     <string name="settings_search_mcp_desc">Connected tools · Add and configure MCP integrations</string>
     <string name="settings_search_add_workspace_title">Add workspace</string>
@@ -291,6 +290,17 @@
     <string name="settings_caveman_install_desc">Installs from the app. Reply mode starts Off; coding skills can be switched off individually.</string>
     <string name="settings_caveman_mode_desc">Automatically applied from the next model request, across chats. Off removes style instructions; skills stay independent.</string>
     <string name="settings_caveman_classical_chinese">Classical Chinese</string>
+    <string name="settings_code_review_before_commit">Review code before commit</string>
+    <string name="settings_code_review_min_diff_lines">Minimum changed lines for AI review</string>
+    <string name="settings_device_control_enabled">Device control (Android apps)</string>
+    <string name="settings_device_control_desc">Let the agent open and control Android apps on this device through Shizuku, Wireless ADB or root. Steps and duration are limited.</string>
+    <string name="settings_device_control_off_note">Device control is off. The agent cannot see or control other apps.</string>
+    <string name="settings_code_review_desc">Check changes for leaked secrets and obvious errors before the agent commits or pushes.</string>
+    <string name="settings_code_review_off">Off</string>
+    <string name="settings_code_review_secrets_only">Secrets only</string>
+    <string name="settings_code_review_full">Full (secrets + AI review)</string>
+    <string name="settings_device_control_max_steps">Device control max steps per task</string>
+    <string name="settings_device_control_max_duration">Device control max duration (seconds)</string>
     <string name="settings_caveman_classical_chinese_desc">Wenyan variant of the selected intensity</string>
     <string name="settings_caveman_classical_chinese_note">Code, paths and exact errors stay intact. Warnings and unclear instructions use full sentences.</string>
     <string name="settings_caveman_skills_desc">Loaded only when relevant. Available in the Skills picker after installation.</string>
@@ -760,10 +770,17 @@
     <string name="chat_create_code">Create Code conversation</string>
     <string name="chat_from_chat">From Chat</string>
     <string name="chat_empty_title">What is on your mind?</string>
-    <string name="chat_empty_description">Ask a question, explore an idea, or talk it through.</string>
+    <string name="chat_logo_replay">Replay logo animation</string>
+    <string name="chat_empty_description">Pick a starter below or just start typing.</string>
     <string name="chat_suggestion_explain">Explain a tricky topic simply</string>
     <string name="chat_suggestion_ideas">Help me brainstorm an idea</string>
     <string name="chat_suggestion_draft">Help me write a clear message</string>
+    <string name="chat_suggestion_think">Help me think something through</string>
+    <string name="chat_prefill_explain">Explain this to me simply:</string>
+    <string name="chat_prefill_ideas">Help me brainstorm ideas for</string>
+    <string name="chat_prefill_draft">Help me write a clear message to</string>
+    <string name="chat_prefill_think">Help me think through</string>
+    <string name="chat_support_discord">Discord</string>
     <string name="chat_switch_attachments">Send or remove attachments before switching sections. Your draft will be kept.</string>
     <string name="chat_file_requires_code">Use Code for this file. Chat can read images, text files, and PDFs with extractable text.</string>
     <string name="chat_thinking">Thinking</string>
@@ -812,11 +829,21 @@
     <string name="chat_image_save_failed">Could not save image</string>
     <string name="chat_image_shared">Image ready to share</string>
     <string name="chat_image_share_failed">Could not share image</string>
+    <string name="chat_image_save_to_gallery">Save to gallery</string>
+    <string name="automation_approval_title">Schedule this message?</string>
+    <string name="phone_control_approval_title">Let the agent control your phone?</string>
+    <string name="phone_control_allow">Allow in this chat</string>
+    <string name="phone_control_risky_title">Allow this change to your phone?</string>
+    <string name="phone_control_allow_once">Allow once</string>
+    <string name="settings_ask_phone_control">Ask before controlling the phone</string>
+    <string name="settings_ask_phone_control_desc">Agents ask once per chat before they use Shizuku, root or Device Owner. Your own terminal is never asked.</string>
+    <string name="chat_message_options">Message options</string>
     <string name="chat_sources_library">Sources in this chat</string>
     <string name="chat_sources_library_count">%1$d sources</string>
     <string name="chat_sources_library_empty">No web sources in this chat yet.</string>
-    <string name="chat_thought_seconds">Thought for %1$ds</string>
+    <string name="chat_thought_duration">Thought for %1$s</string>
     <string name="chat_writing_reply">Writing a reply</string>
+    <string name="chat_draft_checking">Draft. Checking a few more sources</string>
     <string name="chat_searching">Searching the web</string>
     <string name="chat_searched">Searched the web</string>
     <string name="chat_searching_chats">Searching past chats</string>
@@ -849,6 +876,10 @@
     <string name="chat_open_link">Open link</string>
     <string name="chat_sources_explanation">Pages found or read during this reply. Inline citations identify the source for each claim.</string>
     <string name="chat_source_read">Read page</string>
+    <string name="chat_dig_deeper">Dig deeper</string>
+    <string name="chat_answer_outline">Jump to section</string>
+    <string name="chat_claim_check">Check this claim</string>
+    <string name="chat_claim_sources">Sources disagree or only one supports this</string>
     <string name="chat_source_found">Found in search</string>
     <string name="chat_search_failed">Search unavailable</string>
     <string name="chat_page_failed">Could not read page</string>
@@ -910,6 +941,25 @@
     <string name="settings_memory_category_project">Project</string>
     <string name="settings_memory_category_decision">Decision</string>
     <string name="settings_memory_category_fact">Fact</string>
+    <string name="reminders_title">Reminders and alarms</string>
+    <string name="reminders_desc">Chat can set reminders, Clock app alarms and timers when you ask, like \"remind me to call the bank at 10\" or \"wake me up at 6:30\". You approve each one first.</string>
+    <string name="reminders_on_time">On-time reminders</string>
+    <string name="reminders_on_time_on">On. Reminders show at the exact minute.</string>
+    <string name="reminders_on_time_off">Off. Android may show reminders a few minutes late. Tap to allow.</string>
+    <string name="reminders_notifications_blocked">Notifications are blocked for VEXORA, so reminders will not show. Tap to allow them.</string>
+    <string name="reminders_upcoming">Upcoming</string>
+    <string name="reminders_cancel">Cancel reminder</string>
+    <string name="reminders_channel">Reminders</string>
+    <string name="reminders_channel_desc">Reminders you set in Chat.</string>
+    <string name="reminders_notification_title">Reminder</string>
+    <string name="reminders_snooze">Snooze 10 min</string>
+    <string name="reminders_done">Done</string>
+    <string name="reminders_approval_title">Set this reminder?</string>
+    <string name="reminders_set">Set reminder</string>
+    <string name="alarm_approval_title">Set this alarm?</string>
+    <string name="alarm_set">Set alarm</string>
+    <string name="timer_approval_title">Start this timer?</string>
+    <string name="timer_start">Start timer</string>
     <string name="chat_keep_thinking_collapsed">Keep thinking collapsed</string>
     <string name="chat_keep_thinking_collapsed_desc">Open thinking details only when you tap them. The activity animation stays visible.</string>
     <string name="chat_saving_memory">Saving a memory</string>
@@ -953,6 +1003,10 @@
     <string name="chat_attachment_failed">Could not read file</string>
     <string name="chat_attachment_ready">Ready</string>
     <string name="chat_attachment_image_unconfirmed">Ready · image support is unconfirmed for this model</string>
+    <string name="chat_attachment_image_unconfirmed_hint">Image support is unconfirmed for this model.</string>
+    <string name="ui_attachment">Attachment</string>
+    <string name="ui_image_counter">%1$d of %2$d</string>
+    <string name="ui_more_images">+%1$d</string>
     <string name="chat_quote_shortened">Quoted the first 1,500 characters of the selection.</string>
     <string name="chat_handoff_default_title">Continue in your project</string>
     <string name="chat_handoff_default_reason">Use your Chat context to make changes in a workspace.</string>
@@ -1085,6 +1139,11 @@
     <string name="code_search_chat_chats">Let Code search Chat chats</string>
     <string name="code_search_chat_chats_desc">Find and read past Chat conversations when you ask about them. Code history stays searchable when this is off.</string>
     <string name="chat_history_matches">Past conversations</string>
+    <plurals name="chat_history_show_more">
+        <item quantity="one">Show %1$d more</item>
+        <item quantity="other">Show %1$d more</item>
+    </plurals>
+    <string name="chat_history_show_less">Show less</string>
     <string name="chat_history_kind_chat">Chat</string>
     <string name="chat_history_kind_code">Code</string>
     <string name="chat_history_open_message">Open matching message</string>
@@ -1104,4 +1163,77 @@
     <string name="settings_page_provider_debug_desc">Capture what is sent to your providers, inspect errors and streaming responses.</string>
     <string name="settings_debug_count">%1$d recorded</string>
     <string name="settings_debug_consent">Request and response bodies contain your prompts and the model replies. With this on they are stored on this device and can appear in a log you share.</string>
+    <string name="settings_group_ai_models">AI &amp; models</string>
+    <string name="settings_group_look_feel">Look &amp; feel</string>
+    <string name="settings_group_device_privacy">Device &amp; privacy</string>
+    <string name="settings_group_data_sync">Data &amp; sync</string>
+    <string name="settings_group_help_about">Help &amp; about</string>
+    <string name="settings_page_background_desc">Background work, battery and notifications</string>
+    <string name="stall_timeout_title">Stream stall timeout</string>
+    <string name="stall_timeout_subtitle">Pauses the task when the model sends nothing for this long.</string>
+    <string name="stall_timeout_detail">How long a reply may go without sending any data before the task pauses. Slow models can stay silent for minutes while they write a large file, so give them more time.</string>
+    <string name="stall_timeout_default">default</string>
+    <string name="stall_timeout_never">Never</string>
+    <string name="stall_timeout_custom">Custom</string>
+    <string name="stall_timeout_minutes">Minutes</string>
+    <string name="stall_timeout_range">Between 0.5 and 60 minutes</string>
+    <string name="stall_timeout_wait_longer">Wait longer</string>
+    <string name="stall_timeout_save_resume">Save and resume</string>
+    <string name="stream_writes_title">Stream file writes as text</string>
+    <string name="stream_writes_desc">Some servers, including several NVIDIA models, only send a file write once it is finished. For those models the agent writes the file into its reply instead, so you can watch it being written.</string>
+    <string name="stream_writes_detected">Models detected so far: %1$d</string>
+
+    <string name="settings_activity_display">Activity display</string>
+    <string name="settings_activity_display_desc">How thinking and tool calls are drawn in chat and code conversations.</string>
+    <string name="activity_display_new">Grouped lines (new)</string>
+    <string name="activity_display_classic">Classic cards</string>
+    <string name="activity_group_expand">Expand activity</string>
+    <string name="activity_group_collapse">Collapse activity</string>
+    <string name="activity_running_thinking">Thinking…</string>
+    <string name="activity_running_command">Running a command…</string>
+    <string name="activity_running_browser">Using the browser…</string>
+    <string name="activity_running_read">Reading files…</string>
+    <string name="activity_running_edit">Editing files…</string>
+    <string name="activity_group_failed">Activity finished with an error</string>
+    <string name="activity_group_waiting">Activity is waiting for your approval</string>
+    <plurals name="activity_read_files">
+        <item quantity="one">read a file</item>
+        <item quantity="other">read files</item>
+    </plurals>
+    <plurals name="activity_edit_files">
+        <item quantity="one">edited a file</item>
+        <item quantity="other">edited files</item>
+    </plurals>
+    <plurals name="activity_commands">
+        <item quantity="one">ran a command</item>
+        <item quantity="other">ran commands</item>
+    </plurals>
+    <plurals name="activity_browser">
+        <item quantity="one">used the browser</item>
+        <item quantity="other">used the browser</item>
+    </plurals>
+    <plurals name="activity_git">
+        <item quantity="one">used git</item>
+        <item quantity="other">used git</item>
+    </plurals>
+    <plurals name="activity_search">
+        <item quantity="one">searched</item>
+        <item quantity="other">searched</item>
+    </plurals>
+    <plurals name="activity_mcp">
+        <item quantity="one">used a tool</item>
+        <item quantity="other">used tools</item>
+    </plurals>
+    <plurals name="activity_subagent">
+        <item quantity="one">used a subagent</item>
+        <item quantity="other">used subagents</item>
+    </plurals>
+    <plurals name="activity_thinking">
+        <item quantity="one">thought</item>
+        <item quantity="other">thought</item>
+    </plurals>
+    <plurals name="activity_other">
+        <item quantity="one">ran a tool</item>
+        <item quantity="other">ran tools</item>
+    </plurals>
 </resources>

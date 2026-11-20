@@ -112,6 +112,11 @@ fun AppNav(container: AppContainer) {
     val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val sessions by container.sessions.sessions.collectAsStateWithLifecycle(initialValue = emptyList())
+    // Decoding a session's conversation JSON is a full parse; the sidebar, section motion and
+    // filters used to redo it for every session on every recomposition, which made switching lag.
+    val sessionKinds = remember(sessions) {
+        sessions.associate { it.id to com.agent.mhamed.data.ConversationConfig.decode(it.conversationJson).kind }
+    }
     // Nullable gate: the synthetic AppSettings() default (onboardingDone=false)
     // used to pass for one frame as a real emission and flash the setup screen
     // for fully-onboarded users. Null = DataStore hasn't spoken yet.
@@ -159,6 +164,13 @@ fun AppNav(container: AppContainer) {
     val desktopKeyboard = remember { DesktopKeyboardRouter() }
     androidx.compose.runtime.LaunchedEffect(desktopNavigation) {
         if (desktopNavigation) { drawerState.close(); androidx.compose.runtime.withFrameNanos { }; desktopFocus.requestFocus() }
+        else {
+            // The desktop layout hides the drawer sheet at zero width, so its state can read as open when the
+            // phone sheet comes back after a rotation. Wait for the sheet to measure, then shut it.
+            androidx.compose.runtime.withFrameNanos { }
+            androidx.compose.runtime.withFrameNanos { }
+            drawerState.snapTo(DrawerValue.Closed)
+        }
     }
 
     var searchQuery by remember { mutableStateOf("") }
@@ -249,6 +261,22 @@ fun AppNav(container: AppContainer) {
     androidx.compose.runtime.LaunchedEffect(currentSessionId) {
         if (!currentSessionId.isNullOrBlank()) {
             container.settings.setLastActiveSessionId(currentSessionId)
+        }
+    }
+    // Opening the app or moving between chats clears blank "New chat" rows left
+    // behind, so the sidebar never collects duplicates. The open chat, the one
+    // the screen is still bound to, pinned chats and running chats are kept.
+    androidx.compose.runtime.LaunchedEffect(currentSessionId, currentEntry?.destination?.route) {
+        if (currentEntry == null) return@LaunchedEffect
+        val keep = buildSet {
+            currentSessionId?.let(::add)
+            draftSessionId?.let(::add)
+            workspaceChatViewModel?.state?.value?.sessionId?.let(::add)
+            addAll(container.runManager.runningSessionIds.value)
+            addAll(settings.pinnedSessions)
+        }
+        runCatching {
+            container.sessions.pruneUntouchedChats(keep, setOf("New chat", uiContext.getString(R.string.settings_telegram_new_chat)))
         }
     }
     val currentRoute = currentEntry?.destination?.route
@@ -362,7 +390,7 @@ fun AppNav(container: AppContainer) {
     }
     fun selectedChatAction(ids: Set<String>, action: SidebarChatAction) {
         if (batchBusy) return
-        val targets = sessions.filter { it.id in ids && com.agent.mhamed.data.ConversationConfig.decode(it.conversationJson).kind == activeKind }
+        val targets = sessions.filter { it.id in ids && sessionKinds[it.id] == activeKind }
         if (targets.isEmpty()) { selectedChatIds = emptyList(); return }
         val selectedIds = targets.mapTo(mutableSetOf()) { it.id }
         when (action) {
@@ -420,7 +448,7 @@ fun AppNav(container: AppContainer) {
             com.agent.mhamed.data.ConversationKind.CODE ->
                 settings.codeStart == com.agent.mhamed.data.CodeStartMode.LAST_CODE
         }
-        val last = sessions.firstOrNull { com.agent.mhamed.data.ConversationConfig.decode(it.conversationJson).kind == kind && it.id !in settings.archivedSessions }
+        val last = sessions.firstOrNull { sessionKinds[it.id] == kind && it.id !in settings.archivedSessions }
             ?.takeIf { resume }
         val availablePrevious = previous?.takeIf { route -> sessions.any { "chat/${it.id}" == route && it.id !in settings.archivedSessions } }
         val target = availablePrevious ?: last?.let { "chat/${it.id}" } ?: "chat?kind=${kind.name}"
@@ -432,25 +460,24 @@ fun AppNav(container: AppContainer) {
             if (entry.destination.route?.startsWith("chat") != true) return null
             return entry.arguments?.getString("kind")?.let {
                 runCatching { com.agent.mhamed.data.ConversationKind.valueOf(it) }.getOrNull()
-            } ?: sessions.firstOrNull { it.id == entry.arguments?.getString("sessionId") }
-                ?.let { com.agent.mhamed.data.ConversationConfig.decode(it.conversationJson).kind }
+            } ?: entry.arguments?.getString("sessionId")?.let { sessionKinds[it] }
         }
         val origin = kind(from) ?: return 0
         val destination = kind(to) ?: return 0
         val direction = if (origin == destination) 0 else if (destination == com.agent.mhamed.data.ConversationKind.CHAT) 1 else -1
         return direction * if (sectionRtl) -1 else 1
     }
-    @Composable fun Sidebar(onCollapse: () -> Unit) {
+    @Composable fun Sidebar(opened: Boolean, onCollapse: () -> Unit) {
     val uiContext = androidx.compose.ui.platform.LocalContext.current
         val changes by remember(currentSessionId) {
             currentSessionId?.let(container.sessions::fileChangesFor) ?: kotlinx.coroutines.flow.flowOf(emptyList())
         }.collectAsStateWithLifecycle(initialValue = emptyList())
         ProjectNavigationSidebar(
-            projects = if (activeConversation.isChat) emptyList() else allWorkspaces, sessions = sessions.filter { com.agent.mhamed.data.ConversationConfig.decode(it.conversationJson).kind == activeKind }, selectedSession = currentSessionId, selectedProject = currentEntry?.arguments?.getString("workProjectId"),
+            projects = if (activeConversation.isChat) emptyList() else allWorkspaces, sessions = remember(sessions, sessionKinds, activeKind) { sessions.filter { sessionKinds[it.id] == activeKind } }, selectedSession = currentSessionId, selectedProject = currentEntry?.arguments?.getString("workProjectId"),
             workProjects = if (activeConversation.isChat) emptyList() else workProjects,
             onCreateProject = { selectedChatIds = emptyList(); scope.launch { drawerState.close() }; creatingProject = true },
             pinned = settings.pinnedSessions.toSet(), archived = settings.archivedSessions.toSet(), query = searchQuery,
-            onQueryChange = { searchQuery = it }, messageHits = messageHits.filter { hit -> sessions.any { it.id == hit.sessionId && com.agent.mhamed.data.ConversationConfig.decode(it.conversationJson).kind == activeKind } }, fuzzy = fuzzySearch, onFuzzyChange = { fuzzySearch = !fuzzySearch },
+            onQueryChange = { searchQuery = it }, messageHits = remember(messageHits, sessionKinds, activeKind) { messageHits.filter { hit -> sessionKinds[hit.sessionId] == activeKind } }, fuzzy = fuzzySearch, onFuzzyChange = { fuzzySearch = !fuzzySearch },
             activity = { session ->
                 if (session.id in runningSessionIds) {
                     val live by remember(session.id) { container.runManager.live(session.id) }.collectAsStateWithLifecycle()
@@ -458,7 +485,8 @@ fun AppNav(container: AppContainer) {
                 } else sidebarActivity(false, session.pendingPlan)
             },
             onNewChat = { navigateFromSidebar {
-                scope.launch { currentWorkspace?.id?.let { container.workspace.setActiveProject(it) }; openChat(null) }
+                // New chats start in the workspace the user last picked, not the open chat's.
+                openChat(null)
             } }, onChat = { sid -> navigateFromSidebar { openChat(sid) } },
             onMessage = { hit -> navigateFromSidebar { openChat(hit.sessionId, hit.messageId) } },
             onProjectChat = { project -> if (!creatingProjectChat) {
@@ -488,6 +516,7 @@ fun AppNav(container: AppContainer) {
             workspaceLabel = if (chatWorkspaceContext) uiContext.getString(R.string.ui_workspaces_for_this_chat) else uiContext.getString(R.string.ui_workspace), workspaceSummary = workspaceSummary,
             onWorkspaces = { selectedChatIds = emptyList(); scope.launch { drawerState.close() }; showWorkspaceSheet = true },
             onCollapse = { if (!batchBusy) { selectedChatIds = emptyList(); onCollapse() } },
+            opened = opened,
             currentRoute = currentRoute, projectCreationEnabled = !creatingProjectChat,
             changesSummary = changes.takeIf { it.isNotEmpty() }?.let { uiContext.getString(R.string.ui_files_changed_758, (it.size).toString()) },
             onChanges = { currentSessionId?.let { sid -> navigateFromSidebar { nav.navigate("changes/${encode(sid)}") } } },
@@ -589,7 +618,9 @@ fun AppNav(container: AppContainer) {
         drawerState = drawerState,
         gesturesEnabled = !desktopNavigation && drawerGesturesEnabled,
         drawerContent = {
+            // Passing the state gives the sheet Material's predictive back: it follows the back swipe and shrinks before closing.
             if (!desktopNavigation) ModalDrawerSheet(
+                drawerState = drawerState,
                 modifier = if (glass) Modifier.onSizeChanged { glassDrawerWidth = it.width }
                     .padding(horizontal = 10.dp).statusBarsPadding().navigationBarsPadding().padding(vertical = 8.dp) else Modifier,
                 drawerShape = if (glass) androidx.compose.foundation.shape.RoundedCornerShape(32.dp) else androidx.compose.material3.DrawerDefaults.shape,
@@ -599,7 +630,8 @@ fun AppNav(container: AppContainer) {
                 androidx.compose.runtime.CompositionLocalProvider(
                     LocalHarnessGlassCaptureActive provides glassDrawerCapture,
                     LocalHarnessGlassBackdrop provides (LocalHarnessGlassOverlayBackdrop.current ?: LocalHarnessGlassBackdrop.current)) {
-                Sidebar { scope.launch { drawerState.close() } }
+                val drawerOpening by remember(drawerState) { androidx.compose.runtime.derivedStateOf { drawerState.targetValue == DrawerValue.Open } }
+                Sidebar(drawerOpening) { scope.launch { drawerState.close() } }
                 }
             }
         },
@@ -618,7 +650,7 @@ fun AppNav(container: AppContainer) {
         }.then(if (desktopNavigation) Modifier.focusable() else Modifier).then(if (desktopNavigation) Modifier.statusBarsPadding().navigationBarsPadding() else Modifier)) {
             RetainedWorkspaceContent(desktopNavigation && sidebarVisible,
                 Modifier.width(if (desktopNavigation && sidebarVisible) 232.dp else 0.dp)) {
-                Sidebar { sidebarVisible = false }
+                Sidebar(desktopNavigation && sidebarVisible) { sidebarVisible = false }
             }
             Column(Modifier.weight(1f).fillMaxHeight()) {
         if (currentRoute?.startsWith("project") != true) {
@@ -633,29 +665,31 @@ fun AppNav(container: AppContainer) {
                 val direction = sectionMotion(initialState, targetState)
                 if (direction == 0) fadeIn(tween(220, easing = FastOutSlowInEasing)) +
                     slideInVertically(tween(240, easing = FastOutSlowInEasing)) { it / 28 }
-                else fadeIn(com.agent.mhamed.ui.theme.expressiveEffectsSpec()) +
-                    androidx.compose.animation.scaleIn(com.agent.mhamed.ui.theme.expressiveSpatialSpec(), initialScale = .98f) +
-                    androidx.compose.animation.slideInHorizontally(com.agent.mhamed.ui.theme.expressiveSpatialSpec()) { it / 10 * direction }
+                // The new section fades in on top right away while the old one stays solid
+                // underneath, so the window background never shows through mid-switch.
+                else fadeIn(tween(200, easing = FastOutSlowInEasing)) +
+                    androidx.compose.animation.slideInHorizontally(com.agent.mhamed.ui.theme.defaultSpatialSpec()) { it / 14 * direction }
             },
             exitTransition = {
                 val direction = sectionMotion(initialState, targetState)
                 if (direction == 0) fadeOut(tween(180, easing = FastOutSlowInEasing))
-                else fadeOut(com.agent.mhamed.ui.theme.expressiveEffectsSpec()) +
-                    androidx.compose.animation.slideOutHorizontally(com.agent.mhamed.ui.theme.expressiveSpatialSpec()) { -it / 20 * direction }
+                else fadeOut(tween(100, delayMillis = 200)) +
+                    androidx.compose.animation.slideOutHorizontally(com.agent.mhamed.ui.theme.defaultSpatialSpec()) { -it / 24 * direction }
             },
             popEnterTransition = {
                 val direction = sectionMotion(initialState, targetState)
                 if (direction == 0) fadeIn(tween(220, easing = FastOutSlowInEasing))
-                else fadeIn(com.agent.mhamed.ui.theme.expressiveEffectsSpec()) +
-                    androidx.compose.animation.scaleIn(com.agent.mhamed.ui.theme.expressiveSpatialSpec(), initialScale = .98f) +
-                    androidx.compose.animation.slideInHorizontally(com.agent.mhamed.ui.theme.expressiveSpatialSpec()) { it / 10 * direction }
+                // The new section fades in on top right away while the old one stays solid
+                // underneath, so the window background never shows through mid-switch.
+                else fadeIn(tween(200, easing = FastOutSlowInEasing)) +
+                    androidx.compose.animation.slideInHorizontally(com.agent.mhamed.ui.theme.defaultSpatialSpec()) { it / 14 * direction }
             },
             popExitTransition = {
                 val direction = sectionMotion(initialState, targetState)
                 if (direction == 0) fadeOut(tween(180, easing = FastOutSlowInEasing)) +
                     slideOutVertically(tween(200, easing = FastOutSlowInEasing)) { it / 28 }
-                else fadeOut(com.agent.mhamed.ui.theme.expressiveEffectsSpec()) +
-                    androidx.compose.animation.slideOutHorizontally(com.agent.mhamed.ui.theme.expressiveSpatialSpec()) { -it / 20 * direction }
+                else fadeOut(tween(100, delayMillis = 200)) +
+                    androidx.compose.animation.slideOutHorizontally(com.agent.mhamed.ui.theme.defaultSpatialSpec()) { -it / 24 * direction }
             },
         ) {
             composable("chat?kind={kind}", arguments = listOf(navArgument("kind") { defaultValue = "CODE" })) { entry ->
@@ -854,11 +888,11 @@ fun AppNav(container: AppContainer) {
                 val id = requireNotNull(entry.arguments?.getString("workProjectId"))
                 com.agent.mhamed.ui.projects.WorkProjectScreen(container, id, onBack = { nav.popBackStack() },
                     onOpenChat = { openChat(it) },
-                    onNewChat = {
+                    onNewChat = { customTitle ->
                         if (!creatingProjectChat) {
                             creatingProjectChat = true
                             scope.launch {
-                                try { openChat(container.runManager.createProjectChat(id, uiContext.getString(R.string.settings_telegram_new_chat))) }
+                                try { openChat(container.runManager.createProjectChat(id, uiContext.getString(R.string.settings_telegram_new_chat), customTitle)) }
                                 catch (e: Exception) { if (e is kotlinx.coroutines.CancellationException) throw e; workspaceError = e.message ?: uiContext.getString(R.string.ui_could_not_create_chat) }
                                 finally { creatingProjectChat = false }
                             }
@@ -1004,9 +1038,7 @@ fun AppNav(container: AppContainer) {
     }
     }
 
-    androidx.activity.compose.BackHandler(enabled = !desktopNavigation && drawerState.isOpen) {
-        scope.launch { drawerState.close() }
-    }
+    // The drawer sheet owns back while open (predictive back); a plain handler here would override its animation.
 
     com.agent.mhamed.ui.common.ShizukuDisabledWarning(container.shizuku.workspaceWarning)
 

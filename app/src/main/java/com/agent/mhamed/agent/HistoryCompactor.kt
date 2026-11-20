@@ -22,7 +22,7 @@ internal object HistoryCompactor {
         sessionId: String,
         progress: suspend (String) -> Unit = {},
         event: suspend (StreamEvent, ProviderConfig) -> Unit = { _, _ -> },
-        stallTimeoutMs: Long = 90_000,
+        stallTimeoutMs: Long = StreamRetrier.DEFAULT_STALL_TIMEOUT_MS,
     ): String = withContext(Dispatchers.IO) {
         val outputTokens = minOf(1_500, maxContextTokens / 8)
         // Conservative allowance for non-English text, prompt and completion.
@@ -37,11 +37,12 @@ internal object HistoryCompactor {
             var done = false
             var failureCode: Int? = null
             val managedFallback = coroutineContext[FallbackRun]?.policy()?.enabled == true
+            val options = RequestOptions(maxOutputTokens = outputTokens, thinking = ThinkingLevel.OFF, cacheKey = sessionId)
+            val stallWindow = if (managedFallback) maxOf(stallTimeoutMs, 600_000) + 10_000 else stallTimeoutMs
             val failure = StreamRetrier.run(
                 streamFor = {
                     provider.streamChat(cfg, apiKey, PROMPT,
-                        listOf(ChatMessage(role = Role.USER, text = input)), emptyList(),
-                        RequestOptions(maxOutputTokens = outputTokens, thinking = ThinkingLevel.OFF, cacheKey = sessionId))
+                        listOf(ChatMessage(role = Role.USER, text = input)), emptyList(), options)
                         .transform { batch ->
                             fun flatten(e: StreamEvent): List<StreamEvent> = if (e is StreamEvent.Batch) e.events.flatMap(::flatten) else listOf(e)
                             for (e in flatten(batch)) { if (e is StreamEvent.Failure) failureCode = e.code; emit(e) }
@@ -62,8 +63,10 @@ internal object HistoryCompactor {
                 },
                 retryReason = { it },
                 emitEvent = { progress("Retrying summary · attempt ${it.attempt}") },
-                stallTimeoutMs = if (managedFallback) maxOf(stallTimeoutMs, 610_000) else stallTimeoutMs,
+                stallTimeoutMs = stallWindow,
+                firstOutputTimeoutMs = StreamRetrier.firstOutputWindow(stallWindow, options, cfg),
                 allowRetries = !managedFallback,
+                retryStalls = !StreamRetrier.selfHosted(cfg),
             )
             if (failure != null) error(listOfNotNull(failureCode?.let { "HTTP $it" }, failure).joinToString(": "))
             check(done) { "The summary stream ended before completion. Retry /compact." }

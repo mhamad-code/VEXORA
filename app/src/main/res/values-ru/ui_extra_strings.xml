@@ -114,6 +114,8 @@
     <string name="ui_authentication_failed">"Не удалось пройти аутентификацию"</string>
     <string name="ui_run_results">"Результаты запусков"</string>
     <string name="ui_notified_when_a_background_agent_run_finishes">"Уведомлять о завершении фоновой работы агента"</string>
+    <string name="ui_run_errors">"Ошибки запусков"</string>
+    <string name="ui_notified_when_a_background_agent_run_fails">"Уведомлять, когда фоновая работа агента останавливается с ошибкой"</string>
     <string name="ui_run_finished">"Запуск завершён"</string>
     <string name="ui_run_needs_attention">"Требуется внимание"</string>
     <string name="ui_agent_runs">"Запуски агента"</string>
@@ -141,7 +143,6 @@
     <string name="ui_could_not_load_that_image">"Не удалось загрузить изображение."</string>
     <string name="ui_pages">"Страницы: %1$s"</string>
     <string name="ui_could_not_attach_that_file">"Не удалось прикрепить файл: %1$s"</string>
-    <string name="ui_file_is_larger_than">"размер файла превышает %1$s"</string>
     <string name="ui_model_selection_is_being_saved_try_sending">"Выбор модели сохраняется. Попробуйте отправить сообщение чуть позже."</string>
     <string name="ui_this_chat_s_provider_is_unavailable_choose">"Провайдер этого чата недоступен. Выберите другого в списке моделей."</string>
     <string name="ui_the_selected_local_model_was_removed_download">"Выбранная локальная модель удалена. Загрузите её заново или явно выберите другого провайдера."</string>
@@ -278,6 +279,13 @@
     <string name="provider_use_key">"Использовать ключ %1$d"</string>
     <string name="provider_remove_key">"Удалить ключ %1$d"</string>
     <string name="provider_add_key">"Добавить ключ API"</string>
+    <string name="provider_test_key">Test</string>
+    <string name="provider_test_key_description">Test key %1$d</string>
+    <string name="provider_testing_key">Testing…</string>
+    <string name="provider_key_works">Key works (%1$d ms)</string>
+    <string name="provider_key_works_model">Key works with %1$s (%2$d ms)</string>
+    <string name="provider_key_failed">Key failed: %1$s</string>
+    <string name="provider_test_key_hint">Sends one short message capped at a few tokens.</string>
     <string name="provider_proxy_title">"Прокси"</string>
     <string name="provider_proxy_system">"Системное соединение"</string>
     <string name="provider_proxy_inherit">"Использовать глобальную настройку"</string>
@@ -549,4 +557,16 @@
     <string name="settings_voice_preview_play">Listen to %1$s</string>
     <string name="settings_voice_preview_stop">Stop the sample</string>
     <string name="settings_voice_preview_hint">Tap the speaker to hear a voice before you pick it.</string>
+    <string name="sidebar_workspace_other">"Другие чаты"</string>
+    <plurals name="subagents_finished_title">
+        <item quantity="one">"%1$d субагент завершён"</item>
+        <item quantity="few">"%1$d субагента завершены"</item>
+        <item quantity="many">"%1$d субагентов завершены"</item>
+        <item quantity="other">"%1$d субагента завершены"</item>
+    </plurals>
+    <string name="subagents_finished_with_failures">"%1$d готово, %2$d не завершено"</string>
+    <string name="subagents_show_result">"Показать результат"</string>
+    <string name="subagents_hide_result">"Скрыть результат"</string>
+    <string name="subagents_no_output">"Результат не был возвращён."</string>
+    <string name="subagents_took">"Заняло %1$s"</string>
 </resources>

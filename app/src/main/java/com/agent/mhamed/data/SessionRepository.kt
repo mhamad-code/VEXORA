@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.jsonObject
@@ -888,7 +889,45 @@ class SessionRepository(
         db.dao().setCompaction(sessionId, "", 0)
     }
 
+    /**
+     * Removes blank "New chat" sessions the user has left. Changing a model or
+     * setting on a fresh chat saves it before any message is sent, so without
+     * this every visit to a new chat could leave another empty row in the
+     * sidebar. Only chats still carrying a default title, with no messages and
+     * no unsent draft, are removed; [keep] protects the open and running ones.
+     */
+    suspend fun pruneUntouchedChats(keep: Set<String>, defaultTitles: Set<String>): Int {
+        // A project's numbered names ("ALPHA 3") count as default titles for its own chats.
+        val patterns = HashMap<String, String?>()
+        suspend fun seriesTitle(session: SessionEntity): Boolean {
+            val projectId = session.workProjectId ?: return false
+            val pattern = if (projectId in patterns) patterns[projectId]
+                else db.dao().workProject(projectId)?.chatNamePattern.also { patterns[projectId] = it }
+            return pattern != null && com.agent.mhamed.core.ChatSeries.numberOf(pattern, session.title) != null
+        }
+        val targets = db.dao().untouchedSessions().filter { session ->
+            session.id !in keep && (session.title.trim() in defaultTitles || seriesTitle(session)) &&
+                ConversationConfig.decode(session.conversationJson).draftText.isBlank()
+        }
+        deleteSessions(targets)
+        return targets.size
+    }
+
     suspend fun deleteSession(session: SessionEntity) = deleteSessions(listOf(session))
+
+    /** Deletes every chat and its images, then shrinks the database file. Returns how many chats were removed. */
+    suspend fun deleteAllSessions(): Int {
+        val all = db.dao().allSessions()
+        deleteSessions(all)
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val sql = db.openHelper.writableDatabase
+                sql.query("PRAGMA wal_checkpoint(TRUNCATE)").close()
+                sql.execSQL("VACUUM")
+            }
+        }
+        return all.size
+    }
 
     /** Delete the selected histories together, then collect images no remaining chat uses. */
     suspend fun deleteSessions(sessions: List<SessionEntity>) {

@@ -13,6 +13,8 @@ internal object ChangeReview {
         appendLine()
         if (changedPaths.isEmpty()) {
             appendLine("Find the changes first: run git status and git diff (staged and unstaged) and include untracked files. If this is not a Git repository, review the files you changed in this chat and say that you did.")
+        appendLine()
+        appendLine("Before reviewing, run the code_review tool (deterministic secret scan + redacted diff). Treat any Blocker as a stop condition unless the user explicitly approves an override.")
         } else {
             appendLine("Files changed in this chat:")
             changedPaths.take(MAX_LISTED_FILES).forEach { appendLine("- $it") }

@@ -98,6 +98,9 @@ internal fun PluginManagerSection(container: AppContainer, managerOverride: Plug
     var reviewLabel by remember { mutableStateOf("") }
     var deleting by remember { mutableStateOf<InstalledPlugin?>(null) }
     var details by remember { mutableStateOf<Pair<InstalledPlugin, PluginContents>?>(null) }
+    var problems by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var editing by remember { mutableStateOf<Pair<InstalledPlugin, List<PluginSetting>>?>(null) }
+    var settingCounts by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
     val failed = stringResource(R.string.pm_failed)
 
     LaunchedEffect(manager, revision) {
@@ -107,10 +110,25 @@ internal fun PluginManagerSection(container: AppContainer, managerOverride: Plug
         catch (e: Exception) { error = e.message; registryBroken = true }
         finally { loading = false }
     }
+    // Plugins that failed to load in this project, with the reason, so a broken plugin is visible instead of silently missing.
+    LaunchedEffect(manager, revision, fs) {
+        val workspace = fs ?: return@LaunchedEffect
+        problems = withContext(Dispatchers.IO) {
+            if (managerOverride != null) runCatching { manager.managed(workspace).problems }.getOrDefault(emptyMap())
+            else runCatching { container.configuration.load(workspace).pluginProblems }.getOrElse { runCatching { manager.managed(workspace).problems }.getOrDefault(emptyMap()) }
+        }
+    }
+    LaunchedEffect(installed) {
+        settingCounts = withContext(Dispatchers.IO) { installed.associate { it.id to runCatching { manager.settings(it).size }.getOrDefault(0) } }
+    }
+    var pages by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    var exhausted by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var loadingMore by remember { mutableStateOf<String?>(null) }
     var searchRun by remember { mutableIntStateOf(0) }
     fun search() {
         if (searching) return
         searching = true
+        pages = emptyMap(); exhausted = emptySet()
         val run = ++searchRun
         scope.launch {
             try { sections = catalogSearch?.invoke(query) ?: manager.search(query) }
@@ -288,6 +306,32 @@ internal fun PluginManagerSection(container: AppContainer, managerOverride: Plug
                                     listing.version.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty(),
                                     container = MaterialTheme.colorScheme.primaryContainer, content = MaterialTheme.colorScheme.onPrimaryContainer)
                             }
+                            problems[record.name]?.let { reason ->
+                                Text(stringResource(R.string.pm_problem, reason), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error,
+                                    maxLines = 6, overflow = TextOverflow.Ellipsis)
+                            }
+                            if (record.scope == "global" && projectScope != null && record.enabled) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(stringResource(R.string.pm_in_project), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                                    Switch(checked = record.enabledIn(projectScope), onCheckedChange = { on -> scope.launch {
+                                        busy = true; error = null
+                                        try { withContext(Dispatchers.IO) { manager.store.setEnabledFor(record.id, projectScope, if (on == record.enabled) null else on) } }
+                                        catch (e: CancellationException) { throw e }
+                                        catch (e: Exception) { error = e.message }
+                                        finally { busy = false }
+                                    } }, enabled = !busy)
+                                }
+                            }
+                            if (record.origin.kind in setOf("npm", "github", "git")) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(stringResource(R.string.pm_auto_update), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                                    Switch(checked = record.autoUpdate, onCheckedChange = { on -> scope.launch {
+                                        try { withContext(Dispatchers.IO) { manager.store.setAutoUpdate(record.id, on) } }
+                                        catch (e: CancellationException) { throw e }
+                                        catch (e: Exception) { error = e.message }
+                                    } }, enabled = !busy)
+                                }
+                            }
                             if (record.description.isNotBlank()) Text(if (record.origin.kind == "builtin") starterDescription(record.name) else record.description,
                                 style = MaterialTheme.typography.bodyMedium, maxLines = 4, overflow = TextOverflow.Ellipsis)
                             Text(pluginOriginLabel(record.origin), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -297,6 +341,11 @@ internal fun PluginManagerSection(container: AppContainer, managerOverride: Plug
                                     catch (e: CancellationException) { throw e }
                                     catch (e: Exception) { error = e.message }
                                 } }, enabled = !busy) { Text(stringResource(R.string.pm_details)) }
+                                if ((settingCounts[record.id] ?: 0) > 0) TextButton(onClick = { scope.launch {
+                                    try { editing = record to withContext(Dispatchers.IO) { manager.settings(record) } }
+                                    catch (e: CancellationException) { throw e }
+                                    catch (e: Exception) { error = e.message }
+                                } }, enabled = !busy) { Text(stringResource(R.string.pm_settings)) }
                                 if (record.origin.kind !in setOf("archive", "folder")) {
                                     if (record.id in updates) FilledTonalButton(onClick = { prepare(record.origin, record) }, enabled = !busy) {
                                         Icon(Icons.Rounded.Upgrade, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.pm_update))
@@ -343,6 +392,32 @@ internal fun PluginManagerSection(container: AppContainer, managerOverride: Plug
                             }
                             section.error?.let { item(key = "error-${section.title}") { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) } }
                             items(if (open) shown else shown.take(6), key = { it.key }) { card(it) }
+                            if (catalogSearch == null && section.title in manager.pagedSections && section.title !in exhausted && section.error == null &&
+                                (open || shown.size <= 6)) item(key = "more-${section.title}") {
+                                OutlinedButton(onClick = {
+                                    val title = section.title
+                                    val next = (pages[title] ?: 0) + 1
+                                    val run = searchRun
+                                    loadingMore = title
+                                    scope.launch {
+                                        try {
+                                            val found = manager.more(title, query, next)
+                                            if (run != searchRun) return@launch
+                                            val current = sections.orEmpty()
+                                            val known = current.firstOrNull { it.title == title }?.listings.orEmpty().map { PluginCatalog.identity(it.origin) }.toSet()
+                                            val fresh = found.filter { PluginCatalog.identity(it.origin) !in known }
+                                            if (fresh.isEmpty()) exhausted = exhausted + title
+                                            sections = current.map { if (it.title == title) it.copy(listings = it.listings + fresh) else it }
+                                            pages = pages + (title to next)
+                                            expanded = expanded + title
+                                        } catch (e: CancellationException) { throw e }
+                                        catch (e: Exception) { error = e.message }
+                                        finally { loadingMore = null }
+                                    }
+                                }, enabled = loadingMore == null, modifier = Modifier.fillMaxWidth()) {
+                                    Text(stringResource(R.string.pm_load_more))
+                                }
+                            }
                         }
                         item {
                             PluginPanel {
@@ -453,6 +528,25 @@ internal fun PluginManagerSection(container: AppContainer, managerOverride: Plug
             catch (e: CancellationException) { throw e }
             catch (e: Exception) { error = e.message; resetRegistry = false }
         } }) { Text(stringResource(R.string.pm_reset)) } }, dismissButton = { TextButton(onClick = { resetRegistry = false }) { Text(stringResource(android.R.string.cancel)) } })
+    editing?.let { (record, settings) ->
+        PluginSettingsDialog(record.name, settings, values = remember(record.id) { runCatching { container.configuration.variables() }.getOrDefault(emptyMap()) },
+            secrets = remember(record.id) { runCatching { container.configuration.secretNames().toSet() }.getOrDefault(emptySet()) },
+            busy = busy, onDismiss = { editing = null }) { changed ->
+            scope.launch {
+                busy = true; error = null
+                try {
+                    changed.forEach { (setting, value) ->
+                        if (value.isEmpty()) container.configuration.removeVariable(setting.key, setting.sensitive)
+                        else container.configuration.putVariable(setting.key, value, setting.sensitive)
+                    }
+                    editing = null
+                    notice = container.appContext.getString(R.string.pm_settings_saved)
+                } catch (e: CancellationException) { throw e }
+                catch (e: Exception) { error = e.message }
+                finally { busy = false }
+            }
+        }
+    }
     deleting?.let { record -> AlertDialog(onDismissRequest = { deleting = null }, title = { Text(stringResource(R.string.pm_uninstall_named, record.name)) },
         text = { Text(stringResource(R.string.pm_uninstall_hint)) }, confirmButton = { TextButton(onClick = { scope.launch {
             busy = true; error = null; notice = null
@@ -590,7 +684,8 @@ private fun PluginContentsView(contents: PluginContents) {
 private fun PluginInstallDialog(candidate: PreparedPlugin, workspace: WorkspaceFs?, workspaceLabel: String, manager: PluginManager,
     previous: InstalledPlugin?, busy: Boolean, progress: PluginProgress?, onCancel: () -> Unit,
     onDismiss: () -> Unit, onInstall: (String, String) -> Unit) {
-    var global by rememberSaveable(candidate.token) { mutableStateOf(previous?.let { it.scope == "global" } ?: (workspace == null)) }
+    // Global is the default: most plugins are wanted in every Code workspace.
+    var global by rememberSaveable(candidate.token) { mutableStateOf(previous?.let { it.scope == "global" } ?: true) }
     var manifest by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(candidate.token) {
         try { manifest = withContext(Dispatchers.IO) { candidate.root.resolve("plugin.json").readText() } }
@@ -598,6 +693,7 @@ private fun PluginInstallDialog(candidate: PreparedPlugin, workspace: WorkspaceF
         catch (_: Exception) { manifest = null }
     }
     var reviewManifest by remember { mutableStateOf(false) }
+    val scopeLocked = candidate.replacing != null || busy
     AlertDialog(onDismissRequest = { if (!busy) { if (reviewManifest) reviewManifest = false else onDismiss() } },
         shape = RoundedCornerShape(32.dp),
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -608,25 +704,47 @@ private fun PluginInstallDialog(candidate: PreparedPlugin, workspace: WorkspaceF
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text(manifest.orEmpty(), fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
             }
-        } else Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(candidate.contents.name, style = MaterialTheme.typography.titleLarge)
-            Text(candidate.contents.version, style = MaterialTheme.typography.labelLarge)
-            if (candidate.contents.description.isNotBlank()) Text(candidate.contents.description, style = MaterialTheme.typography.bodyMedium, maxLines = 6, overflow = TextOverflow.Ellipsis)
-            Text(pluginOriginLabel(candidate.origin), style = MaterialTheme.typography.bodySmall)
-            Text(candidate.revision, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
-            PluginContentsView(candidate.contents)
-            Text(stringResource(R.string.pm_scope), style = MaterialTheme.typography.titleSmall)
-            Row(Modifier.fillMaxWidth().selectable(selected = !global, onClick = { global = false }, role = Role.RadioButton,
-                enabled = workspace != null && candidate.replacing == null && !busy), verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(selected = !global, onClick = null, enabled = workspace != null && candidate.replacing == null && !busy)
-                Text(workspaceLabel.ifBlank { stringResource(R.string.config_project) }, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+        } else Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.primaryContainer) {
+                    Icon(Icons.Rounded.Extension, null, Modifier.padding(12.dp).size(28.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(candidate.contents.name, style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    if (candidate.contents.version.isNotBlank()) Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer) {
+                        Text(candidate.contents.version, Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
+                            style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    }
+                }
             }
-            Row(Modifier.fillMaxWidth().selectable(selected = global, onClick = { global = true }, role = Role.RadioButton,
-                enabled = candidate.replacing == null && !busy), verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(selected = global, onClick = null, enabled = candidate.replacing == null && !busy)
-                Text(stringResource(R.string.pm_global_scope), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+            if (candidate.contents.description.isNotBlank()) Text(candidate.contents.description, style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 6, overflow = TextOverflow.Ellipsis)
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(R.string.pm_scope), style = MaterialTheme.typography.titleSmall)
+                PluginScopeOption(Icons.Rounded.Public, stringResource(R.string.pm_global_scope), stringResource(R.string.pm_global_scope_hint),
+                    selected = global, enabled = !scopeLocked, onClick = { global = true })
+                PluginScopeOption(Icons.Rounded.FolderOpen, workspaceLabel.ifBlank { stringResource(R.string.config_project) },
+                    stringResource(if (workspace == null) R.string.pm_no_workspace_scope_hint else R.string.pm_workspace_scope_hint),
+                    selected = !global, enabled = workspace != null && !scopeLocked, onClick = { global = false })
+                if (candidate.replacing != null) Text(stringResource(R.string.pm_scope_locked_hint), style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Text(stringResource(R.string.pm_review_hint), style = MaterialTheme.typography.bodySmall)
+
+            Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceContainer) {
+                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(stringResource(R.string.pm_included), style = MaterialTheme.typography.titleSmall)
+                    PluginContentsView(candidate.contents)
+                }
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(stringResource(R.string.pm_source), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(pluginOriginLabel(candidate.origin), style = MaterialTheme.typography.bodySmall)
+                if (candidate.revision.isNotBlank()) Text(candidate.revision, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Text(stringResource(R.string.pm_review_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             TextButton(onClick = { reviewManifest = true }, enabled = manifest != null && !busy) { Text(stringResource(R.string.pm_manifest)) }
         }
     }, confirmButton = {
@@ -639,5 +757,63 @@ private fun PluginInstallDialog(candidate: PreparedPlugin, workspace: WorkspaceF
 }
 
 @Composable
+private fun PluginScopeOption(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, hint: String,
+    selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = if (selected) colors.secondaryContainer else colors.surfaceContainer,
+        border = if (selected) androidx.compose.foundation.BorderStroke(2.dp, colors.primary) else null,
+        modifier = Modifier.fillMaxWidth().selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick),
+    ) {
+        Row(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            val tint = if (selected) colors.onSecondaryContainer else colors.onSurfaceVariant
+            Icon(icon, null, Modifier.size(24.dp), tint = if (enabled || selected) tint else tint.copy(alpha = 0.38f))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                val alpha = if (enabled || selected) 1f else 0.38f
+                Text(title, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                    color = (if (selected) colors.onSecondaryContainer else colors.onSurface).copy(alpha = alpha))
+                Text(hint, style = MaterialTheme.typography.bodySmall,
+                    color = (if (selected) colors.onSecondaryContainer else colors.onSurfaceVariant).copy(alpha = alpha))
+            }
+            RadioButton(selected = selected, onClick = null, enabled = enabled)
+        }
+    }
+}
+
+@Composable
 internal fun starterDescription(name: String): String = stringResource(
     if (name == "review-workflow") R.string.pm_review_description else R.string.pm_test_description)
+
+@Composable
+private fun PluginSettingsDialog(name: String, settings: List<PluginSetting>, values: Map<String, String>, secrets: Set<String>, busy: Boolean,
+    onDismiss: () -> Unit, onSave: (List<Pair<PluginSetting, String>>) -> Unit) {
+    // Only fields the user touched are saved, so a stored secret is never overwritten with an empty value by accident.
+    val edits = remember { mutableStateMapOf<String, String>() }
+    AlertDialog(onDismissRequest = onDismiss, title = { Text(stringResource(R.string.pm_settings_title, name)) }, text = {
+        Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(stringResource(R.string.pm_settings_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            settings.forEach { setting ->
+                val stored = if (setting.sensitive) null else values[setting.key]
+                val hasSecret = setting.sensitive && setting.key in secrets
+                OutlinedTextField(
+                    value = edits[setting.key] ?: stored.orEmpty(),
+                    onValueChange = { edits[setting.key] = it },
+                    label = { Text(setting.title + if (setting.required) " *" else "") },
+                    placeholder = { Text(if (hasSecret) stringResource(R.string.pm_setting_saved) else setting.default.orEmpty()) },
+                    supportingText = { Text(listOfNotNull(setting.description.takeIf(String::isNotBlank), setting.key.takeIf { it != setting.title })
+                        .joinToString(" · ")) },
+                    singleLine = true,
+                    visualTransformation = if (setting.sensitive) androidx.compose.ui.text.input.PasswordVisualTransformation()
+                        else androidx.compose.ui.text.input.VisualTransformation.None,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+    }, confirmButton = {
+        TextButton(onClick = { onSave(settings.mapNotNull { setting -> edits[setting.key]?.let { setting to it.trim() } }) }, enabled = !busy) {
+            Text(stringResource(R.string.config_save))
+        }
+    }, dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text(stringResource(android.R.string.cancel)) } })
+}

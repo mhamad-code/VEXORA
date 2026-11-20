@@ -62,8 +62,8 @@ android {
         applicationId = "com.agent.mhamed"
         minSdk = 26
         targetSdk = 36
-        versionCode = 39
-        versionName = "3.5"
+        versionCode = 43
+        versionName = "4.0"
         buildConfigField("String", "GITHUB_CLIENT_ID", "\"$githubClientId\"")
         buildConfigField("boolean", "PLAY_DISTRIBUTION", (distributionChannel == "play").toString())
         if (hasNdk) {

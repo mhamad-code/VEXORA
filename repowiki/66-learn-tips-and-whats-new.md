@@ -7,7 +7,7 @@ The Learn page is a fully offline guide shipped as a JSON asset. `LearnCatalog` 
 ## Module Responsibilities
 
 - **Lesson model**: `LearnCatalog`, `LearnCategory`, `LearnLesson`, `LearnStep`, `LearnFix`, `LearnAction`, and `LearnLink` define the JSON schema. `LearnCatalog.search` performs the filtering, and `LearnLesson.searchText` builds the text index.
-- **Guide loading**: `LearnSection` reads `assets/learn/guide.json` on `Dispatchers.IO` inside `produceState`, parses it with `LearnCatalog.parse`, and renders a loading or failure state before the library.
+- **Guide loading**: `LearnSection` calls `loadLearnGuide` on `Dispatchers.IO` inside `produceState`, which resolves the current app locale to `assets/learn/guide-<locale>.json` and falls back to `assets/learn/guide.json`. The result is parsed with `LearnCatalog.parse`; the library renders a loading or failure state until it is ready.
 - **Library and reader**: `LearnLibrary` owns the search field, category chips, Saved filter, featured lessons, progress card, and grouped lesson list. `LearnReader` renders location, prerequisites, steps, example, outcome, limits, fixes, actions, official links, completion, and related lessons.
 - **Local progress**: completed and saved lesson ids live in the `learn_guide` `SharedPreferences` file as two string sets. The reader toggles them and the library reflects them.
 - **Deep links**: `LearnAction.kind` is `settings` or `screen`. `settings` resolves against `SettingsPage.entries` and calls `onOpenSettings`; `screen` resolves against `LearnDestination.entries` and calls `onOpenDestination`.
@@ -21,7 +21,7 @@ The Learn page is a fully offline guide shipped as a JSON asset. `LearnCatalog` 
 ```mermaid
 flowchart TD
     A[SettingsPage.LEARN selected] --> B[LearnSection]
-    B --> C[produceState loads assets/learn/guide.json]
+    B --> C[produceState loads localized guide with English fallback]
     C --> D{parse result}
     D -- failure --> E[learn_load_failed]
     D -- success --> F{lessonId}
@@ -105,29 +105,29 @@ flowchart TD
 
 - `FEATURES.md` describes deep links that open the exact screen each lesson talks about. These are internal Compose callbacks into Settings and app routes, not external URI or intent links. There is no public URL scheme for a lesson id.
 - What's New is documented as a summary of everything since the last uploaded store version, but the implementation shows it at most once per install and never compares versions. The list content is curated by hand.
-- Guide content is English only even though the rest of the interface is translated into 21 languages; `guide.json` has no locale variants.
+- Guide content ships in English plus 21 translated variants. The English `guide.json` is the source of truth; localized files must be regenerated when lessons, actions, or links change.
 - The `sources` field in each lesson is present in the asset and used for review, but no UI exposes it.
 - Learn progress is stored outside `SettingsRepository`, so it does not travel with settings backups.
 
-Sources: [app/src/main/java/com/androidharness/app/ui/learn/LearnSection.kt](../app/src/main/java/com/androidharness/app/ui/learn/LearnSection.kt)#L77-L121)
+Sources: [app/src/main/java/com/agent/mhamed/ui/learn/LearnSection.kt](../app/src/main/java/com/agent/mhamed/ui/learn/LearnSection.kt)#L77-L121)
 
 ## Source files
 
-- `app/src/main/java/com/androidharness/app/ui/learn/LearnCatalog.kt`
-- `app/src/main/java/com/androidharness/app/ui/learn/LearnSection.kt`
-- `app/src/main/java/com/androidharness/app/ui/chat/RunTips.kt`
-- `app/src/main/java/com/androidharness/app/ui/chat/components/RunTipCard.kt`
-- `app/src/main/java/com/androidharness/app/ui/whatsnew/WhatsNewDialog.kt`
-- `app/src/main/java/com/androidharness/app/ui/whatsnew/WhatsNewStore.kt`
-- `app/src/main/java/com/androidharness/app/ui/settings/SettingsScreen.kt`
-- `app/src/main/java/com/androidharness/app/ui/settings/SettingsNavigation.kt`
-- `app/src/main/java/com/androidharness/app/ui/settings/SettingsHome.kt`
-- `app/src/main/java/com/androidharness/app/ui/settings/AgentBehaviorSection.kt`
-- `app/src/main/java/com/androidharness/app/ui/settings/AgentSettingsCatalog.kt`
-- `app/src/main/java/com/androidharness/app/ui/AppNav.kt`
-- `app/src/main/java/com/androidharness/app/ui/chat/ChatScreen.kt`
-- `app/src/main/java/com/androidharness/app/data/SettingsRepository.kt`
-- `app/src/main/java/com/androidharness/app/MainActivity.kt`
+- `app/src/main/java/com/agent/mhamed/ui/learn/LearnCatalog.kt`
+- `app/src/main/java/com/agent/mhamed/ui/learn/LearnSection.kt`
+- `app/src/main/java/com/agent/mhamed/ui/chat/RunTips.kt`
+- `app/src/main/java/com/agent/mhamed/ui/chat/components/RunTipCard.kt`
+- `app/src/main/java/com/agent/mhamed/ui/whatsnew/WhatsNewDialog.kt`
+- `app/src/main/java/com/agent/mhamed/ui/whatsnew/WhatsNewStore.kt`
+- `app/src/main/java/com/agent/mhamed/ui/settings/SettingsScreen.kt`
+- `app/src/main/java/com/agent/mhamed/ui/settings/SettingsNavigation.kt`
+- `app/src/main/java/com/agent/mhamed/ui/settings/SettingsHome.kt`
+- `app/src/main/java/com/agent/mhamed/ui/settings/AgentBehaviorSection.kt`
+- `app/src/main/java/com/agent/mhamed/ui/settings/AgentSettingsCatalog.kt`
+- `app/src/main/java/com/agent/mhamed/ui/AppNav.kt`
+- `app/src/main/java/com/agent/mhamed/ui/chat/ChatScreen.kt`
+- `app/src/main/java/com/agent/mhamed/data/SettingsRepository.kt`
+- `app/src/main/java/com/agent/mhamed/MainActivity.kt`
 - `app/src/main/assets/learn/guide.json`
 - `app/src/main/res/values/learn_strings.xml`
 - `app/src/main/res/values/tips_strings.xml`

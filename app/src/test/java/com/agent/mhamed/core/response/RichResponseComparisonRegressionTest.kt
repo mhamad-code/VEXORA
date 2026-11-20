@@ -13,7 +13,7 @@ class RichResponseComparisonRegressionTest {
         assertTrue(parts.all { it is RichResponse.Part.Content })
         val nodes = parts.filterIsInstance<RichResponse.Part.Content>().map { it.node }
         val table = nodes[0] as RichResponse.Node.Table
-        assertEquals(listOf("", "Android Harness", "Mobile Harness"), table.columns)
+        assertEquals(listOf("", "VEXORA", "Mobile Harness"), table.columns)
         assertEquals(10, table.rows.size)
         val mobile = (nodes[1] as RichResponse.Node.Card).children.single() as RichResponse.Node.Steps
         val android = (nodes[2] as RichResponse.Node.Card).children.single() as RichResponse.Node.Steps

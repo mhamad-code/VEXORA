@@ -42,6 +42,7 @@ internal fun RootAccessSection(container: AppContainer) {
     val access = container.deviceAccess
     val prefs by access.preferences.collectAsStateWithLifecycle()
     val root by access.root.state.collectAsStateWithLifecycle()
+    val rootConnected by access.root.connected.collectAsStateWithLifecycle()
     val paused by access.paused.collectAsStateWithLifecycle()
     val allowance by access.allowanceLabel.collectAsStateWithLifecycle()
     val last by access.lastExecution.collectAsStateWithLifecycle()
@@ -57,6 +58,8 @@ internal fun RootAccessSection(container: AppContainer) {
     var browser by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     var useMenu by remember { mutableStateOf(false) }
     var confirmUnlimited by remember { mutableStateOf(false) }
+    // Opening the card re-checks the runner so it never shows a binding that is already gone.
+    LaunchedEffect(Unit) { access.reconnectRoot() }
 
     SettingsPanel(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -79,6 +82,7 @@ internal fun RootAccessSection(container: AppContainer) {
             if (shizukuUid == 0) Text(stringResource(R.string.settings_root_shizuku_available), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
             val rootEnabled = rootChipEnabled(
                 root.status,
+                rootConnected,
                 access.rootUseActive(settings.lastActiveSessionId, prefs),
             )
             AccessActionPair(first = { buttonModifier ->
@@ -121,6 +125,14 @@ internal fun RootAccessSection(container: AppContainer) {
                 !prefs.autoFallback && prefs.mode != AccessMode.NORMAL -> uiContext.getString(R.string.ui_commands_fail_if_the_selected_access_is)
                 else -> uiContext.getString(R.string.ui_fallback_applies_before_a_command_starts_interrupted)
             }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().settingsAnchor(R.string.settings_ask_phone_control)) {
+                Column(Modifier.weight(1f).padding(end = 12.dp)) {
+                    Text(stringResource(R.string.settings_ask_phone_control), style = MaterialTheme.typography.titleSmall)
+                    Text(stringResource(R.string.settings_ask_phone_control_desc),
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Switch(checked = prefs.askPhoneControl, onCheckedChange = { scope.launch { access.store.setAskPhoneControl(it) } })
+            }
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().settingsAnchor(R.string.settings_root_app_workspace_privileged)) {
                 Column(Modifier.weight(1f).padding(end = 12.dp)) {
                     Text(stringResource(R.string.settings_root_app_workspace_privileged), style = MaterialTheme.typography.titleSmall)
@@ -224,8 +236,8 @@ internal fun RootAccessSection(container: AppContainer) {
  * status line; counting it here claimed root was enabled after a denied
  * KernelSU/Magisk grant while the detail said no connection was active.
  */
-internal fun rootChipEnabled(status: RootStatus, useActive: Boolean): Boolean =
-    status == RootStatus.READY && useActive
+internal fun rootChipEnabled(status: RootStatus, connected: Boolean, useActive: Boolean): Boolean =
+    status == RootStatus.READY && connected && useActive
 
 @Composable
 internal fun AccessModeChoices(selected: AccessMode, onSelect: (AccessMode) -> Unit) {

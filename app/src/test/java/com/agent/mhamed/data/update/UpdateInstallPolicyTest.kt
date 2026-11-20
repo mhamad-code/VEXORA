@@ -11,8 +11,8 @@ class UpdateInstallPolicyTest {
             assertFalse(UpdateInstallPolicy.succeeded(exit, timed, output))
     }
     @Test fun onlyThisRepositoriesHttpsReleaseAssetsCanBeDownloaded() {
-        assertTrue(UpdateInstallPolicy.trustedAsset("https://github.com/Sanuu7/AndroidHarness/releases/download/v3/app.apk"))
-        for (url in listOf("http://github.com/Sanuu7/AndroidHarness/releases/download/a/a.apk", "https://github.com.evil/Sanuu7/AndroidHarness/releases/download/a/a.apk", "https://user@github.com/Sanuu7/AndroidHarness/releases/download/a/a.apk", "https://github.com/other/app/releases/download/a/a.apk", "file:///tmp/app.apk", "https://github.com/Sanuu7/AndroidHarness/releases/download/a/a.apk?token=secret")) assertFalse(url, UpdateInstallPolicy.trustedAsset(url))
+        assertTrue(UpdateInstallPolicy.trustedAsset("https://github.com/mhamad-code/VEXORA/releases/download/v3/app.apk"))
+        for (url in listOf("http://github.com/mhamad-code/VEXORA/releases/download/a/a.apk", "https://github.com.evil/mhamad-code/VEXORA/releases/download/a/a.apk", "https://user@github.com/mhamad-code/VEXORA/releases/download/a/a.apk", "https://github.com/other/app/releases/download/a/a.apk", "file:///tmp/app.apk", "https://github.com/mhamad-code/VEXORA/releases/download/a/a.apk?token=secret")) assertFalse(url, UpdateInstallPolicy.trustedAsset(url))
     }
     @Test fun packageVersionAndSigningIdentityMustBeCompatibleIncludingValidRotationHistory() {
         fun valid(pkg: String = "app", version: Long = 20, signers: Set<String> = setOf("current"), history: Set<String> = signers) =

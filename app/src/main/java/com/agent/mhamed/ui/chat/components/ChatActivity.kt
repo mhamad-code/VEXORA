@@ -1,5 +1,7 @@
 package com.agent.mhamed.ui.chat.components
 
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.interaction.DragInteraction
@@ -42,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.agent.mhamed.R
 import com.agent.mhamed.core.ChatActivityPresentation
 import com.agent.mhamed.core.ChatMessage
@@ -68,13 +71,20 @@ internal fun ChatActivity(
     turnStartedAt: Long? = null,
     onOpenUrl: (String) -> Unit = {},
     onStep: (RumbleCue) -> Unit = {},
+    grouped: Boolean = false,
+    pendingApprovalCallId: String? = null,
+    workedLabel: String = "",
 ) {
     val entries = remember(messages, runningCalls, streamingThinking, streamId, streamingCommentary) {
         ChatActivityPresentation.timeline(messages, runningCalls, streamingThinking, streamId, streamingCommentary)
     }
     if (!live && entries.isEmpty()) return
     val thoughtChunks = remember { mutableMapOf<String, com.agent.mhamed.core.ReasoningTextChunks.Stream>() }
+    val groupedExpanded = remember { androidx.compose.runtime.mutableStateMapOf<String, Boolean>() }
     val active = remember(messages, runningCalls) { ChatActivityPresentation.activeCall(messages, runningCalls) }
+    val hasAttention = remember(entries) {
+        entries.any { it is ChatActivityPresentation.Entry.Tool && it.result?.isError == true } || pendingApprovalCallId != null
+    }
     val research = remember(messages) { ChatActivityPresentation.researchProgress(messages) }
     val lastTool = remember(entries) {
         entries.filterIsInstance<ChatActivityPresentation.Entry.Tool>().lastOrNull()
@@ -89,13 +99,27 @@ internal fun ChatActivity(
         showToolPhase = false
     }
     val completedPhase = showToolPhase && active == null && lastTool?.result != null
+    var elapsedMs by remember { mutableStateOf(0L) }
+    LaunchedEffect(live, turnStartedAt) {
+        if (live && turnStartedAt != null) {
+            while (true) {
+                elapsedMs = (System.currentTimeMillis() - turnStartedAt).coerceAtLeast(0)
+                kotlinx.coroutines.delay(500)
+            }
+        } else {
+            elapsedMs = 0
+        }
+    }
     val seconds = messages.sumOf { it.thinkingMs }.coerceAtLeast(0) / 1000
     val title = when {
+        live && turnStartedAt != null -> stringResource(R.string.ui_working_for, formatElapsed(elapsedMs))
         live && showToolPhase && active != null -> activityLabel(active.name, true)
         live && completedPhase -> if (lastTool!!.result?.isError == true) stringResource(R.string.chat_tool_failed) else activityLabel(lastTool.call.name, false)
         live && writing -> stringResource(R.string.chat_writing_reply)
         live -> stringResource(R.string.chat_thinking)
-        seconds > 0 && !showThinkingMetrics -> stringResource(R.string.chat_thought_seconds, seconds)
+        grouped && workedLabel.isNotBlank() -> stringResource(R.string.ui_worked_for, workedLabel)
+        seconds > 0 && !showThinkingMetrics -> stringResource(R.string.chat_thought_duration,
+            com.agent.mhamed.ui.common.formatDuration(seconds * 1000))
         else -> stringResource(R.string.chat_thought)
     }
     // Each step change of a live turn is felt once; a row that merely scrolls back into view stays silent.
@@ -112,36 +136,111 @@ internal fun ChatActivity(
         seenStep = step
         if (step != null) onStep(step.first)
     }
+    val introContext = androidx.compose.ui.platform.LocalContext.current
+    // The model has sent something of its own: reasoning, words, or a tool call.
+    val modelStarted = entries.isNotEmpty() || writing || runningCalls.isNotEmpty() ||
+        streamingThinking.isNotEmpty() || thinkingTiming?.startedAt != null
+    // The brand intro plays for a turn that has just started, and for one still waiting on
+    // the model when it comes back into view, but not for a turn already under way.
+    var introDone by rememberSaveable(turnStartedAt != null) {
+        mutableStateOf(!(live && turnStartedAt != null &&
+            (!modelStarted || com.agent.mhamed.agent.ThinkingTiming.now() - turnStartedAt < 1_500) &&
+            android.provider.Settings.Global.getFloat(introContext.contentResolver,
+                android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f))
+    }
+    Column(Modifier.fillMaxWidth()) {
+    // The intro ends on the same glyph in the same spot, so a short crossfade is all the handoff needs.
+    AnimatedContent(introDone || !live, transitionSpec = {
+        fadeIn(tween(160)) togetherWith fadeOut(tween(120))
+    }, label = "Chat turn intro") { showActivity ->
+    if (!showActivity) ChatTurnIntro(started = modelStarted || !live, onFinished = { introDone = true }) else
     ChatActivityRow(title, if (live && showToolPhase) (active ?: lastTool?.call?.takeIf { completedPhase })?.name else null, live, entries.isNotEmpty(), followLatest = live, autoExpand = autoExpand,
-        progress = research,
+        writing = live && writing && active == null,
+        plainDetails = grouped, grouped = grouped, attention = hasAttention, progress = research,
         trailing = if (showThinkingMetrics) ({ ChatThinkingMetrics(messages, streamingThinking, thinkingTiming, reasoningTokens, live,
             turnStartedAt = turnStartedAt, streamId = streamId) }) else null) {
-        entries.forEach { entry ->
-            when (entry) {
-                is ChatActivityPresentation.Entry.Thought -> {
-                    item(key = entry.key + "-heading") {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Icon(painterResource(R.drawable.ic_brain), null, Modifier.size(13.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(if (entry.milliseconds >= 1000) stringResource(R.string.chat_thought_seconds, entry.milliseconds / 1000)
-                            else stringResource(R.string.chat_thought), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (grouped) {
+            val blocks = com.agent.mhamed.core.ActivityGrouping.blocks(entries, pendingApprovalCallId)
+            blocks.forEach { block ->
+                when (block) {
+                    is com.agent.mhamed.core.ActivityGrouping.Block.Text -> item(key = block.key) {
+                        Text(
+                            com.agent.mhamed.core.response.RichResponse.plainText(
+                                com.agent.mhamed.core.response.ChatRichResponse.normalize(block.text)),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
                     }
-                    }
-                    thoughtChunks.getOrPut(entry.key) { com.agent.mhamed.core.ReasoningTextChunks.Stream() }.update(entry.text).forEachIndexed { index, chunk ->
-                        item(key = entry.key + "-text-" + index) {
-                            Text(chunk, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    is com.agent.mhamed.core.ActivityGrouping.Block.Activity -> item(key = block.key) {
+                        val open = groupedExpanded[block.key] == true
+                        LaunchedEffect(block.group.awaitingApproval, block.group.hasFailure) {
+                            if (block.group.awaitingApproval || block.group.hasFailure) groupedExpanded[block.key] = true
+                        }
+                        Column(Modifier.fillMaxWidth()) {
+                            ActivityGroupLine(block.group, open) { groupedExpanded[block.key] = !open }
+                            AnimatedVisibility(open) {
+                                Column(Modifier.fillMaxWidth().padding(start = 4.dp, bottom = 6.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    block.group.entries.forEach { entry ->
+                                        ChatEntryContent(entry, live, true, thoughtChunks, onOpenUrl)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
-                is ChatActivityPresentation.Entry.Commentary -> item(key = entry.key) { Text(
-                    com.agent.mhamed.core.response.RichResponse.plainText(
-                        com.agent.mhamed.core.response.ChatRichResponse.normalize(entry.text)),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                ) }
-                is ChatActivityPresentation.Entry.Tool -> item(key = entry.key) { ChatToolActivity(entry.call, entry.result,
-                    running = live && entry.result == null, onOpenUrl) }
+            }
+        } else {
+            entries.forEach { entry ->
+                item(key = entry.key) { ChatEntryContent(entry, live, false, thoughtChunks, onOpenUrl) }
             }
         }
+    }
+    }
+    // While the answer is being written the chips sit under it instead (see ChatScreen).
+    if (live && introDone && !writing) {
+        val sources = remember(messages) { ChatActivityPresentation.sources(messages) }
+        LiveSourceChips(sources, messages.firstNotNullOfOrNull { it.turnId }, onOpenUrl)
+    }
+    }
+}
+
+/**
+ * Draws one activity entry. The grouped layout keeps the exact same tool card and
+ * detail content, so opening a group reveals everything the classic layout showed.
+ */
+@Composable
+private fun ChatEntryContent(
+    entry: ChatActivityPresentation.Entry,
+    live: Boolean,
+    grouped: Boolean,
+    thoughtChunks: MutableMap<String, com.agent.mhamed.core.ReasoningTextChunks.Stream>,
+    onOpenUrl: (String) -> Unit,
+) {
+    when (entry) {
+        is ChatActivityPresentation.Entry.Thought -> Column(Modifier.fillMaxWidth()) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                Icon(painterResource(R.drawable.ic_brain), null, Modifier.size(13.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    if (entry.milliseconds >= 1000) stringResource(R.string.chat_thought_duration,
+                        com.agent.mhamed.ui.common.formatDuration(entry.milliseconds))
+                    else stringResource(R.string.chat_thought),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            thoughtChunks.getOrPut(entry.key) { com.agent.mhamed.core.ReasoningTextChunks.Stream() }.update(entry.text).forEachIndexed { _, chunk ->
+                Text(chunk, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        is ChatActivityPresentation.Entry.Commentary -> Text(
+            com.agent.mhamed.core.response.RichResponse.plainText(
+                com.agent.mhamed.core.response.ChatRichResponse.normalize(entry.text)),
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (grouped) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        is ChatActivityPresentation.Entry.Tool ->
+            ChatToolActivity(entry.call, entry.result, running = live && entry.result == null, onOpenUrl)
     }
 }
 
@@ -235,6 +334,11 @@ private fun ChatActivityRow(
     expandable: Boolean,
     followLatest: Boolean = false,
     autoExpand: Boolean = true,
+    /** The answer is streaming: the working log steps aside so the reply has the focus. */
+    writing: Boolean = false,
+    plainDetails: Boolean = false,
+    grouped: Boolean = false,
+    attention: Boolean = false,
     progress: ChatActivityPresentation.ResearchProgress? = null,
     trailing: (@Composable () -> Unit)? = null,
     compactPreview: Boolean = false,
@@ -246,7 +350,8 @@ private fun ChatActivityRow(
     val depth = LocalActivityDepth.current
     val inline = depth > 0 && inlineDetails != null
     var readerOpen by rememberSaveable { mutableStateOf(false) }
-    var expanded by rememberSaveable { mutableStateOf(false) }
+    // Grouped turns open on the worked lines; classic rows stay folded.
+    var expanded by rememberSaveable { mutableStateOf(plainDetails) }
     var autoOpened by remember { mutableStateOf(false) }
     // A live turn opens its working log so streamed commentary never disappears
     // into a collapsed row, then folds away when the turn finishes.
@@ -255,10 +360,23 @@ private fun ChatActivityRow(
             expanded = true
             autoOpened = true
         }
-        if (!live && autoOpened) {
+        // Attention items never collapse; normal grouped turns fold away.
+        if (grouped && !live && autoOpened && !attention) {
             expanded = false
             autoOpened = false
         }
+        if (!grouped && !plainDetails && !live && autoOpened) {
+            expanded = false
+            autoOpened = false
+        }
+    }
+    // Fold the log once, as the first words of the answer land, and leave it
+    // folded for the rest of the turn. Reopening it whenever the model went back
+    // to a tool made the reply below jump up and down; the row title still
+    // names the live step.
+    var foldedForAnswer by remember { mutableStateOf(false) }
+    LaunchedEffect(writing) {
+        if (writing && live && autoOpened && !foldedForAnswer) { foldedForAnswer = true; expanded = false }
     }
     val scroll = rememberChatListState()
     // Retain the reader's follow preference when this disclosure survives a stream commit.
@@ -324,7 +442,24 @@ private fun ChatActivityRow(
     val context = androidx.compose.ui.platform.LocalContext.current
     val motion = remember(context) { android.provider.Settings.Global.getFloat(context.contentResolver,
         android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f }
-    Column(Modifier.fillMaxWidth()) {
+    // A card the reader opens scrolls itself into view, through any card it sits in,
+    // once its expand animation settles. Auto-opened live logs leave scrolling alone.
+    val reveal = remember { androidx.compose.foundation.relocation.BringIntoViewRequester() }
+    var revealOnOpen by remember { mutableStateOf(false) }
+    var cardHeight by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    LaunchedEffect(revealOnOpen) {
+        if (!revealOnOpen) return@LaunchedEffect
+        var last = -1
+        var steady = 0
+        val deadline = System.nanoTime() + 1_200_000_000L
+        while (expanded && steady < 3 && System.nanoTime() < deadline) {
+            withFrameNanos { }
+            if (cardHeight == last) steady++ else { steady = 0; last = cardHeight }
+        }
+        if (expanded) reveal.bringIntoView()
+        revealOnOpen = false
+    }
+    Column(Modifier.fillMaxWidth().bringIntoViewRequester(reveal).onSizeChanged { cardHeight = it.height }) {
         val header: @Composable () -> Unit = {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -332,7 +467,8 @@ private fun ChatActivityRow(
                     AnimatedContent(title, transitionSpec = {
                         (fadeIn(tween(if (motion) 180 else 0)) + slideInVertically { if (motion) it / 3 else 0 }) togetherWith
                             fadeOut(tween(if (motion) 100 else 0))
-                    }, label = "Chat activity phase", modifier = Modifier.weight(1f, fill = false)) { label -> ChatShimmerText(label, live && motion) }
+                    }, label = "Chat activity phase", modifier = Modifier.weight(1f, fill = false)) { label -> ChatShimmerText(label, live && motion,
+                        style = if (grouped) MaterialTheme.typography.bodyMedium.copy(fontSize = 17.sp) else MaterialTheme.typography.labelLarge) }
                     if (expandable) Icon(if (expanded) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown,
                         stringResource(if (expanded) R.string.ui_collapse else R.string.ui_expand), Modifier.size(16.dp), tint = scheme.onSurfaceVariant)
                 }
@@ -341,7 +477,7 @@ private fun ChatActivityRow(
         }
         CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 40.dp) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            if (expandable) TextButton(onClick = { pauseParent(); detailScroll?.pause(); expanded = !expanded }, modifier = Modifier.weight(1f),
+            if (expandable) TextButton(onClick = { pauseParent(); detailScroll?.pause(); expanded = !expanded; revealOnOpen = expanded }, modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(12.dp), contentPadding = PaddingValues(horizontal = 4.dp)) { header() }
             else Box(Modifier.weight(1f).heightIn(min = 36.dp).padding(horizontal = 4.dp), contentAlignment = Alignment.CenterStart) { header() }
             if (expanded && inlineDetails == null) IconButton(onClick = { pauseParent(); detailScroll?.pause(); following = false; readerOpen = true }) {
@@ -353,21 +489,29 @@ private fun ChatActivityRow(
             enter = fadeIn(tween(120)) + expandVertically(com.agent.mhamed.ui.theme.expressiveSpatialSpec()),
             exit = fadeOut(tween(100)) + shrinkVertically(com.agent.mhamed.ui.theme.expressiveSpatialSpec())) {
             CompositionLocalProvider(LocalActivityInteraction provides { following = false; userDragged = true }, LocalActivityDepth provides depth + 1) {
-                Surface(shape = RoundedCornerShape(if (inline) 16.dp else 20.dp), color = scheme.surfaceContainerLow,
-                    border = BorderStroke(1.dp, scheme.outlineVariant.copy(alpha = .45f))) {
-                    if (inline) Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) { inlineDetails!!() }
-                    else Column {
-                        ActivityScrollFrame(scroll, Modifier.fillMaxWidth().heightIn(max = if (compactPreview) 180.dp else detailHeight)) {
-                            LazyColumn(Modifier.fillMaxWidth().containChatDetailScroll().nestedScroll(userScroll), state = scroll,
-                                contentPadding = PaddingValues(start = 12.dp, end = 16.dp, top = 12.dp, bottom = 12.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp), content = details)
-                        }
-                        if (scroll.canScrollForward || live && !following && followLatest) Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            if (scroll.canScrollForward) Text(stringResource(R.string.chat_activity_more), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = scheme.onSurfaceVariant)
-                            else Spacer(Modifier.weight(1f))
-                            if (live && followLatest && !following) TextButton(onClick = { following = true; userDragged = false }) { Text(stringResource(R.string.chat_activity_latest)) }
+                if (inline) {
+                    Surface(shape = RoundedCornerShape(16.dp), color = scheme.surfaceContainerLow,
+                        border = BorderStroke(1.dp, scheme.outlineVariant.copy(alpha = .45f))) {
+                        Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) { inlineDetails!!() }
+                    }
+                } else {
+                    val detailContent: @Composable () -> Unit = {
+                        Column(Modifier.fillMaxWidth()) {
+                            ActivityScrollFrame(scroll, Modifier.fillMaxWidth().heightIn(max = if (compactPreview) 180.dp else detailHeight)) {
+                                LazyColumn(Modifier.fillMaxWidth().containChatDetailScroll().nestedScroll(userScroll), state = scroll,
+                                    contentPadding = PaddingValues(start = if (plainDetails) 2.dp else 12.dp, end = 16.dp, top = 4.dp, bottom = 12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(if (plainDetails) 2.dp else 10.dp), content = details)
+                            }
+                            if (scroll.canScrollForward || live && !following && followLatest) Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                if (scroll.canScrollForward) Text(stringResource(R.string.chat_activity_more), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = scheme.onSurfaceVariant)
+                                else Spacer(Modifier.weight(1f))
+                                if (live && followLatest && !following) TextButton(onClick = { following = true; userDragged = false }) { Text(stringResource(R.string.chat_activity_latest)) }
+                            }
                         }
                     }
+                    if (plainDetails) detailContent()
+                    else Surface(shape = RoundedCornerShape(20.dp), color = scheme.surfaceContainerLow,
+                        border = BorderStroke(1.dp, scheme.outlineVariant.copy(alpha = .45f))) { detailContent() }
                 }
             }
         }
@@ -432,7 +576,7 @@ internal fun ChatSources(messages: List<ChatMessage>, onOpenUrl: (String) -> Uni
             Text(stringResource(R.string.chat_sources), style = MaterialTheme.typography.titleLarge)
             Text(stringResource(R.string.chat_sources_explanation), style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.dp, bottom = 12.dp))
             sources.forEach { source ->
-                TextButton(onClick = { open = false; onOpenUrl(source.url) }, shape = RoundedCornerShape(12.dp), contentPadding = PaddingValues(vertical = 10.dp, horizontal = 8.dp), modifier = Modifier.fillMaxWidth()) {
+                TextButton(onClick = { open = false; onOpenUrl(source.url) }, shape = RoundedCornerShape(12.dp), contentPadding = PaddingValues(vertical = 10.dp, horizontal = 8.dp), modifier = Modifier.fillMaxWidth().markPreviewOrigin()) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                         Text(source.title, style = MaterialTheme.typography.titleSmall)
                         Text(source.host, style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant)
@@ -609,6 +753,7 @@ private fun activityLabel(name: String, running: Boolean): String = stringResour
     "offer_code_handoff" -> R.string.chat_preparing_code_option
     "app_settings_find" -> if (running) R.string.as_activity_finding else R.string.as_activity_found
     "app_settings_change" -> if (running) R.string.as_activity_changing else R.string.as_activity_changed
+    "app_plugins" -> if (running) R.string.as_activity_plugins else R.string.as_activity_plugins_done
     else -> if (running) R.string.chat_working else R.string.chat_finished_activity
 })
 
@@ -636,4 +781,11 @@ internal fun ChatShimmerText(text: String, running: Boolean, style: androidx.com
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
     )
+}
+
+private fun formatElapsed(ms: Long): String {
+    val total = (ms / 1000).coerceAtLeast(1)
+    val m = total / 60
+    val s = total % 60
+    return if (m > 0) "${m}m ${s}s" else "${s}s"
 }

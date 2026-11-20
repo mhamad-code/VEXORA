@@ -165,7 +165,8 @@ sealed interface StreamEvent {
     data class Done(val finishReason: String? = null) : StreamEvent
 }
 
-class ApiException(val code: Int, message: String, retryAfterSecondsHeader: Long? = null) : IOException("HTTP $code: $message") {
+class ApiException(val code: Int, message: String, retryAfterSecondsHeader: Long? = null) :
+    IOException("HTTP $code: ${ServerContext.overflowMessage(message) ?: message}") {
     val retryAfterSeconds: Long? = retryAfterSecondsHeader ?: runCatching {
         providerRetryAfterSeconds(Json.parseToJsonElement(message))
     }.getOrNull()
@@ -243,6 +244,8 @@ object ProviderFactory {
      */
     fun sseJson(request: Request, httpClient: OkHttpClient = client, onDone: () -> Unit = {}): Flow<JsonElement> = callbackFlow {
         val call = httpClient.newCall(request)
+        // Every line counts as proof of life, keep-alive comments included.
+        val activity = coroutineContext[com.agent.mhamed.agent.StreamActivity]
         val reader = launch(Dispatchers.IO) {
             try {
                 val response = kotlinx.coroutines.suspendCancellableCoroutine<Response> { continuation ->
@@ -270,6 +273,7 @@ object ProviderFactory {
                     try {
                         while (true) {
                             val line = readSseLine(source) ?: break
+                            activity?.touch()
                             tap?.line(line)
                             if (!line.startsWith("data:")) continue
                             val payload = line.removePrefix("data:").trim()

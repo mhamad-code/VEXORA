@@ -1,5 +1,6 @@
 package com.agent.mhamed.ui.chat
 
+import com.agent.mhamed.data.SteeringMode
 import com.agent.mhamed.R
 import android.net.Uri
 import androidx.lifecycle.ViewModel
@@ -104,6 +105,7 @@ data class ChatUiState(
     val currentTurnId: String? = null,
     val runningCalls: List<ToolCallData> = emptyList(),
     val codeDrafts: Map<String, com.agent.mhamed.agent.LiveCodeDraft> = emptyMap(),
+    val streamStallTimeoutSeconds: Int = com.agent.mhamed.agent.StreamRetrier.DEFAULT_STALL_TIMEOUT_SECONDS,
     val packageProgress: Map<String, com.agent.mhamed.data.env.PackageInstallStatus> = emptyMap(),
     val showLiveCode: Boolean = true,
     val showTodoList: Boolean = true,
@@ -127,6 +129,8 @@ data class ChatUiState(
     val fileAttachments: List<FileAttachment> = emptyList(),
     val attachmentImports: List<AttachmentImport> = emptyList(),
     val maxContextTokens: Int = 1_000_000,
+    /** "providerId|model" to the window its server named when it rejected a request as too long. */
+    val learnedContextLimits: Map<String, Int> = emptyMap(),
     val autoCompactTokens: Int = 0,
     /** App-wide resume prompt; blank means the built-in text. A chat's own prompt lives on its task record. */
     val resumePrompt: String = "",
@@ -397,8 +401,8 @@ class ChatViewModel(
     private var compactionJob: kotlinx.coroutines.Job? = null
 
     /** The open /btw sheet; held apart from [state] so its token stream redraws only the sheet. */
-    private val _sideQuestion = MutableStateFlow<SideQuestionUi?>(null)
-    val sideQuestion: StateFlow<SideQuestionUi?> = _sideQuestion
+    private val _sideThread = MutableStateFlow<SideThreadUi?>(null)
+    val sideThread: StateFlow<SideThreadUi?> = _sideThread
     private var sideJob: kotlinx.coroutines.Job? = null
     private var sideGeneration = 0
 
@@ -469,7 +473,8 @@ class ChatViewModel(
         }
         viewModelScope.launch {
             c.settings.settings.collect {
-                _state.update { st -> st.copy(showLiveCode = it.showLiveCode, showTodoList = it.showTodoList) }
+                _state.update { st -> st.copy(showLiveCode = it.showLiveCode, showTodoList = it.showTodoList,
+                    streamStallTimeoutSeconds = it.streamStallTimeoutSeconds) }
             }
         }
         viewModelScope.launch {
@@ -748,6 +753,7 @@ class ChatViewModel(
             reasoningConfigs = settings.reasoningConfigs,
             customThinkingLevels = selection.customThinkingLevels,
             maxContextTokens = settings.maxContextTokens,
+            learnedContextLimits = settings.learnedContextLimits,
             autoCompactTokens = settings.autoCompactTokens,
             resumePrompt = settings.resumePrompt,
             maxOutputTokens = settings.maxOutputTokens,
@@ -829,7 +835,8 @@ class ChatViewModel(
     // ------------------------------------------------------------------
 
     /** True when the composer can consume the draft, including local commands and queued messages. */
-    fun send(rawText: String): Boolean {
+    /** [steering] is the pick from holding send while the agent works; null follows Settings. */
+    fun send(rawText: String, steering: SteeringMode? = null): Boolean {
         // Answered aside on the live context; never queued, injected or saved.
         if (SlashCommands.isSideQuestion(rawText)) return askAside(rawText.trim().removeRange(0, SlashCommands.SIDE_COMMAND.length))
         if (compactionJob?.isActive == true) {
@@ -847,6 +854,7 @@ class ChatViewModel(
                 skillNames = chatSkills().slashNames(),
                 snippetBodies = _state.value.snippets.associate { it.name to it.body },
                 skillContent = { name -> chatSkills().view(name).getOrNull()?.content },
+                commandFor = { name -> chatSkills().command(name) },
             )
         } else {
             SlashCommands.Result(SlashCommands.Kind.PLAIN, agentText = trimmed)
@@ -935,6 +943,75 @@ class ChatViewModel(
         }
 
         val agentText = resolved.agentText ?: return false
+        val command = resolved.command
+        if (command != null && (com.agent.mhamed.skills.CommandTemplate.shellCommands(agentText).isNotEmpty() ||
+                com.agent.mhamed.skills.CommandTemplate.fileReferences(agentText).isNotEmpty())) {
+            // !`shell` lines and @file references are filled in first, as Claude Code does before the model sees the command.
+            viewModelScope.launch {
+                val expanded = runCatching { expandCommand(agentText, command) }.getOrElse { e ->
+                    if (e is kotlinx.coroutines.CancellationException) throw e
+                    _state.update { it.copy(error = e.message) }; return@launch
+                }
+                dispatchAgentText(expanded, steering)
+            }
+            return true
+        }
+        return dispatchAgentText(agentText, steering)
+    }
+
+    /**
+     * Runs a command's shell lines in the open project and reads the files it names. A shell line runs only when the
+     * command's allowed-tools permit it or Full access is on; otherwise the model is asked to run it, with the usual approvals.
+     */
+    private suspend fun expandCommand(text: String, command: com.agent.mhamed.skills.SkillStore.Command): String =
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val workspace = workspaceFs.value
+            val primary = (workspace as? com.agent.mhamed.workspace.ChatWorkspaceFs)?.primary?.fs ?: workspace
+            val root = primary?.shellRoot
+            val fullAccess = _state.value.permissionMode == PermissionMode.FULL_ACCESS
+            val outputs = com.agent.mhamed.skills.CommandTemplate.shellCommands(text).associateWith { line ->
+                if (root == null || !c.linuxEnv.isReady || !(fullAccess || com.agent.mhamed.skills.CommandTemplate.shellAllowed(command.fields["allowed-tools"], line)))
+                    "(Run `$line` and use its output.)"
+                else runCommandLine(line, root)
+            }
+            val withOutput = com.agent.mhamed.skills.CommandTemplate.withShellOutput(text) { outputs[it] ?: it }
+            val files = com.agent.mhamed.skills.CommandTemplate.fileReferences(withOutput).mapNotNull { path ->
+                val node = runCatching { primary?.resolve(path) }.getOrNull() ?: command.folder?.resolve(path)?.takeIf { it.isFile }?.let { file ->
+                    return@mapNotNull path to file.readText()
+                } ?: return@mapNotNull null
+                if (!node.exists || !node.isFile || node.length > COMMAND_FILE_BYTES) return@mapNotNull null
+                path to (runCatching { node.readText() }.getOrNull() ?: return@mapNotNull null)
+            }.toMap()
+            com.agent.mhamed.skills.CommandTemplate.withFiles(withOutput, files)
+        }
+
+    private suspend fun runCommandLine(line: String, root: java.io.File): String = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        val process = runCatching { c.linuxEnv.shellProcessBuilder(line).directory(root).redirectErrorStream(true).start() }
+            .getOrElse { return@withContext "(Could not run `$line`: ${it.message})" }
+        try {
+            process.outputStream.close()
+            val output = java.io.ByteArrayOutputStream()
+            // Read on its own thread so a command that fills the pipe cannot stall the timeout below.
+            val reader = Thread {
+                runCatching {
+                    process.inputStream.use { input ->
+                        val buffer = ByteArray(8192)
+                        while (true) {
+                            val count = input.read(buffer)
+                            if (count < 0) break
+                            synchronized(output) { if (output.size() < COMMAND_FILE_BYTES) output.write(buffer, 0, minOf(count, COMMAND_FILE_BYTES - output.size())) }
+                        }
+                    }
+                }
+            }.apply { isDaemon = true; start() }
+            val done = kotlinx.coroutines.runInterruptible { process.waitFor(COMMAND_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS) }
+            if (!done) { process.destroyForcibly(); return@withContext "(`$line` did not finish within $COMMAND_TIMEOUT_SECONDS seconds.)" }
+            reader.join(2_000)
+            synchronized(output) { output.toString(Charsets.UTF_8.name()) }.trimEnd()
+        } finally { if (process.isAlive) process.destroyForcibly() }
+    }
+
+    private fun dispatchAgentText(agentText: String, steering: SteeringMode? = null): Boolean {
         val sid = sessionId
         if (sid != null && c.runManager.isRunning(sid)) {
             if (_state.value.conversation.isChat && (_state.value.attachments.isNotEmpty() || _state.value.fileAttachments.isNotEmpty())) {
@@ -944,7 +1021,7 @@ class ChatViewModel(
             // Queue the expanded text for this chat's successful Run finished event.
             // Local slash commands never reach here, so /cost /skills /clear keep working mid-run.
             val target = SlashCommands.dispatchTarget(isRunning = true, agentText = agentText)
-            c.runManager.inject(sid, target.text)
+            c.runManager.inject(sid, target.text, steering)
             return true
         }
         return startRun(agentText)
@@ -985,15 +1062,18 @@ class ChatViewModel(
 
     private suspend fun resumeTaskNow(sid: String) {
         var record = c.runManager.controls.flow(sid).value
-        // A manual provider choice after a free-limit notice must also apply to Continue.
-        // Other interrupted tasks retain their saved provider and recovery behavior.
-        if (record.provider?.id == com.agent.mhamed.llm.HarnessProvider.ID &&
-            com.agent.mhamed.llm.HarnessFreeLimit.notice(record.reason) != null) {
-            val current = _state.value
-            val target = current.modelSelectionTarget
-            val chosen = current.providers.firstOrNull { it.id == current.selectedProviderIdFor(target) }
-                ?.let { it.copy(model = current.selectedModelFor(target) ?: it.model) }
-            if (chosen != null && (chosen.id != record.provider?.id || chosen.model != record.provider?.model)) {
+        // Resume follows the model the chat shows. A provider or model picked after the
+        // pause replaces the saved one, whatever stopped the task (#118), so a quota or
+        // 429 on the old provider is not retried forever. An untouched selection still
+        // matches the saved run or its fallback primary, and keeps its recovery as is.
+        val current = _state.value
+        val target = current.modelSelectionTarget
+        val chosen = current.providers.firstOrNull { it.id == current.selectedProviderIdFor(target) }
+            ?.let { it.copy(model = current.selectedModelFor(target) ?: it.model) }
+        if (chosen != null) {
+            val resolvedModel = runCatching { c.providers.resolveHarnessConfig(chosen).model }.getOrNull()
+            if (!ResumeSelection.matches(chosen, resolvedModel, record.provider) &&
+                !ResumeSelection.matches(chosen, resolvedModel, record.fallbackPrimary)) {
                 record = c.runManager.controls.update(sid) { it.copy(provider = chosen, fallbackPrimary = null) }
             }
         }
@@ -1015,6 +1095,15 @@ class ChatViewModel(
         c.runManager.resumeTask(sid, key)
     }
 
+    /** Saves a longer stall window from the paused card, then resumes with it. */
+    fun waitLongerAndResume(seconds: Int) {
+        viewModelScope.launch {
+            c.settings.setStreamStallTimeoutSeconds(seconds)
+            _state.update { it.copy(streamStallTimeoutSeconds = seconds) }
+            resumeInterruptedTask()
+        }
+    }
+
     fun resumeInterruptedTask() {
         val sid = sessionId ?: return
         if (selectingAnswerVersion || steering || compactionJob?.isActive == true || c.runManager.isRunning(sid)) return
@@ -1023,6 +1112,16 @@ class ChatViewModel(
             try { resumeTaskNow(sid) }
             catch (e: Exception) { _state.update { it.copy(error = e.message) } }
             finally { steering = false }
+        }
+    }
+
+    /** Leaves a paused or interrupted task the user chose not to continue; the chat is usable again. */
+    fun dismissPausedTask() {
+        val sid = sessionId ?: return
+        if (c.runManager.isRunning(sid)) return
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try { c.runManager.dismissPausedTask(sid) }
+            catch (e: Exception) { _state.update { it.copy(error = e.message) } }
         }
     }
 
@@ -1099,7 +1198,8 @@ class ChatViewModel(
     /**
      * Asks [question] on the main task's latest request, so the answer sees
      * everything the agent has read and decided and reuses its prompt cache.
-     * A blank question opens the sheet ready for typing.
+     * Earlier answers of this chat's /btw thread ride along, so follow-ups
+     * keep their context. A blank question reopens the thread ready for typing.
      */
     fun askAside(question: String): Boolean {
         val sid = sessionId
@@ -1108,25 +1208,34 @@ class ChatViewModel(
             return false
         }
         val text = question.trim()
-        sideJob?.cancel()
-        val generation = ++sideGeneration
-        if (text.isEmpty()) {
-            _sideQuestion.value = SideQuestionUi()
+        // A thread belongs to one chat; opening /btw elsewhere starts fresh.
+        val thread = _sideThread.value?.takeIf { it.sessionId == sid } ?: run {
+            sideJob?.cancel()
+            sideGeneration++
+            SideThreadUi(sid)
+        }
+        if (text.isEmpty() || thread.running) {
+            _sideThread.value = thread.copy(visible = true)
             return true
         }
+        val history = thread.history()
+        val generation = ++sideGeneration
         val starting = SideQuestionUi(question = text, running = true, startedAt = System.currentTimeMillis())
-        _sideQuestion.value = starting
-        fun publish(ui: SideQuestionUi) { if (generation == sideGeneration) _sideQuestion.value = ui }
+        _sideThread.value = thread.copy(turns = thread.turns + starting, visible = true)
+        fun publish(ui: SideQuestionUi) {
+            if (generation == sideGeneration) _sideThread.update { it?.withCurrent(ui) }
+        }
         sideJob = viewModelScope.launch {
             var ui = starting
             try {
+                // Taken fresh on every ask, so each follow-up reads the main task's live state.
                 val context = c.runManager.sideContext(sid) ?: coldAsideContext(sid)
                 ui = ui.copy(warm = context.warm, capturedAt = context.capturedAt, model = context.config.model)
                 publish(ui)
                 val events = kotlinx.coroutines.channels.Channel<com.agent.mhamed.agent.SideEvent>(kotlinx.coroutines.channels.Channel.UNLIMITED)
                 launch {
                     try {
-                        c.runManager.askAside(context, text).collect { events.send(it) }
+                        c.runManager.askAside(context, text, history).collect { events.send(it) }
                         events.close()
                     } catch (e: kotlinx.coroutines.CancellationException) {
                         events.close()
@@ -1187,10 +1296,16 @@ class ChatViewModel(
 
     fun stopAside() { sideJob?.cancel() }
 
-    fun dismissAside() {
+    /** Hides the sheet. The thread stays, and an answer still streaming keeps going. */
+    fun hideAside() {
+        _sideThread.update { it?.copy(visible = false) }
+    }
+
+    /** Ends the thread: stops any answer and forgets every side exchange of this chat. */
+    fun clearAside() {
         sideJob?.cancel()
         sideGeneration++
-        _sideQuestion.value = null
+        _sideThread.update { it?.let { thread -> SideThreadUi(thread.sessionId, visible = thread.visible) } }
     }
 
     private suspend fun coldAsideContext(sid: String): com.agent.mhamed.agent.SideContext {
@@ -1248,9 +1363,9 @@ class ChatViewModel(
                     ?: mimeHint?.takeUnless { it.contains('*') } ?: "application/octet-stream"
                 _state.update { it.copy(attachmentImports = it.attachmentImports.map { item -> if (item.id == id) item.copy(name = name) else item }) }
                 val size = querySize(resolver, uri)
-                if (size != null && size > FileAttachments.COPY_BYTE_LIMIT) throw AttachmentProblem(
-                    AttachmentImportStatus.TOO_LARGE, c.appContext.getString(R.string.chat_attachment_too_large))
                 if (imageOnly || mime.startsWith("image/")) {
+                    if (size != null && size > FileAttachments.IMAGE_BYTE_LIMIT) throw AttachmentProblem(
+                        AttachmentImportStatus.TOO_LARGE, c.appContext.getString(R.string.chat_attachment_too_large))
                     val keepOriginal = if (snapshot.conversationReady || snapshot.sessionId == null) snapshot.conversation.isChat
                         else c.sessions.session(snapshot.sessionId)?.let {
                             com.agent.mhamed.data.ConversationConfig.decode(it.conversationJson).isChat
@@ -1357,10 +1472,6 @@ class ChatViewModel(
         size: Long?,
         importId: String,
     ) {
-        val cap = FileAttachments.COPY_BYTE_LIMIT
-        if (size != null && size > cap) {
-            throw IllegalStateException(c.appContext.getString(R.string.ui_file_is_larger_than, (FileAttachments.humanBytes(cap)).toString()))
-        }
         val fs = chatWorkspace()
         val dir = fs.resolve(".harness/attachments")
         dir.mkdirs()
@@ -1369,22 +1480,21 @@ class ChatViewModel(
         val unique = "$stamp-${importId.take(8)}-$safe"
         val node = dir.createFile(unique)
         try {
-            val bytes = resolver.openInputStream(uri)!!.use { input ->
-                val out = java.io.ByteArrayOutputStream()
-                val chunk = ByteArray(16 * 1024)
-                while (true) {
-                    val count = input.read(chunk)
-                    if (count < 0) break
-                    if (out.size().toLong() + count > cap) throw AttachmentProblem(AttachmentImportStatus.TOO_LARGE,
-                        c.appContext.getString(R.string.chat_attachment_too_large))
-                    out.write(chunk, 0, count)
-                }
-                out.toByteArray()
+            // Stream straight to disk so attachment size is bounded only by free storage, never by heap.
+            var copied = 0L
+            resolver.openInputStream(uri)!!.use { input ->
+                node.writeFrom(object : java.io.FilterInputStream(input) {
+                    override fun read(b: ByteArray, off: Int, len: Int): Int {
+                        // Removing the chip mid-copy stops a large transfer instead of finishing it first.
+                        if (_state.value.attachmentImports.none { it.id == importId }) throw java.io.IOException("Attachment removed")
+                        return super.read(b, off, len).also { if (it > 0) copied += it }
+                    }
+                    override fun read(): Int = super.read().also { if (it >= 0) copied++ }
+                })
             }
-            node.writeBytes(bytes)
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main.immediate) {
                 if (_state.value.attachmentImports.any { it.id == importId }) {
-                    addFileAttachment(FileAttachment(name, mime, FileAttachments.humanBytes(size ?: bytes.size.toLong()), null, ".harness/attachments/$unique"))
+                    addFileAttachment(FileAttachment(name, mime, FileAttachments.humanBytes(size ?: copied), null, ".harness/attachments/$unique"))
                 } else node.delete()
             }
         } catch (e: Exception) { runCatching { node.delete() }; throw e }
@@ -1438,6 +1548,7 @@ class ChatViewModel(
         queuedPromptId: String? = null,
         replacement: ChatMessage? = null,
         retryModel: com.agent.mhamed.data.ModelShortcut? = null,
+        searchDepth: com.agent.mhamed.data.SearchDepth? = null,
     ): Boolean {
         if (selectingAnswerVersion || startingRun || compactionJob?.isActive == true || !_state.value.conversationReady || _state.value.conversationSaving) return false
         if (replacement == null) attachmentBlockReason()?.let { reason -> _state.update { it.copy(error = reason) }; return false }
@@ -1602,6 +1713,7 @@ class ChatViewModel(
                     queuedPromptId = queuedPromptId,
                     replacementMessageId = replacement?.id,
                     allowModelFallback = s0.sameModelAcrossChats && retryChoice == null,
+                    searchDepthOverride = searchDepth,
                 )
                 if (sessionId == null) {
                     sessionId = sid
@@ -1698,7 +1810,12 @@ class ChatViewModel(
         if (_state.value.busy || startingRun || _state.value.conversationSaving) return
         _state.update { it.copy(conversationSaving = true) }
         viewModelScope.launch {
-            try { _navEvents.emit(NavEvent.OpenSession(c.sessions.continueInCode(ensureSession(), projectId))) }
+            try {
+                val codeId = c.sessions.continueInCode(ensureSession(), projectId)
+                // The workspace picked for the handoff is the latest choice for new Code chats too.
+                c.workspace.setActiveProject(projectId)
+                _navEvents.emit(NavEvent.OpenSession(codeId))
+            }
             catch (e: kotlinx.coroutines.CancellationException) { throw e }
             catch (e: Exception) { _state.update { it.copy(error = e.message) } }
             finally { _state.update { it.copy(conversationSaving = false) } }
@@ -2077,9 +2194,17 @@ class ChatViewModel(
      * message, truncates the conversation there, then resends the edited text
      * as a fresh run. The UI warns before calling this.
      */
-    fun editAndResend(message: ChatMessage, newText: String, retryModel: com.agent.mhamed.data.ModelShortcut? = null) {
+    fun editAndResend(message: ChatMessage, newText: String, retryModel: com.agent.mhamed.data.ModelShortcut? = null,
+        searchDepth: com.agent.mhamed.data.SearchDepth? = null) {
         if (sessionId == null || message.id == null || message.role != Role.USER || newText.isBlank()) return
-        startRun(newText, replacement = message, retryModel = retryModel)
+        startRun(newText, replacement = message, retryModel = retryModel, searchDepth = searchDepth)
+    }
+
+    /** Answers the latest question again with Deep search, kept as a new answer version; the saved depth is unchanged. */
+    fun digDeeper() {
+        if (_state.value.busy || !_state.value.conversation.isChat) return
+        val question = _state.value.messages.lastOrNull { it.role == Role.USER } ?: return
+        editAndResend(question, question.text, searchDepth = com.agent.mhamed.data.SearchDepth.DEEP)
     }
 
     fun retryLatestResponse(retryModel: com.agent.mhamed.data.ModelShortcut? = null) {
@@ -2351,6 +2476,30 @@ class ChatViewModel(
         }
     }
 
+    /**
+     * The start-of-chat picker. An unsent chat only moves the default, so no empty
+     * chat row is created; either way the pick becomes the default for new chats.
+     */
+    fun chooseStartWorkspace(projectId: String) {
+        viewModelScope.launch {
+            try {
+                val sid = sessionId
+                if (sid != null) c.runManager.assignWorkspace(sid, projectId)
+                c.workspace.setActiveProject(projectId)
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (e: Exception) { _state.update { it.copy(error = e.message) } }
+        }
+    }
+
+    /** A folder added from the start-of-chat picker, without creating an empty chat. */
+    fun addStartFolder(uri: Uri) {
+        viewModelScope.launch {
+            try { chooseStartWorkspace(c.workspace.addPickedFolder(uri, activate = sessionId == null).id) }
+            catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (e: Exception) { _state.update { it.copy(error = e.message) } }
+        }
+    }
+
     suspend fun saveWorkspaces(selection: com.agent.mhamed.workspace.ChatWorkspaceSelection) {
         c.runManager.assignWorkspaces(ensureSession(), selection)
     }
@@ -2381,6 +2530,9 @@ class ChatViewModel(
         private const val HOLD_TIMEOUT_MS = 2_000L
         /** Side answers batch their deltas to about 30 redraws a second. */
         private const val SIDE_FLUSH_MS = 32L
+        /** Largest file or shell output a slash command puts into its message. */
+        private const val COMMAND_FILE_BYTES = 4 * 1024 * 1024
+        private const val COMMAND_TIMEOUT_SECONDS = 120L
 
         fun factory(container: AppContainer, sessionId: String?, kind: com.agent.mhamed.data.ConversationKind = com.agent.mhamed.data.ConversationKind.CODE) = viewModelFactory {
             initializer { ChatViewModel(container, sessionId, kind) }

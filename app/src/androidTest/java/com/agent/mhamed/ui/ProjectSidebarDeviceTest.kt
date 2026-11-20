@@ -43,7 +43,7 @@ class ProjectSidebarDeviceTest {
 
     @Test fun projectTreeSearchActionsAndToolsMatchTheApprovedLayout() {
         val now = System.currentTimeMillis()
-        val projects = listOf(ProjectEntity("a", "AndroidHarness", "APP", null, now),
+        val projects = listOf(ProjectEntity("a", "VEXORA", "APP", null, now),
             ProjectEntity("b", "Frame", "APP", null, now), ProjectEntity("c", "SanuFlix", "APP", null, now))
         fun chat(id: String, title: String, project: String, minutes: Long, plan: String? = null) =
             SessionEntity(id, title, now, now - minutes * 60_000, projectId = project, pendingPlan = plan)
@@ -83,7 +83,7 @@ class ProjectSidebarDeviceTest {
                                         if (value == SidebarChatAction.ARCHIVE) archived = archived + session.id
                                     }, onBuild = { destination.set("Build") }, onTerminal = { destination.set("Terminal") },
                                     onAutomation = { destination.set("Scheduled tasks") }, onProviders = { destination.set("Providers") },
-                                    onSettings = { destination.set("Settings") }, workspaceLabel = "Workspaces for this chat", workspaceSummary = "1 workspace · Primary: AndroidHarness",
+                                    onSettings = { destination.set("Settings") }, workspaceLabel = "Workspaces for this chat", workspaceSummary = "1 workspace · Primary: VEXORA",
                                     onWorkspaces = { destination.set("Workspaces") }, onCollapse = { destination.set("Collapse") }, currentRoute = null,
                                     projectsView = projectsView, onProjectsViewChange = { projectsView = it },
                                     projectPins = projectPins, projectArchives = projectArchives,

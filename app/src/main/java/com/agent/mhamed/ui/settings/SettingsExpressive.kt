@@ -9,6 +9,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -21,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
@@ -35,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.material3.toShape
+import androidx.compose.material3.toPath
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -45,12 +48,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.composed
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.graphics.shapes.Morph
+import kotlinx.coroutines.delay
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -128,9 +142,10 @@ internal fun SettingsSegment(
     selected: Boolean = false,
     color: Color = MaterialTheme.colorScheme.surfaceContainer,
     contentColor: Color = Color.Unspecified,
+    interactionSource: MutableInteractionSource? = null,
     content: @Composable () -> Unit,
 ) {
-    val interaction = remember { MutableInteractionSource() }
+    val interaction = interactionSource ?: remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val round = pressed || selected
     val spec = MaterialTheme.motionScheme.fastSpatialSpec<Dp>()
@@ -163,6 +178,7 @@ internal class SettingsGroupScope {
     internal class Item(
         val onClick: (() -> Unit)?, val selected: Boolean, val modifier: Modifier,
         val color: Color, val contentColor: Color, val content: @Composable () -> Unit,
+        val pressedContent: (@Composable (pressed: Boolean) -> Unit)? = null,
     )
     internal val items = mutableListOf<Item>()
 
@@ -180,6 +196,11 @@ internal class SettingsGroupScope {
     ) {
         items += Item(onClick, selected, modifier, color, contentColor, content)
     }
+
+    /** A row whose content follows the finger, for shapes that react while the row is held. */
+    fun pressItem(onClick: () -> Unit, selected: Boolean = false, content: @Composable (pressed: Boolean) -> Unit) {
+        items += Item(onClick, selected, Modifier, Color.Unspecified, Color.Unspecified, {}, content)
+    }
 }
 
 /** A segmented group: related rows as separate tonal surfaces, a hair apart, sharing one rounded silhouette. */
@@ -188,10 +209,16 @@ internal fun SettingsGroup(modifier: Modifier = Modifier, content: SettingsGroup
     val items = SettingsGroupScope().apply(content).items
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(SettingsSegmentGap)) {
         items.forEachIndexed { index, item ->
+            val interaction = remember { MutableInteractionSource() }
+            val pressedContent = item.pressedContent
             SettingsSegment(
                 index, items.size, item.modifier, item.onClick, item.selected,
                 color = if (item.color != Color.Unspecified) item.color else MaterialTheme.colorScheme.surfaceContainer,
-                contentColor = item.contentColor, content = item.content,
+                contentColor = item.contentColor, interactionSource = interaction,
+                content = if (pressedContent == null) item.content else ({
+                    val pressed by interaction.collectIsPressedAsState()
+                    pressedContent(pressed)
+                }),
             )
         }
     }
@@ -328,32 +355,64 @@ internal fun Switch(
     enabled, colors, interactionSource,
 )
 
-/** The soft polygons a page hero cycles through, so neighbouring pages do not share a silhouette. */
+/**
+ * The wide palette for hero badges outside settings, where a project card or an
+ * empty state can afford its own silhouette. Only rounded shapes belong here: the
+ * spiky cookies, bursts and suns read as sharp stars at badge size.
+ */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private val heroPolygons = listOf(
-    MaterialShapes.Cookie9Sided, MaterialShapes.Clover4Leaf, MaterialShapes.Cookie6Sided, MaterialShapes.Sunny,
-    MaterialShapes.Cookie12Sided, MaterialShapes.Flower, MaterialShapes.Pentagon, MaterialShapes.Clover8Leaf,
-    MaterialShapes.Cookie7Sided, MaterialShapes.SoftBurst, MaterialShapes.Cookie4Sided, MaterialShapes.Gem,
+    MaterialShapes.Clover4Leaf, MaterialShapes.Cookie4Sided, MaterialShapes.Cookie6Sided, MaterialShapes.Flower,
+    MaterialShapes.Puffy, MaterialShapes.PuffyDiamond, MaterialShapes.ClamShell, MaterialShapes.Clover8Leaf,
+    MaterialShapes.Cookie7Sided, MaterialShapes.Bun, MaterialShapes.Ghostish, MaterialShapes.Oval,
 )
 
+/**
+ * The settings screen keeps to six silhouettes, the rounded ones that read best at
+ * badge size. The list still has twelve slots so every page keeps the shape it always
+ * had: setup and language stay on the cookie, about on the six-sided cookie, sync and
+ * FTP on the seven-sided cookie and the bun, updates on the clover, backup on the ghost.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private val settingsPolygons = listOf(
+    MaterialShapes.Clover4Leaf, MaterialShapes.Cookie4Sided, MaterialShapes.Cookie6Sided,
+    MaterialShapes.Cookie4Sided, MaterialShapes.Clover4Leaf, MaterialShapes.Cookie6Sided,
+    MaterialShapes.Cookie7Sided, MaterialShapes.Bun, MaterialShapes.Cookie7Sided,
+    MaterialShapes.Bun, MaterialShapes.Ghostish, MaterialShapes.Ghostish,
+)
+
+/** The shared hero silhouette, for badges outside the settings screen. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun settingsHeroShape(seed: Int): Shape = heroPolygons[Math.floorMod(seed, heroPolygons.size)].toShape()
 
+/** The settings screen's shorter silhouette palette. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+internal fun settingsPageShape(seed: Int): Shape =
+    settingsPolygons[Math.floorMod(seed, settingsPolygons.size)].toShape()
+
 /** Hero badge of a page: a Material shape that springs in with a small turn when the page opens. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-internal fun SettingsHeroBadge(seed: Int, modifier: Modifier = Modifier, size: Dp = 64.dp, content: @Composable (tint: Color) -> Unit) {
+internal fun SettingsHeroBadge(
+    seed: Int,
+    modifier: Modifier = Modifier,
+    size: Dp = 64.dp,
+    settingsScreen: Boolean = false,
+    content: @Composable (tint: Color) -> Unit,
+) {
     val entrance = remember { Animatable(0f) }
     val spec = MaterialTheme.motionScheme.slowSpatialSpec<Float>()
     LaunchedEffect(Unit) { entrance.animateTo(1f, spec) }
+    val shape = if (settingsScreen) settingsPageShape(seed) else settingsHeroShape(seed)
     Box(
         modifier.size(size).graphicsLayer {
             val p = entrance.value
             scaleX = 0.6f + 0.4f * p
             scaleY = 0.6f + 0.4f * p
             rotationZ = -40f * (1f - p)
-        }.background(MaterialTheme.colorScheme.primaryContainer, settingsHeroShape(seed)),
+        }.background(MaterialTheme.colorScheme.primaryContainer, shape),
         contentAlignment = Alignment.Center,
     ) {
         // The icon stays upright while the shape turns behind it.
@@ -362,3 +421,160 @@ internal fun SettingsHeroBadge(seed: Int, modifier: Modifier = Modifier, size: D
         }
     }
 }
+
+/**
+ * A tonal badge resting in one of the page polygons. Under the finger it morphs into a
+ * circle and turns a little, then springs back. The morph is drawn in the draw phase,
+ * so a press never recomposes the row.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+internal fun SettingsMorphBadge(
+    seed: Int,
+    pressed: Boolean,
+    modifier: Modifier = Modifier,
+    tone: SettingsTone = SettingsTone.PRIMARY,
+    size: Dp = 44.dp,
+    content: @Composable (tint: Color) -> Unit,
+) {
+    val scheme = MaterialTheme.colorScheme
+    val (fill, tint) = when (tone) {
+        SettingsTone.PRIMARY -> scheme.primaryContainer to scheme.onPrimaryContainer
+        SettingsTone.SECONDARY -> scheme.secondaryContainer to scheme.onSecondaryContainer
+        SettingsTone.TERTIARY -> scheme.tertiaryContainer to scheme.onTertiaryContainer
+        SettingsTone.NEUTRAL -> scheme.surfaceContainerHighest to scheme.onSurfaceVariant
+    }
+    val polygon = settingsPolygons[Math.floorMod(seed, settingsPolygons.size)]
+    val morph = remember(polygon) { Morph(polygon, MaterialShapes.Circle) }
+    val progress = remember { Animatable(0f) }
+    val spec = MaterialTheme.motionScheme.fastSpatialSpec<Float>()
+    LaunchedEffect(pressed) { progress.animateTo(if (pressed) 1f else 0f, spec) }
+    Box(
+        modifier.size(size).drawWithCache {
+            val path = Path()
+            val matrix = Matrix()
+            onDrawBehind {
+                // A spring may overshoot past either end; the morph only accepts 0..1.
+                val p = progress.value
+                morph.toPath(p.coerceIn(0f, 1f), path)
+                matrix.reset()
+                matrix.scale(this.size.width, this.size.height)
+                path.transform(matrix)
+                rotate(30f * p) { drawPath(path, fill) }
+            }
+        },
+        contentAlignment = Alignment.Center,
+    ) { content(tint) }
+}
+
+/**
+ * Fades and lifts content in when it first appears, [order] steps after the first item,
+ * so a list of groups arrives as a short cascade. Runs once per composition and only
+ * touches the layer, never layout.
+ */
+internal fun Modifier.settingsEntrance(order: Int): Modifier = composed {
+    val progress = remember { Animatable(0f) }
+    val spec = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
+    LaunchedEffect(Unit) {
+        delay(35L * order.coerceAtMost(8))
+        progress.animateTo(1f, spec)
+    }
+    graphicsLayer {
+        val p = progress.value
+        alpha = p.coerceIn(0f, 1f)
+        translationY = (1f - p) * 28.dp.toPx()
+    }
+}
+
+/** The label over a group of rows, marked as a heading so screen readers can jump between groups. */
+@Composable
+internal fun SettingsSectionLabel(text: String, modifier: Modifier = Modifier, top: Dp = 10.dp) {
+    Text(
+        text,
+        modifier.padding(start = 16.dp, top = top, bottom = 2.dp).semantics { heading() },
+        style = MaterialTheme.typography.labelLargeEmphasized,
+        color = MaterialTheme.colorScheme.primary,
+    )
+}
+
+/**
+ * One entry of the desktop settings rail. The selected entry fills in and rounds out to a
+ * full pill; a press squeezes the corners the other way, so the rail answers the finger
+ * the same way the segmented rows do.
+ */
+@Composable
+internal fun SettingsRailItem(
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    icon: @Composable () -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val scheme = MaterialTheme.colorScheme
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val corner by animateDpAsState(
+        when { pressed -> 12.dp; selected -> 28.dp; else -> 20.dp },
+        MaterialTheme.motionScheme.fastSpatialSpec(), label = "railCorner",
+    )
+    val fill by animateColorAsState(
+        if (selected) scheme.secondaryContainer else scheme.surfaceContainerLow,
+        MaterialTheme.motionScheme.defaultEffectsSpec(), label = "railFill",
+    )
+    val onFill by animateColorAsState(
+        if (selected) scheme.onSecondaryContainer else scheme.onSurface,
+        MaterialTheme.motionScheme.defaultEffectsSpec(), label = "railContent",
+    )
+    HarnessGlassSurface(
+        onClick = onClick, color = fill, contentColor = onFill, interactionSource = interaction,
+        shape = RoundedCornerShape(corner.coerceAtLeast(0.dp)),
+        modifier = modifier.fillMaxWidth().padding(vertical = 1.dp).semantics { this.selected = selected },
+    ) {
+        Row(
+            Modifier.heightIn(min = 44.dp).padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            icon()
+            Column(Modifier.weight(1f), content = content)
+        }
+    }
+}
+
+/**
+ * One row that opens a page: a morphing badge, the title, optional supporting lines and a
+ * chevron. Used by the settings home and the Coding hub so both feel the same.
+ */
+internal fun SettingsGroupScope.navItem(
+    seed: Int,
+    tone: SettingsTone,
+    title: String,
+    subtitle: String?,
+    onClick: () -> Unit,
+    selected: Boolean = false,
+    path: String? = null,
+    extra: @Composable () -> Unit = {},
+    icon: @Composable (tint: Color) -> Unit,
+) = pressItem(onClick, selected) { pressed ->
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 72.dp).padding(start = 14.dp, end = 12.dp, top = 12.dp, bottom = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            SettingsMorphBadge(seed, pressed, tone = tone, content = icon)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(title, style = MaterialTheme.typography.titleMedium)
+                if (path != null) Text(path, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                extra()
+            }
+            val nudge = remember { Animatable(0f) }
+            val toward = if (LocalLayoutDirection.current == LayoutDirection.Rtl) -1f else 1f
+            val spec = MaterialTheme.motionScheme.fastSpatialSpec<Float>()
+            LaunchedEffect(pressed) { nudge.animateTo(if (pressed) 1f else 0f, spec) }
+            Icon(
+                Icons.AutoMirrored.Rounded.KeyboardArrowRight, null,
+                Modifier.size(22.dp).graphicsLayer { translationX = toward * nudge.value * 4.dp.toPx() },
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }

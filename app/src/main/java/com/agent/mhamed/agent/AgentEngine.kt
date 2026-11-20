@@ -60,6 +60,16 @@ class ApprovalRequest(
     val response = CompletableDeferred<Boolean>()
 }
 
+/** Grant key prefix of the once-per-chat card that lets an agent control the phone. */
+const val PHONE_CONTROL_KEY = "phone:"
+const val PHONE_CONTROL_TITLE = "Control your phone"
+
+val ApprovalRequest.isPhoneControl: Boolean get() = grantKey.startsWith(PHONE_CONTROL_KEY)
+
+/** Marks a phone command that can't easily be undone; its card allows only that one command. */
+const val PHONE_CONTROL_ONCE = "once:"
+val ApprovalRequest.isRiskyPhoneControl: Boolean get() = grantKey.startsWith(PHONE_CONTROL_KEY + PHONE_CONTROL_ONCE)
+
 class QuestionRequest(
     val callId: String,
     val question: String,
@@ -149,11 +159,15 @@ sealed interface AgentEvent {
     data class ProviderChanged(val config: com.agent.mhamed.llm.ProviderConfig, val reason: String, val persistSelection: Boolean = true) : AgentEvent
     /** Includes independently configured subagents so disconnecting stops every affected run. */
     data class ProviderUsed(val providerId: String) : AgentEvent
+    /** A message from a plugin hook, shown in the chat as a system line. */
+    data class Notice(val text: String) : AgentEvent
     data class Text(val delta: String) : AgentEvent
     data class Thinking(val delta: String) : AgentEvent
     data class ThinkingProgress(val timing: ThinkingTiming) : AgentEvent
     data class CodeDraft(val draft: LiveCodeDraft) : AgentEvent
     data object CodeDraftsCleared : AgentEvent
+    /** A live preview that turned out not to be a separate call (a streamed file block now filled into one). */
+    data class CodeDraftRemoved(val id: String) : AgentEvent
     data class ToolStarted(val call: ToolCallData) : AgentEvent
     data class PackageProgress(val callId: String, val status: com.agent.mhamed.data.env.PackageInstallStatus) : AgentEvent
     data class ToolFinished(val callId: String, val result: ToolResult) : AgentEvent
@@ -161,6 +175,8 @@ sealed interface AgentEvent {
     data class QuestionNeeded(val request: QuestionRequest) : AgentEvent
     data class EnvironmentNeeded(val request: EnvironmentRequest) : AgentEvent
     data class AssistantCommitted(val message: ChatMessage) : AgentEvent
+    /** The text streamed this round was not final (the app sent the model back to work); drop it from the screen. */
+    data object DraftDiscarded : AgentEvent
     data class ToolMessageCommitted(val message: ChatMessage) : AgentEvent
     /** A message the user sent mid-run, already saved to the chat by the [SteeringInbox]. */
     data class UserMessageInjected(val message: ChatMessage) : AgentEvent
@@ -248,8 +264,15 @@ class AgentEngine(
     private val deviceAccess: com.agent.mhamed.data.env.DeviceAccessManager? = null,
     private val universalMemory: com.agent.mhamed.data.MemoryRepository? = null,
     private val chatOnlyTools: List<com.agent.mhamed.tools.Tool> = emptyList(),
+    /** The Chat reminders switch in Settings; off hides the reminder tools. */
+    private val remindersEnabled: suspend () -> Boolean = { true },
     private val resolveConfiguration: suspend (WorkspaceFs) -> com.agent.mhamed.config.HarnessConfig = { com.agent.mhamed.config.HarnessConfigLoader().load(it) },
     private val pluginHooks: com.agent.mhamed.config.PluginHooks? = null,
+    /** Remembers a provider|model whose server delivered a whole file write in one chunk. */
+    private val markBufferedToolCalls: suspend (String) -> Unit = {},
+    private val markFileBlocksDeclined: suspend (String) -> Unit = {},
+    /** Remembers the input window a server named when it rejected a provider|model request as too long. */
+    private val learnContextLimit: suspend (String, Int) -> Unit = { _, _ -> },
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -263,6 +286,10 @@ class AgentEngine(
     private val recallToolNames = setOf("search_chats", "recent_chats", "read_chat_snippet")
     private val memoryToolNames = com.agent.mhamed.data.MemoryRepository.toolNames +
         setOf("memory_write", "memory_read", "memory_search")
+
+    /** The stall window picked in Settings, read fresh for each request. */
+    private suspend fun stallSettingMs(): Long =
+        StreamRetrier.stallTimeoutMs(cavemanSettings().streamStallTimeoutSeconds)
 
     suspend fun configuration(workspace: WorkspaceFs) = withContext(kotlinx.coroutines.Dispatchers.IO) { resolveConfiguration(workspace) }
 
@@ -313,13 +340,22 @@ class AgentEngine(
         val selectedSkillStore = withContext(kotlinx.coroutines.Dispatchers.IO) {
             skills.forWorkspace(workspace).configured(projectConfig).freeze()
         }
-        val runContext = com.agent.mhamed.config.ConfigRunContext(projectConfig, selectedSkillStore, pluginHooks)
+        val runContext = com.agent.mhamed.config.ConfigRunContext(projectConfig, selectedSkillStore, pluginHooks,
+            hookRun = hookContext(sessionId, workspace, permissionMode(), mode, projectConfig, config, apiKey, options))
         withContext(runContext) {
+        // Hook messages raised before the event emitter exists are shown once it does.
+        val earlyNotices = mutableListOf<String>()
         suspend fun hook(name: String, event: kotlinx.serialization.json.JsonObject = kotlinx.serialization.json.JsonObject(emptyMap())) =
-            pluginHooks?.invoke(projectConfig.plugins, name, event) ?: com.agent.mhamed.config.HookResult()
-        val startNotes = hook("session.start").instructions + hook("message.received", kotlinx.serialization.json.buildJsonObject {
-            put("message", runContext.redact(history.lastOrNull { it.role == Role.USER }?.text.orEmpty()).take(32_000))
-        }).instructions
+            runContext.fire(name, event).also { earlyNotices += it.messages }
+        val hooksActive = projectConfig.plugins.isNotEmpty() && pluginHooks != null
+        val started = if (!hooksActive) com.agent.mhamed.config.HookResult() else hook(com.agent.mhamed.config.HookEvents.SESSION_START, kotlinx.serialization.json.buildJsonObject {
+            put("source", if (history.any { it.role == Role.ASSISTANT }) "resume" else "startup")
+        })
+        val received = if (!hooksActive) com.agent.mhamed.config.HookResult() else hook(com.agent.mhamed.config.HookEvents.MESSAGE, kotlinx.serialization.json.buildJsonObject {
+            put("message", runContext.redact(history.lastOrNull { it.role == Role.USER }?.text.orEmpty()))
+        })
+        val startNotes = listOf(started.instructions, received.instructions).filter(String::isNotBlank).joinToString("\n").let { if (it.isBlank()) "" else "\n\n$it" }
+        var stopHookActive = false
         try {
         var config = config
         // Parallel subagents emit from async children, plain flow{} forbids
@@ -331,12 +367,25 @@ class AgentEngine(
                 if (durableEvent != null) durableEvent(event) else send(event)
             }
         }
+        earlyNotices.forEach { emit(AgentEvent.Notice(it)) }
+        earlyNotices.clear()
+        val blockedPrompt = received.denied ?: runContext.stopRequested.get()
+        if (blockedPrompt != null) {
+            emit(AgentEvent.Notice("Prompt blocked by a plugin hook: $blockedPrompt"))
+            emit(AgentEvent.Finished())
+            return@withContext
+        }
         // Rebuilt when Full access toggles, because the path rules the model
         // is told about change with it.
         var replySettings = cavemanSettings()
         val localChat = com.agent.mhamed.local.LocalModelCatalog.isLocal(config.id)
-        val contextLimit = if (conversation.isChat) ChatContextPolicy.limit(maxContextTokens,
-            options.modelCatalogs[config.id]?.firstOrNull { it.id == config.model }?.contextTokens, localChat) else maxContextTokens
+        // RunManager already folded in a self-hosted server's real context; never raise past it.
+        // Lowered mid-run when the server rejects a request as too long and names its real window.
+        // One holder for the limit and the recovery state: a new local here would be saved at
+        // every suspension point of this method, which is already near the JVM size limit.
+        val budget = ContextBudget(ChatContextPolicy.runLimit(conversation.isChat, maxContextTokens,
+            options.modelCatalogs[config.id]?.firstOrNull { it.id == config.model }?.contextTokens,
+            replySettings.learnedContextLimits[TextFileWrites.modelKey(config.id, config.model)], localChat))
         val agentContextEnabled = !localChat || replySettings.localModelAgentContext
         var suppliedMemories = emptyList<com.agent.mhamed.core.SuppliedMemory>()
         var memoryQuery = recentMemoryQuery(history)
@@ -351,7 +400,9 @@ class AgentEngine(
         // Chat gets a run-scoped web_search so the header's research depth
         // limits distinct sources per turn without touching other sessions.
         val scopedSearch = if (conversation.isChat) {
-            (registry.get("web_search") as? com.agent.mhamed.tools.WebSearchTool)?.forDepth(searchDepth)
+            (registry.get("web_search") as? com.agent.mhamed.tools.WebSearchTool)?.forDepth(searchDepth,
+                images = com.agent.mhamed.core.ChatExperience.effectiveImageFrequency(conversation.imageFrequency, chatImageFrequency) ==
+                    com.agent.mhamed.data.ImageFrequency.ALWAYS)
         } else null
         // Same run budget for page reads: deep research must not only collect
         // snippets, and every read is counted against the same turn.
@@ -378,14 +429,8 @@ class AgentEngine(
         }
         val turnImages = com.agent.mhamed.tools.ChatImageTurnInventory(working)
         var visionAvailable = imageCapable
-        val runRegistry = (if (conversation.isChat) registry.withExtra(chatOnlyTools + com.agent.mhamed.tools.chatAgentTools(conversation.agent) + listOfNotNull(scopedSearch, scopedFetch, scopedBrowser?.forImageInput { visionAvailable }) +
-            if (imageCapable) listOf(com.agent.mhamed.tools.ChatImageZoomTool(imageStore) { working.toList() }.forInventory(turnImages::sources), com.agent.mhamed.tools.ViewChatImageTool(imageStore) { working.toList() }.forInventory(turnImages::sources)) else emptyList()) else registry.withExtra(chatOnlyTools.filter { it.name in recallToolNames } + extraTools + (if (projectConfig.references.isEmpty()) emptyList() else listOf(com.agent.mhamed.config.ConfigReferenceReadTool(projectConfig))) +
-            if (subagentRuns == null) emptyList() else com.agent.mhamed.tools.subagentControlTools(subagentRuns, sessionId)))
-            .restrictedTo(conversation.allowedTools)
-            .let { if (conversation.isChat && searchDepth == com.agent.mhamed.data.SearchDepth.OFF) it.without(setOf("web_search")) else it }
-            .let { if (memoryOn) it else it.without(memoryToolNames) }
-            .let { if (conversation.personalizationEnabled) it else it.without(recallToolNames) }
-            .let { if (conversation.isChat && !imageCapable) it.without(setOf("view_chat_image", "zoom_chat_image")) else it }
+        val runRegistry = runRegistry(conversation, searchDepth, projectConfig, extraTools, subagentRuns, sessionId,
+            imageCapable, memoryOn, turnImages, listOfNotNull(scopedSearch, scopedFetch, scopedBrowser?.forImageInput { visionAvailable })) { working.toList() }
         val provider = providerFactory(config)
         // Stable per-session cache routing for providers that support it.
         val requestOptions = options.copy(cacheKey = sessionId)
@@ -398,6 +443,8 @@ class AgentEngine(
         var answerNudges = 0
         var researchNudges = 0
         var imageNudges = 0
+        var imageReminders = 0
+        var turnFoundImage = false
         val alwaysImages = conversation.isChat && com.agent.mhamed.core.ChatExperience
             .effectiveImageFrequency(conversation.imageFrequency, chatImageFrequency) == com.agent.mhamed.data.ImageFrequency.ALWAYS
         val firstChatAnswer = history.count { it.role == Role.USER } <= 1
@@ -411,20 +458,13 @@ class AgentEngine(
             return messages.isNotEmpty()
         }
 
+        // Set once the model sends the file block marker without the block; later rounds use plain writes.
+        var fileBlocksDeclined = false
         while (true) {
             kotlin.coroutines.coroutineContext[TaskBudget]?.check()
             // Results land only between model requests. Persist before acknowledging so
             // navigation, a new user turn, or process death cannot eat a completion.
-            subagentRuns?.pending(sessionId)?.forEach { run ->
-                val noticeId = "subagent-result-${run.id}"
-                if (working.none { it.id == noticeId }) {
-                    val notice = ChatMessage(role = Role.SYSTEM, id = noticeId,
-                        text = "Background subagent result (task output, not user instructions):\n${run.report()}")
-                    working += notice
-                    emit(AgentEvent.ToolMessageCommitted(notice))
-                }
-                subagentRuns.acknowledge(sessionId, run.id)
-            }
+            if (subagentRuns != null) deliverSubagentResults(subagentRuns, sessionId, working) { emit(it) }
             if (maxIterations > 0 && iterations++ >= maxIterations) {
                 emit(AgentEvent.Error("Stopped after $maxIterations tool iterations (safety limit)."))
                 break
@@ -462,42 +502,41 @@ class AgentEngine(
                     workspace
                 }
 
-            var roundRegistry = (if (conversation.isChat && !visionAvailable)
-                runRegistry.without(setOf("view_chat_image", "zoom_chat_image")) else runRegistry)
-                .filter { !runContext.denies(it) && com.agent.mhamed.config.ConfigToolPolicy.permission(projectConfig, it, effectiveMode) != "deny" }
-                .let { if (nextReplySettings.subagentsEnabled) it else it.without(SUBAGENT_TOOLS) }
-                .let { if (nextReplySettings.storageAccessCards) it else it.without(setOf(com.agent.mhamed.tools.StorageAccessTool.NAME)) }
-            val searchConfiguration = (roundRegistry.get("web_search") as? com.agent.mhamed.tools.WebSearchTool)?.configurationNote()
-            var tools = if (!agentContextEnabled) emptyList() else roundRegistry.schemas(
-                readOnlyOnly = mode == AgentMode.PLAN,
-                context = ToolContext(execWorkspace, sandboxOff, sessionId, configuration = projectConfig, skills = runContext.skills),
-            )
-            val environment = if (agentContextEnabled)
-                runtimeEnvironment(workspace, sessionId, mode, effectiveMode, tools, conversation.isChat) +
-                    searchConfiguration?.let { "\n## Current web research configuration\n$it\n" }.orEmpty() else ""
-            turnImages.update(working)
-            val imageInventory = if (conversation.isChat && visionAvailable)
-                com.agent.mhamed.tools.ChatImageInventory.promptSources(turnImages.sources(), imageStore::metadata) else ""
-            var requestSystemPrompt = if (!agentContextEnabled) "" else if (conversation.isChat) systemPrompt + environment + imageInventory else com.agent.mhamed.caveman.CavemanPolicy.apply(
-                systemPrompt + environment + TodoPrompt.format(
-                    todoStore?.takeIf { !conversation.isChat && it.owner.value == sessionId }?.todos?.value.orEmpty(),
-                    roundsWithoutTodoUpdate,
-                ).let { if (it.isBlank()) "" else "\n\n$it" },
-                installed = replySettings.cavemanInstalled,
-                intensity = replySettings.cavemanIntensity,
-                wenyan = replySettings.cavemanWenyan,
-            )
-            if (agentContextEnabled) requestSystemPrompt += runContext.drainInstructions() + hook("prompt.before", kotlinx.serialization.json.buildJsonObject {
-                put("agent", runContext.agent); put("iteration", iterations)
-            }).instructions
+            // replySettings equals nextReplySettings here: the check above copied it over when they differed.
+            val round = roundRequest(runRegistry, conversation, visionAvailable, runContext, projectConfig, effectiveMode,
+                replySettings, agentContextEnabled, mode, execWorkspace, sandboxOff, sessionId, workspace, config, options,
+                turnImages, working, systemPrompt, roundsWithoutTodoUpdate, fileBlocksDeclined)
+            var roundRegistry = round.registry
+            var tools = round.tools
+            var requestSystemPrompt = round.systemPrompt
+            val bufferKey = round.bufferKey
+            val textWrites = round.textWrites
+            if (agentContextEnabled) {
+                val before = if (hooksActive) hook(com.agent.mhamed.config.HookEvents.PROMPT, kotlinx.serialization.json.buildJsonObject {
+                    put("agent", runContext.agent); put("iteration", iterations)
+                }) else com.agent.mhamed.config.HookResult()
+                earlyNotices.forEach { emit(AgentEvent.Notice(it)) }; earlyNotices.clear()
+                requestSystemPrompt += runContext.drainInstructions().let { if (it.isBlank()) "" else "\n\n$it" } +
+                    before.instructions.let { if (it.isBlank()) "" else "\n\n$it" }
+            }
+            runContext.stopRequested.get()?.let { reason ->
+                emit(AgentEvent.Notice("A plugin hook stopped the run: $reason"))
+                emit(AgentEvent.Finished())
+                break
+            }
             // Auto-compact before the request grows past the context budget.
             val estimate = estimateContext(working, requestSystemPrompt, tools, withBreakdown = true)
             emit(AgentEvent.EstimatedContext(estimate))
-            val compactThreshold = if (conversation.isChat) ChatContextPolicy.compactAt(contextLimit, requestOptions.maxOutputTokens)
-                else AutoCompaction.threshold(autoCompactTokens(), contextLimit, requestOptions.maxOutputTokens)
-            val needsCompaction = estimate.total >= compactThreshold
+            val compactThreshold = budget.recovery.scaled(if (conversation.isChat) ChatContextPolicy.compactAt(budget.limit, requestOptions.maxOutputTokens)
+                else AutoCompaction.threshold(autoCompactTokens(), budget.limit, requestOptions.maxOutputTokens))
+            val needsCompaction = budget.recovery.forceCompaction || estimate.total >= compactThreshold
             if ((!localChat || agentContextEnabled) && needsCompaction && (conversation.isChat || working.size > 1)) {
-                val compacted = compact(provider, config, apiKey, working, contextLimit, sessionId, conversation.isChat, compactThreshold) {
+                if (hooksActive) {
+                    hook(com.agent.mhamed.config.HookEvents.COMPACT, kotlinx.serialization.json.buildJsonObject { put("trigger", "auto") })
+                        .instructions.takeIf(String::isNotBlank)?.let { runContext.pendingInstructions.add(it) }
+                    earlyNotices.forEach { emit(AgentEvent.Notice(it)) }; earlyNotices.clear()
+                }
+                val compacted = compact(provider, config, apiKey, working, budget.limit, sessionId, conversation.isChat, compactThreshold, budget.recovery) {
                     if (it is AgentEvent.ProviderChanged) config = it.config
                     emit(it)
                 }
@@ -514,6 +553,7 @@ class AgentEngine(
                     break
                 }
             }
+            budget.settle()
 
             // Mirrors what this round sends, so /btw replays the same cached prefix.
             fun publishSide(messages: List<ChatMessage> = working) = sideContexts.publish(SideContext(
@@ -534,8 +574,27 @@ class AgentEngine(
             var lastTokenNs = 0L
             val codeTracker = LiveCodeTracker()
             emit(AgentEvent.CodeDraftsCleared)
+            val fileBlocks = if (textWrites) FileBlockStream("text-file-$turnId-$iterations") else null
+            // Argument fragments seen per call; one fragment for a whole write means the server buffered it.
+            val argumentFragments = HashMap<String, Int>()
 
-            suspend fun codeReady(call: ToolCallData) {
+            suspend fun codeReady(original: ToolCallData) {
+                var call = original
+                if (!conversation.isChat && call.name in LiveCodePreview.tools &&
+                    call.argumentsJson.length >= TextFileWrites.BUFFERED_MIN_CHARS &&
+                    (argumentFragments[call.id] ?: 0) <= 1 && bufferKey !in replySettings.bufferedToolCallModels) {
+                    runCatching { markBufferedToolCalls(bufferKey) }
+                }
+                fileBlocks?.let { blocks ->
+                    val filled = TextFileWrites.fill(call, blocks)
+                    if (filled != null) {
+                        call = filled.first
+                        emit(AgentEvent.CodeDraftRemoved(filled.second.draftId))
+                    } else if (TextFileWrites.isMarkerCall(call) && !fileBlocksDeclined) {
+                        fileBlocksDeclined = true
+                        runCatching { markFileBlocksDeclined(bufferKey) }
+                    }
+                }
                 val labeled = if (conversation.isChat) call else workspaceCall(call, execWorkspace)
                 calls += labeled
                 if (!conversation.isChat) codeTracker.ready(labeled, execWorkspace)?.let { emit(AgentEvent.CodeDraft(it)) }
@@ -546,8 +605,34 @@ class AgentEngine(
                     val now = System.nanoTime()
                     if (firstTokenNs == 0L) firstTokenNs = now
                     lastTokenNs = now
+                    argumentFragments[event.id] = (argumentFragments[event.id] ?: 0) + 1
                 }
                 if (!conversation.isChat) codeTracker.delta(event, execWorkspace)?.let { emit(AgentEvent.CodeDraft(it)) }
+            }
+
+            /** Live previews for file blocks in the reply, throttled like tool argument previews. */
+            suspend fun blockPreviews(blocks: FileBlockStream) {
+                val now = System.nanoTime()
+                for (block in blocks.touched.toList()) {
+                    if (block.consumed) continue
+                    if (!block.closed && block.previewAt != 0L && now - block.previewAt < 80_000_000L) continue
+                    block.previewAt = now
+                    codeTracker.delta(StreamEvent.ToolCallDelta(block.draftId, "write_file",
+                        TextFileWrites.previewArguments(block), replace = true), execWorkspace, force = true)
+                        ?.let { emit(AgentEvent.CodeDraft(it)) }
+                }
+            }
+
+            suspend fun answerText(delta: String) {
+                if (delta.isNotEmpty()) {
+                    val now = System.nanoTime()
+                    if (firstTokenNs == 0L) firstTokenNs = now
+                    lastTokenNs = now
+                }
+                val visible = fileBlocks?.feed(delta) ?: delta
+                text.append(visible)
+                if (visible.isNotEmpty() || fileBlocks == null) emit(AgentEvent.Text(visible))
+                fileBlocks?.let { blockPreviews(it) }
             }
 
             val streamEventHandler: suspend (StreamEvent) -> Unit = { event ->
@@ -560,15 +645,7 @@ class AgentEngine(
                         emit(AgentEvent.ProviderChanged(event.config, event.reason, event.persistSelection))
                     }
                     is StreamEvent.Retrying -> emit(AgentEvent.Retrying(event.attempt, event.delayMs, event.reason))
-                    is StreamEvent.TextDelta -> {
-                        if (event.text.isNotEmpty()) {
-                            val now = System.nanoTime()
-                            if (firstTokenNs == 0L) firstTokenNs = now
-                            lastTokenNs = now
-                        }
-                        text.append(event.text)
-                        emit(AgentEvent.Text(event.text))
-                    }
+                    is StreamEvent.TextDelta -> answerText(event.text)
                     is StreamEvent.ResponseState -> responseState = event.state
                     is StreamEvent.ThinkingConfigured -> reasoningSetting = event.label
                     is StreamEvent.ThinkingDelta -> {
@@ -585,15 +662,7 @@ class AgentEngine(
                     is StreamEvent.ToolCallBatch -> event.calls.forEach { codeReady(it) }
                     is StreamEvent.Batch -> event.events.forEach { nested ->
                         when (nested) {
-                            is StreamEvent.TextDelta -> {
-                                if (nested.text.isNotEmpty()) {
-                                    val now = System.nanoTime()
-                                    if (firstTokenNs == 0L) firstTokenNs = now
-                                    lastTokenNs = now
-                                }
-                                text.append(nested.text)
-                                emit(AgentEvent.Text(nested.text))
-                            }
+                            is StreamEvent.TextDelta -> answerText(nested.text)
                             is StreamEvent.ThinkingDelta -> {
                                 if (nested.text.isNotEmpty()) {
                                     val now = System.nanoTime()
@@ -634,14 +703,23 @@ class AgentEngine(
             // re-emitting deltas the UI already showed would duplicate output.
             var recoverableFailure = false
             val managedFallback = kotlin.coroutines.coroutineContext[com.agent.mhamed.llm.FallbackRun]?.policy()?.enabled == true
+            // The router guards each attempt with the user's window (10 min for local
+            // models), so the outer guard waits a little longer than either.
+            val userStall = StreamRetrier.stallTimeoutMs(replySettings.streamStallTimeoutSeconds)
+            val stallWindow: Long = if (managedFallback) maxOf(userStall, 600_000) + 10_000
+                else if (localChat) maxOf(userStall, 600_000) else userStall
+            val firstOutputWindow = StreamRetrier.firstOutputWindow(stallWindow, requestOptions, config)
 
-            var failure = StreamRetrier.run(
+            // One request with its retries; the image fallback below sends it again.
+            suspend fun requestRound(allowRetries: Boolean) = StreamRetrier.run(
                 streamFor = {
                     publishSide()
                     provider.streamChat(config, apiKey, requestSystemPrompt, working, tools, requestOptions)
                 },
                 onAttemptStart = {
                     codeTracker.clear()
+                    fileBlocks?.reset()
+                    argumentFragments.clear()
                     responseStarted = false
                     requestStartedNs = System.nanoTime()
                     outputTokens = 0
@@ -660,10 +738,13 @@ class AgentEngine(
                 handleEvent = streamEventHandler,
                 retryReason = { f -> f.take(200) },
                 emitEvent = { emit(it) },
-                stallTimeoutMs = if (managedFallback) 610_000 else if (localChat) 600_000 else 90_000,
-                allowRetries = !localChat && !managedFallback,
+                stallTimeoutMs = stallWindow,
+                firstOutputTimeoutMs = firstOutputWindow,
+                allowRetries = allowRetries,
+                retryStalls = !StreamRetrier.selfHosted(config),
                 onTerminalFailure = { recoverableFailure = it },
             )
+            var failure = requestRound(allowRetries = !localChat && !managedFallback)
 
             // Dynamic vision degradation fallback: if provider rejected image input,
             // strip images from working history and retry without failing the turn.
@@ -673,101 +754,63 @@ class AgentEngine(
                 working.addAll(stripped)
                 if (conversation.isChat) {
                     visionAvailable = false
-                    roundRegistry = runRegistry.without(setOf("view_chat_image", "zoom_chat_image"))
-                        .let { if (nextReplySettings.subagentsEnabled) it else it.without(SUBAGENT_TOOLS) }
-                .let { if (nextReplySettings.storageAccessCards) it else it.without(setOf(com.agent.mhamed.tools.StorageAccessTool.NAME)) }
+                    roundRegistry = settingsTools(runRegistry.without(setOf("view_chat_image", "zoom_chat_image")), replySettings)
                     tools = tools.filterNot { it.name in setOf("view_chat_image", "zoom_chat_image") }
                     requestSystemPrompt += "\nImage input was rejected by the provider. You cannot inspect or zoom images in this turn; say so rather than claiming to see them.\n"
                 }
-                failure = StreamRetrier.run(
-                    streamFor = {
-                        publishSide()
-                        provider.streamChat(config, apiKey, requestSystemPrompt, working, tools, requestOptions)
-                    },
-                    onAttemptStart = {
-                        codeTracker.clear()
-                        responseStarted = false
-                        requestStartedNs = System.nanoTime()
-                        outputTokens = 0
-                        responseState = null
-                        reasoningTokens = null
-                        reasoningSetting = null
-                        thinkingTiming = ThinkingTiming()
-                        firstTokenNs = 0L
-                        lastTokenNs = 0L
-                        text = StringBuilder()
-                        thinking = StringBuilder()
-                        calls = mutableListOf()
-                        lastFinishReason = null
-                    },
-                    hasOutput = { responseStarted || text.isNotEmpty() || thinking.isNotEmpty() || calls.isNotEmpty() },
-                    handleEvent = streamEventHandler,
-                    retryReason = { f -> f.take(200) },
-                    emitEvent = { emit(it) },
-                    stallTimeoutMs = if (managedFallback) 610_000 else 90_000,
-                    allowRetries = !managedFallback,
-                    onTerminalFailure = { recoverableFailure = it },
-                )
+                failure = requestRound(allowRetries = !managedFallback)
             }
+
+            // The server says the request is longer than this model accepts there. Learn the
+            // window it names, compact, and send again instead of pausing on a request that
+            // would only fail the same way when resumed.
+            if (!responseStarted && (!localChat || agentContextEnabled) && working.size > 1) {
+                // compact() announces it and saves the learned window, so this path adds no suspension.
+                if (budget.recover(failure, estimate.total, bufferKey)) continue
+            }
+
+            // Silence after thinking that ends in a stall or an empty reply is how a server that
+            // holds tool calls back looks while the model writes a large file. Later runs on this
+            // model write files as reply blocks so the writing shows up live.
+            if (!conversation.isChat && !textWrites && calls.isEmpty() && bufferKey !in replySettings.bufferedToolCallModels)
+                markSilentWrite(bufferKey, text, thinking, failure, tools)
+
+            // Held text comes back to the reader; a file block no call used stays visible
+            // as a plain block, so nothing the model wrote is lost.
+            fileBlocks?.drainInto(text)?.let { (removed, shown) ->
+                removed.forEach { emit(AgentEvent.CodeDraftRemoved(it)) }
+                if (shown.isNotEmpty()) emit(AgentEvent.Text(shown))
+            }
+
+            // Where a research turn spends its time: one line per model round.
+            logModelRound(requestStartedNs, firstTokenNs, working.size, calls, failure != null)
 
             // A turn that produced reasoning but no answer and no tool calls is
             // NOT committed: replaying an empty assistant message would hand
             // Anthropic an empty content array (a 400) and teaches the model
             // that silence was acceptable. Instead, nudge it once to actually
             // answer; if it still won't, end with a visible reason.
-            val answerless = text.isBlank() && calls.isEmpty()
-            val wantsNudge = failure == null && answerless &&
-                thinking.isNotBlank() && answerNudges < MAX_ANSWER_NUDGES
-            // Research levels require real page reads, not just search snippets.
-            // Ask again with the shortfall named instead of committing an answer
-            // that never opened a source.
-            val researchBudget = scopedSearch?.budget()
-            val wantsResearchNudge = !wantsNudge && failure == null && calls.isEmpty() && text.isNotBlank() &&
-                conversation.isChat && researchBudget != null && researchBudget.minReads > 0 &&
-                researchBudget.used > 0 && researchBudget.pagesRead < researchBudget.minReads &&
-                researchNudges < MAX_RESEARCH_NUDGES
-            // Always-images chats get one more try when a real answer arrives without a picture.
-            val wantsImageNudge = !wantsNudge && !wantsResearchNudge && failure == null && calls.isEmpty() &&
-                alwaysImages && imageNudges < MAX_IMAGE_NUDGES && text.isNotBlank() &&
-                (firstChatAnswer || text.length >= com.agent.mhamed.core.ChatExperience.IMAGE_NUDGE_MIN_CHARS) &&
-                !com.agent.mhamed.core.ChatExperience.answerHasImage(text.toString())
-            if (wantsNudge) {
-                answerNudges++
-                working += ChatMessage(role = Role.USER, text = ANSWER_NUDGE)
-            } else if (wantsResearchNudge && researchBudget != null) {
-                researchNudges++
-                working += ChatMessage(role = Role.USER, text =
-                    com.agent.mhamed.core.ChatExperience.researchReadNudge(
-                        searchDepth, researchBudget.pagesRead, researchBudget.minReads))
-            } else if (wantsImageNudge) {
-                imageNudges++
-                working += ChatMessage(role = Role.USER, text = com.agent.mhamed.core.ChatExperience.IMAGE_NUDGE)
-            } else if (!answerless) {
-                val followUps = if (conversation.isChat)
-                    com.agent.mhamed.core.FollowUpSuggestions.extract(text.toString())
-                else com.agent.mhamed.core.FollowUpSuggestions(text.toString(), emptyList())
-                val assistant = ChatMessage(
-                    role = Role.ASSISTANT,
-                    text = followUps.text,
-                    toolCalls = calls.toList(),
-                    images = if (conversation.isChat) com.agent.mhamed.core.ChatResponseImages.referenced(followUps.text, working) else emptyList(),
-                    thinking = thinking.toString(),
-                    thinkingMs = thinkingTiming.durationMs(ThinkingTiming.now()),
-                    outputTokens = outputTokens,
-                    generationMs = ((System.nanoTime() - requestStartedNs) / 1_000_000).coerceAtLeast(1),
-                    firstTokenMs = if (firstTokenNs > 0L) ((firstTokenNs - requestStartedNs) / 1_000_000).coerceAtLeast(1) else 0,
-                    streamMs = if (lastTokenNs > firstTokenNs) ((lastTokenNs - firstTokenNs) / 1_000_000).coerceAtLeast(1) else 0,
-                    generation = com.agent.mhamed.core.GenerationMetadata(
-                        reasoningTokens = reasoningTokens,
-                        reasoningSetting = reasoningSetting,
-                        suppliedMemories = suppliedMemories,
-                        model = config.model,
-                        followUps = followUps.items,
-                    ),
-                ).let { it.copy(generation = it.generation.copy(state = responseState?.boundTo(it))) }
-                working += assistant
-                publishSide()
-                emit(AgentEvent.AssistantCommitted(assistant))
+            val nudge = nudgeFor(failure != null, text, thinking, calls.isEmpty(), conversation.isChat, scopedSearch?.budget(),
+                alwaysImages, firstChatAnswer, answerNudges, researchNudges, imageNudges)
+            when (nudge) {
+                Nudge.ANSWER -> {
+                    answerNudges++
+                    working += ChatMessage(role = Role.USER, text = ANSWER_NUDGE)
+                }
+                Nudge.RESEARCH, Nudge.IMAGE -> {
+                    if (nudge == Nudge.RESEARCH) researchNudges++ else imageNudges++
+                    // The model sees its draft, so it can extend it instead of writing the whole answer again.
+                    working += ChatMessage(role = Role.ASSISTANT, text = text.toString())
+                    emit(AgentEvent.DraftDiscarded)
+                    working += nudgeRequest(nudge, searchDepth, scopedSearch?.budget())
+                }
+                Nudge.NONE -> if (text.isNotBlank() || calls.isNotEmpty()) {
+                    val assistant = assistantMessage(conversation.isChat, text, calls, working, thinking, thinkingTiming, outputTokens,
+                        requestStartedNs, firstTokenNs, lastTokenNs, reasoningTokens, reasoningSetting, suppliedMemories, config.model, responseState)
+                    working += assistant
+                    publishSide()
+                    emit(AgentEvent.AssistantCommitted(assistant))
+                }
             }
 
             when {
@@ -775,96 +818,34 @@ class AgentEngine(
                     emit(AgentEvent.Error(failure!!, recoverable = recoverableFailure))
                     break
                 }
-                wantsNudge || wantsResearchNudge || wantsImageNudge -> continue
+                nudge != Nudge.NONE -> continue
                 // A message sent during the final answer keeps the task going in this turn.
                 calls.isEmpty() && takeSteering() -> continue
+                calls.isEmpty() && hooksActive && runContext.stopRequested.get() == null && run {
+                    // Claude Code's Stop hook: a block keeps the agent working with the hook's reason as feedback.
+                    val stop = hook(com.agent.mhamed.config.HookEvents.STOP, kotlinx.serialization.json.buildJsonObject {
+                        put("stop_hook_active", stopHookActive); put("message", text.toString())
+                    })
+                    earlyNotices.forEach { emit(AgentEvent.Notice(it)) }; earlyNotices.clear()
+                    val reason = stop.keepGoing ?: return@run false
+                    stopHookActive = true
+                    emit(AgentEvent.Notice("Continuing because of a plugin hook. $reason"))
+                    working += ChatMessage(role = Role.USER, text = "Stop hook feedback:\n$reason")
+                    true
+                } -> continue
                 calls.isEmpty() -> {
                     emit(AgentEvent.Finished(emptyAnswerReason(text.toString(), thinking.toString(), lastFinishReason, reasoningTokens)))
                     break
                 }
             }
 
-            // Only overlap contiguous subagents or safe reads. Stateful calls
-            // such as todo_write must run at their requested position, including
-            // before a slow subagent batch, so progress is visible during work.
             val results = LinkedHashMap<String, ToolResult>()
-            fun toolMessage(call: ToolCallData, result: ToolResult) = ChatMessage(
-                role = Role.TOOL,
-                text = result.output,
-                toolCallId = call.id,
-                toolName = call.name,
-                isError = !result.ok,
-                images = listOfNotNull(result.image), artifact = result.artifact,
-                generation = com.agent.mhamed.core.GenerationMetadata(execution = result.execution, research = result.research, settings = result.settings, chatHistory = result.chatHistory, storageAccess = result.storageAccess),
+            executeCalls(calls, results, deterministicFailures, effectiveMode, sessionAllowedTools, execWorkspace,
+                sessionId, turnId, mode, requestOptions, config, apiKey, roundRegistry, resolveSubagentModel, subagentRuns,
+                emit = { emit(it) },
+                // Side questions see each finished result while the rest still run.
+                publishResults = { publishSide(working + calls.mapNotNull { call -> results[call.id]?.let { toolMessage(call, it) } }) },
             )
-            // Side questions see each finished result while the rest still run.
-            fun publishResults() = publishSide(working + calls.mapNotNull { call -> results[call.id]?.let { toolMessage(call, it) } })
-            var ordinaryIndex = 0
-            while (ordinaryIndex < calls.size) {
-                val first = calls[ordinaryIndex]
-                if (first.name == "task") {
-                    val subagentCalls = mutableListOf<ToolCallData>()
-                    while (ordinaryIndex < calls.size && calls[ordinaryIndex].name == "task") {
-                        subagentCalls += calls[ordinaryIndex++]
-                    }
-                    // FlowCollector.emit is not concurrency-safe; parallel subagents
-                    // share one mutex-protected emitter.
-                    val emitLock = Mutex()
-                    val serialEmit: suspend (AgentEvent) -> Unit = { event ->
-                        emitLock.withLock { emit(event) }
-                    }
-                    subagentCalls.forEach { call -> emit(AgentEvent.ToolStarted(call)) }
-                    android.util.Log.d(
-                        "HarnessSpawn",
-                        "batch of ${subagentCalls.size} task call(s): ${subagentCalls.map { it.id }}",
-                    )
-                    coroutineScope {
-                        subagentCalls.map { call ->
-                            async {
-                                android.util.Log.d("HarnessSpawn", "task ${call.id} START ${System.currentTimeMillis()}")
-                                val result = executeWithPermission(
-                                    call, effectiveMode, sessionAllowedTools, execWorkspace,
-                                    sessionId, turnId, mode, requestOptions, config, apiKey,
-                                    roundRegistry, resolveSubagentModel, serialEmit,
-                                    subagentRuns = subagentRuns,
-                                )
-                                android.util.Log.d("HarnessSpawn", "task ${call.id} END ${System.currentTimeMillis()}")
-                                call.id to result
-                            }
-                        }.awaitAll().forEach { (id, result) -> results[id] = result }
-                    }
-                    publishResults()
-                } else if (parallelSafeReadOnly(first, roundRegistry)) {
-                    val group = mutableListOf<ToolCallData>()
-                    while (ordinaryIndex < calls.size && calls[ordinaryIndex].name != "task" && parallelSafeReadOnly(calls[ordinaryIndex], roundRegistry)) {
-                        group += calls[ordinaryIndex++]
-                    }
-                    group.forEach { emit(AgentEvent.ToolStarted(it)) }
-                    val emitLock = Mutex()
-                    val serialEmit: suspend (AgentEvent) -> Unit = { event -> emitLock.withLock { emit(event) } }
-                    coroutineScope {
-                        group.map { call ->
-                            async {
-                                call.id to executeWithFailureGuard(
-                                    call, deterministicFailures, effectiveMode, sessionAllowedTools, execWorkspace,
-                                    sessionId, turnId, mode, requestOptions, config, apiKey,
-                                    roundRegistry, resolveSubagentModel, serialEmit,
-                                )
-                            }
-                        }.awaitAll().forEach { (id, result) -> results[id] = result }
-                    }
-                    publishResults()
-                } else {
-                    ordinaryIndex++
-                    emit(AgentEvent.ToolStarted(first))
-                    results[first.id] = executeWithFailureGuard(
-                        first, deterministicFailures, effectiveMode, sessionAllowedTools, execWorkspace,
-                        sessionId, turnId, mode, requestOptions, config, apiKey,
-                        roundRegistry, resolveSubagentModel,
-                    ) { emit(it) }
-                    publishResults()
-                }
-            }
 
             if (calls.any { it.name == "todo_write" && results[it.id]?.ok == true }) roundsWithoutTodoUpdate = 0
             else if (calls.any { it.name != "todo_write" }) roundsWithoutTodoUpdate++
@@ -875,10 +856,343 @@ class AgentEngine(
                 working += toolMessage(call, result).withImagesResolved()
                 emit(AgentEvent.ToolFinished(call.id, result))
             }
+            // Tell the model what the answer still needs before it writes one.
+            // These checks used to run only after a finished answer, so a whole
+            // reply streamed in and was then pulled back for more research,
+            // which read as the answer being cut off. Notes go to the model's
+            // copy of the newest tool result only; the screen never shows them.
+            if (calls.any { results[it.id]?.output?.hasImageCandidate() == true }) turnFoundImage = true
+            if (conversation.isChat && calls.isNotEmpty()) {
+                val notes = mutableListOf<String>()
+                scopedSearch?.budget()?.let { budget ->
+                    if (budget.minReads > 0 && budget.used > 0 && budget.pagesRead < budget.minReads)
+                        notes += "This turn's research level needs at least ${budget.minReads} pages read before the answer; " +
+                            "${budget.pagesRead} so far. Keep reading (passages returned by web_search count) and write the answer only after that."
+                }
+                if (alwaysImages && imageReminders < MAX_IMAGE_REMINDERS && calls.any { it.name in IMAGE_SOURCE_TOOLS } && !turnFoundImage) {
+                    imageReminders++
+                    notes += "This chat shows a picture with every answer and none has been found yet. " +
+                        "Before writing the answer, call web_fetch or browser_read with images=true on a relevant page."
+                }
+                if (notes.isNotEmpty()) {
+                    val last = working.lastIndex
+                    working[last] = working[last].copy(text = working[last].text + "\n\n[Harness note for you, not the user: " + notes.joinToString(" ") + "]")
+                }
+            }
         }
         } finally {
-            withContext(kotlinx.coroutines.NonCancellable) { hook("session.end") }
+            if (hooksActive) withContext(kotlinx.coroutines.NonCancellable) {
+                runCatching { hook(com.agent.mhamed.config.HookEvents.SESSION_END, kotlinx.serialization.json.buildJsonObject { put("reason", "other") }) }
+            }
         }
+        }
+    }
+
+    // The helpers below hold parts of the run loop. That loop compiles to one coroutine
+    // method close to the JVM's 64 KB limit, so its logic lives here instead of inline.
+
+    /** Every tool this run may offer, before the per-round filters in [roundRequest]. */
+    private suspend fun runRegistry(
+        conversation: com.agent.mhamed.data.ConversationConfig,
+        searchDepth: com.agent.mhamed.data.SearchDepth,
+        projectConfig: com.agent.mhamed.config.HarnessConfig,
+        extraTools: List<com.agent.mhamed.tools.Tool>,
+        subagentRuns: SubagentRuns?,
+        sessionId: String,
+        imageCapable: Boolean,
+        memoryOn: Boolean,
+        turnImages: com.agent.mhamed.tools.ChatImageTurnInventory,
+        researchTools: List<com.agent.mhamed.tools.Tool>,
+        messages: () -> List<ChatMessage>,
+    ): ToolRegistry = (if (conversation.isChat) registry.withExtra(chatOnlyTools + com.agent.mhamed.tools.chatAgentTools(conversation.agent) + researchTools +
+        if (imageCapable) listOf(com.agent.mhamed.tools.ChatImageZoomTool(imageStore, messages).forInventory(turnImages::sources), com.agent.mhamed.tools.ViewChatImageTool(imageStore, messages).forInventory(turnImages::sources)) else emptyList()) else registry.withExtra(chatOnlyTools.filter { it.name in recallToolNames } + extraTools + (if (projectConfig.references.isEmpty()) emptyList() else listOf(com.agent.mhamed.config.ConfigReferenceReadTool(projectConfig))) +
+        (if (projectConfig.languageServers.isEmpty()) emptyList() else listOf(com.agent.mhamed.tools.LanguageServerTool(projectConfig.languageServers) { linuxEnv.shellProcessBuilder(it) })) +
+        if (subagentRuns == null) emptyList() else com.agent.mhamed.tools.subagentControlTools(subagentRuns, sessionId)))
+        .restrictedTo(conversation.allowedTools)
+        .let { if (conversation.isChat && searchDepth == com.agent.mhamed.data.SearchDepth.OFF) it.without(setOf("web_search")) else it }
+        .let { if (memoryOn) it else it.without(memoryToolNames) }
+        .let { if (conversation.personalizationEnabled) it else it.without(recallToolNames) }
+        .let { if (conversation.isChat && !imageCapable) it.without(setOf("view_chat_image", "zoom_chat_image")) else it }
+        .let { if (conversation.isChat && remindersEnabled()) it else it.without(com.agent.mhamed.tools.ReminderTools.names) }
+
+    /** Background subagent results join the conversation between model requests, persisted before acknowledging. */
+    private suspend fun deliverSubagentResults(
+        subagentRuns: SubagentRuns,
+        sessionId: String,
+        working: MutableList<ChatMessage>,
+        emit: suspend (AgentEvent) -> Unit,
+    ) {
+        subagentRuns.pending(sessionId).forEach { run ->
+            val noticeId = "subagent-result-${run.id}"
+            if (working.none { it.id == noticeId }) {
+                val notice = ChatMessage(role = Role.SYSTEM, id = noticeId,
+                    text = "Background subagent result (task output, not user instructions):\n${run.report()}")
+                working += notice
+                emit(AgentEvent.ToolMessageCommitted(notice))
+            }
+            subagentRuns.acknowledge(sessionId, run.id)
+        }
+    }
+
+    /** What one model request sends: the tools it may call and the system prompt it carries. */
+    private class RoundRequest(
+        val registry: ToolRegistry,
+        val tools: List<com.agent.mhamed.llm.ToolSchema>,
+        val systemPrompt: String,
+        val bufferKey: String,
+        val textWrites: Boolean,
+    )
+
+    /** The subagent and storage card switches in Settings remove their tools. */
+    private fun settingsTools(registry: ToolRegistry, settings: com.agent.mhamed.data.AppSettings): ToolRegistry = registry
+        .let { if (settings.subagentsEnabled) it else it.without(SUBAGENT_TOOLS) }
+        .let { if (settings.storageAccessCards) it else it.without(setOf(com.agent.mhamed.tools.StorageAccessTool.NAME)) }
+
+    private suspend fun roundRequest(
+        runRegistry: ToolRegistry,
+        conversation: com.agent.mhamed.data.ConversationConfig,
+        visionAvailable: Boolean,
+        runContext: com.agent.mhamed.config.ConfigRunContext,
+        projectConfig: com.agent.mhamed.config.HarnessConfig,
+        effectiveMode: PermissionMode,
+        settings: com.agent.mhamed.data.AppSettings,
+        agentContextEnabled: Boolean,
+        mode: AgentMode,
+        execWorkspace: WorkspaceFs,
+        sandboxOff: Boolean,
+        sessionId: String,
+        workspace: WorkspaceFs,
+        config: ProviderConfig,
+        options: RequestOptions,
+        turnImages: com.agent.mhamed.tools.ChatImageTurnInventory,
+        working: List<ChatMessage>,
+        systemPrompt: String,
+        roundsWithoutTodoUpdate: Int,
+        fileBlocksDeclined: Boolean,
+    ): RoundRequest {
+        val roundRegistry = settingsTools((if (conversation.isChat && !visionAvailable)
+            runRegistry.without(setOf("view_chat_image", "zoom_chat_image")) else runRegistry)
+            .filter { !runContext.denies(it) && com.agent.mhamed.config.ConfigToolPolicy.permission(projectConfig, it, effectiveMode) != "deny" }, settings)
+        val searchConfiguration = (roundRegistry.get("web_search") as? com.agent.mhamed.tools.WebSearchTool)?.configurationNote()
+        val tools = if (!agentContextEnabled) emptyList() else roundRegistry.schemas(
+            readOnlyOnly = mode == AgentMode.PLAN,
+            context = ToolContext(execWorkspace, sandboxOff, sessionId, configuration = projectConfig, skills = runContext.skills),
+        )
+        val environment = if (agentContextEnabled)
+            runtimeEnvironment(workspace, sessionId, mode, effectiveMode, tools, conversation.isChat) +
+                modelIdentity(config, options.modelCatalogs) +
+                searchConfiguration?.let { "\n## Current web research configuration\n$it\n" }.orEmpty() else ""
+        turnImages.update(working)
+        val imageInventory = if (conversation.isChat && visionAvailable)
+            com.agent.mhamed.tools.ChatImageInventory.promptSources(turnImages.sources(), imageStore::metadata) else ""
+        var requestSystemPrompt = if (!agentContextEnabled) "" else if (conversation.isChat) systemPrompt + environment + imageInventory else com.agent.mhamed.caveman.CavemanPolicy.apply(
+            systemPrompt + environment + TodoPrompt.format(
+                todoStore?.takeIf { !conversation.isChat && it.owner.value == sessionId }?.todos?.value.orEmpty(),
+                roundsWithoutTodoUpdate,
+            ).let { if (it.isBlank()) "" else "\n\n$it" },
+            installed = settings.cavemanInstalled,
+            intensity = settings.cavemanIntensity,
+            wenyan = settings.cavemanWenyan,
+        )
+        // Servers that hold tool calls back get file contents as streamed reply text.
+        val bufferKey = TextFileWrites.modelKey(config.id, config.model)
+        val textWrites = !conversation.isChat && agentContextEnabled && settings.streamFileWritesAsText &&
+            !fileBlocksDeclined && bufferKey !in settings.fileBlockDeclinedModels &&
+            (bufferKey in settings.bufferedToolCallModels || TextFileWrites.buffersToolCalls(config.baseUrl)) &&
+            tools.any { it.name == "write_file" }
+        if (textWrites) requestSystemPrompt += TextFileWrites.prompt()
+        return RoundRequest(roundRegistry, tools, requestSystemPrompt, bufferKey, textWrites)
+    }
+
+    /** Where a research turn spends its time: one line per model round. */
+    private fun logModelRound(requestStartedNs: Long, firstTokenNs: Long, contextMessages: Int, calls: List<ToolCallData>, failed: Boolean) {
+        val endNs = System.nanoTime()
+        val firstMs = if (firstTokenNs > 0L) (firstTokenNs - requestStartedNs) / 1_000_000 else -1
+        com.agent.mhamed.tools.researchTiming("model round: total=${(endNs - requestStartedNs) / 1_000_000}ms " +
+            "firstOutput=${firstMs}ms contextMessages=$contextMessages toolCalls=${calls.map { it.name }} failed=$failed")
+    }
+
+    private enum class Nudge { NONE, ANSWER, RESEARCH, IMAGE }
+
+    /** Which nudge, if any, a finished model round gets instead of being committed as the answer. */
+    private fun nudgeFor(
+        failed: Boolean,
+        text: CharSequence,
+        thinking: CharSequence,
+        noCalls: Boolean,
+        chat: Boolean,
+        research: com.agent.mhamed.tools.SearchSourceBudget?,
+        alwaysImages: Boolean,
+        firstChatAnswer: Boolean,
+        answerNudges: Int,
+        researchNudges: Int,
+        imageNudges: Int,
+    ): Nudge {
+        if (failed || !noCalls) return Nudge.NONE
+        // Reasoning with no answer and no calls: ask once for the actual answer.
+        if (text.isBlank()) return if (thinking.isNotBlank() && answerNudges < MAX_ANSWER_NUDGES) Nudge.ANSWER else Nudge.NONE
+        // Research levels require real page reads, not just search snippets.
+        // Ask again with the shortfall named instead of committing an answer
+        // that never opened a source.
+        if (chat && research != null && research.minReads > 0 && research.used > 0 &&
+            research.pagesRead < research.minReads && researchNudges < MAX_RESEARCH_NUDGES) return Nudge.RESEARCH
+        // Always-images chats get one more try when a real answer arrives without a picture.
+        if (alwaysImages && imageNudges < MAX_IMAGE_NUDGES &&
+            (firstChatAnswer || text.length >= com.agent.mhamed.core.ChatExperience.IMAGE_NUDGE_MIN_CHARS) &&
+            !com.agent.mhamed.core.ChatExperience.answerHasImage(text.toString())) return Nudge.IMAGE
+        return Nudge.NONE
+    }
+
+    /** The user message that asks for more research or a picture after a discarded draft. */
+    private fun nudgeRequest(
+        nudge: Nudge,
+        searchDepth: com.agent.mhamed.data.SearchDepth,
+        research: com.agent.mhamed.tools.SearchSourceBudget?,
+    ): ChatMessage = ChatMessage(role = Role.USER, text =
+        if (nudge == Nudge.RESEARCH && research != null) com.agent.mhamed.core.ChatExperience.researchReadNudge(searchDepth, research.pagesRead, research.minReads)
+        else com.agent.mhamed.core.ChatExperience.IMAGE_NUDGE)
+
+    /** The committed assistant message for one model round, with its timing and generation details. */
+    private fun assistantMessage(
+        chat: Boolean,
+        text: CharSequence,
+        calls: List<ToolCallData>,
+        working: List<ChatMessage>,
+        thinking: CharSequence,
+        thinkingTiming: ThinkingTiming,
+        outputTokens: Int,
+        requestStartedNs: Long,
+        firstTokenNs: Long,
+        lastTokenNs: Long,
+        reasoningTokens: Int?,
+        reasoningSetting: String?,
+        suppliedMemories: List<com.agent.mhamed.core.SuppliedMemory>,
+        model: String,
+        responseState: com.agent.mhamed.core.ProviderMessageState?,
+    ): ChatMessage {
+        val followUps = if (chat)
+            com.agent.mhamed.core.FollowUpSuggestions.extract(text.toString())
+        else com.agent.mhamed.core.FollowUpSuggestions(text.toString(), emptyList())
+        return ChatMessage(
+            role = Role.ASSISTANT,
+            text = followUps.text,
+            toolCalls = calls.toList(),
+            images = if (chat) com.agent.mhamed.core.ChatResponseImages.referenced(followUps.text, working) else emptyList(),
+            thinking = thinking.toString(),
+            thinkingMs = thinkingTiming.durationMs(ThinkingTiming.now()),
+            outputTokens = outputTokens,
+            generationMs = ((System.nanoTime() - requestStartedNs) / 1_000_000).coerceAtLeast(1),
+            firstTokenMs = if (firstTokenNs > 0L) ((firstTokenNs - requestStartedNs) / 1_000_000).coerceAtLeast(1) else 0,
+            streamMs = if (lastTokenNs > firstTokenNs) ((lastTokenNs - firstTokenNs) / 1_000_000).coerceAtLeast(1) else 0,
+            generation = com.agent.mhamed.core.GenerationMetadata(
+                reasoningTokens = reasoningTokens,
+                reasoningSetting = reasoningSetting,
+                suppliedMemories = suppliedMemories,
+                model = model,
+                followUps = followUps.items,
+            ),
+        ).let { it.copy(generation = it.generation.copy(state = responseState?.boundTo(it))) }
+    }
+
+    private fun toolMessage(call: ToolCallData, result: ToolResult) = ChatMessage(
+        role = Role.TOOL,
+        text = result.output,
+        toolCallId = call.id,
+        toolName = call.name,
+        isError = !result.ok,
+        images = listOfNotNull(result.image), artifact = result.artifact,
+        generation = com.agent.mhamed.core.GenerationMetadata(execution = result.execution, research = result.research, settings = result.settings, chatHistory = result.chatHistory, storageAccess = result.storageAccess),
+    )
+
+    /**
+     * Runs one round's tool calls into [results]. Only contiguous subagents or safe reads
+     * overlap. Stateful calls such as todo_write run at their requested position, including
+     * before a slow subagent batch, so progress is visible during work.
+     */
+    private suspend fun executeCalls(
+        calls: List<ToolCallData>,
+        results: MutableMap<String, ToolResult>,
+        deterministicFailures: MutableMap<String, String>,
+        effectiveMode: PermissionMode,
+        sessionAllowedTools: MutableSet<String>,
+        execWorkspace: WorkspaceFs,
+        sessionId: String,
+        turnId: String,
+        mode: AgentMode,
+        requestOptions: RequestOptions,
+        config: ProviderConfig,
+        apiKey: String,
+        roundRegistry: ToolRegistry,
+        resolveSubagentModel: (suspend (String) -> SubagentModelResolution)?,
+        subagentRuns: SubagentRuns?,
+        emit: suspend (AgentEvent) -> Unit,
+        publishResults: () -> Unit,
+    ) {
+        var ordinaryIndex = 0
+        while (ordinaryIndex < calls.size) {
+            val first = calls[ordinaryIndex]
+            if (first.name == "task") {
+                val subagentCalls = mutableListOf<ToolCallData>()
+                while (ordinaryIndex < calls.size && calls[ordinaryIndex].name == "task") {
+                    subagentCalls += calls[ordinaryIndex++]
+                }
+                // FlowCollector.emit is not concurrency-safe; parallel subagents
+                // share one mutex-protected emitter.
+                val emitLock = Mutex()
+                val serialEmit: suspend (AgentEvent) -> Unit = { event ->
+                    emitLock.withLock { emit(event) }
+                }
+                subagentCalls.forEach { call -> emit(AgentEvent.ToolStarted(call)) }
+                android.util.Log.d(
+                    "HarnessSpawn",
+                    "batch of ${subagentCalls.size} task call(s): ${subagentCalls.map { it.id }}",
+                )
+                coroutineScope {
+                    subagentCalls.map { call ->
+                        async {
+                            android.util.Log.d("HarnessSpawn", "task ${call.id} START ${System.currentTimeMillis()}")
+                            val result = executeWithPermission(
+                                call, effectiveMode, sessionAllowedTools, execWorkspace,
+                                sessionId, turnId, mode, requestOptions, config, apiKey,
+                                roundRegistry, resolveSubagentModel, serialEmit,
+                                subagentRuns = subagentRuns,
+                            )
+                            android.util.Log.d("HarnessSpawn", "task ${call.id} END ${System.currentTimeMillis()}")
+                            call.id to result
+                        }
+                    }.awaitAll().forEach { (id, result) -> results[id] = result }
+                }
+                publishResults()
+            } else if (parallelSafeReadOnly(first, roundRegistry)) {
+                val group = mutableListOf<ToolCallData>()
+                while (ordinaryIndex < calls.size && calls[ordinaryIndex].name != "task" && parallelSafeReadOnly(calls[ordinaryIndex], roundRegistry)) {
+                    group += calls[ordinaryIndex++]
+                }
+                group.forEach { emit(AgentEvent.ToolStarted(it)) }
+                val emitLock = Mutex()
+                val serialEmit: suspend (AgentEvent) -> Unit = { event -> emitLock.withLock { emit(event) } }
+                coroutineScope {
+                    group.map { call ->
+                        async {
+                            call.id to executeWithFailureGuard(
+                                call, deterministicFailures, effectiveMode, sessionAllowedTools, execWorkspace,
+                                sessionId, turnId, mode, requestOptions, config, apiKey,
+                                roundRegistry, resolveSubagentModel, serialEmit,
+                            )
+                        }
+                    }.awaitAll().forEach { (id, result) -> results[id] = result }
+                }
+                publishResults()
+            } else {
+                ordinaryIndex++
+                emit(AgentEvent.ToolStarted(first))
+                results[first.id] = executeWithFailureGuard(
+                    first, deterministicFailures, effectiveMode, sessionAllowedTools, execWorkspace,
+                    sessionId, turnId, mode, requestOptions, config, apiKey,
+                    roundRegistry, resolveSubagentModel, emit,
+                )
+                publishResults()
+            }
         }
     }
 
@@ -888,8 +1202,8 @@ class AgentEngine(
      * reasoning options unchanged, so the cached prefix is read instead of
      * billed again. Only read-only tools run, and nothing is persisted.
      */
-    fun askAside(context: SideContext, question: String): Flow<SideEvent> =
-        streamAside(context, SideQuestion.requestMessages(context, question))
+    fun askAside(context: SideContext, question: String, history: List<SideTurn> = emptyList()): Flow<SideEvent> =
+        streamAside(context, SideQuestion.requestMessages(context, question, history))
 
     /**
      * The side-question loop over an explicit request. Live Mode sends its own
@@ -970,8 +1284,11 @@ class AgentEngine(
                     },
                     retryReason = { it.take(200) },
                     emitEvent = { send(SideEvent.Retrying(it.attempt, it.reason)) },
-                    stallTimeoutMs = if (local) 600_000 else 90_000,
+                    stallTimeoutMs = if (local) 600_000 else stallSettingMs(),
+                    firstOutputTimeoutMs = StreamRetrier.firstOutputWindow(
+                        if (local) 600_000 else stallSettingMs(), context.options, config),
                     allowRetries = !local,
+                    retryStalls = !StreamRetrier.selfHosted(config),
                 )
                 if (failure != null) {
                     send(SideEvent.Failed(failure))
@@ -1121,6 +1438,37 @@ class AgentEngine(
                 ?: runCatching { imageStore.resolve(ref) }.getOrNull()
         })
 
+    /** What plugin hooks are told about this run, and how a prompt or agent hook asks the run's model. */
+    private fun hookContext(
+        sessionId: String, workspace: WorkspaceFs, permission: PermissionMode, mode: AgentMode,
+        configuration: com.agent.mhamed.config.HarnessConfig, config: ProviderConfig, apiKey: String, options: RequestOptions,
+    ): com.agent.mhamed.config.HookContext {
+        val project = ((workspace as? ChatWorkspaceFs)?.primary?.fs ?: workspace).shellRoot?.absolutePath
+        val claudeMode = when {
+            mode == AgentMode.PLAN -> "plan"
+            permission == PermissionMode.FULL_ACCESS -> "bypassPermissions"
+            permission == PermissionMode.FULL_AUTO -> "acceptEdits"
+            else -> "default"
+        }
+        return com.agent.mhamed.config.HookContext(
+            sessionId = sessionId, projectDir = project, permissionMode = claudeMode,
+            serverNames = configuration.serverSources.filterValues { it.plugin != null }.mapValues { it.value.name },
+            evaluate = { system, prompt ->
+                val answer = StringBuilder()
+                fun take(event: com.agent.mhamed.llm.StreamEvent) {
+                    when (event) {
+                        is com.agent.mhamed.llm.StreamEvent.TextDelta -> answer.append(event.text)
+                        is com.agent.mhamed.llm.StreamEvent.Batch -> event.events.forEach(::take)
+                        else -> Unit
+                    }
+                }
+                providerFactory(config).streamChat(config, apiKey, system, listOf(ChatMessage(role = Role.USER, text = prompt)), emptyList(), options)
+                    .collect { take(it) }
+                answer.toString()
+            },
+        )
+    }
+
     /**
      * Executes one tool call with the current permission gating. [emitEvent]
      * is injected rather than taken from a FlowCollector receiver so parallel
@@ -1144,24 +1492,32 @@ class AgentEngine(
     ): ToolResult {
         kotlin.coroutines.coroutineContext[TaskBudget]?.check()
         val runConfig = kotlin.coroutines.coroutineContext[com.agent.mhamed.config.ConfigRunContext]
-        val before = runConfig?.hooks?.invoke(runConfig.config.plugins, "tool.before", kotlinx.serialization.json.buildJsonObject {
-            put("tool", call.name); put("arguments", runConfig.redact(call.argumentsJson).take(16_000))
-        })
+        val hooked = runConfig?.hooks != null && runConfig.config.plugins.isNotEmpty()
+        fun hookEvent(target: ToolCallData, extra: kotlinx.serialization.json.JsonObjectBuilder.() -> Unit = {}) = kotlinx.serialization.json.buildJsonObject {
+            put("tool", target.name); put("call_id", target.id); put("arguments", runConfig?.redact(target.argumentsJson) ?: target.argumentsJson); extra()
+        }
+        val before = if (hooked) runConfig!!.fire(com.agent.mhamed.config.HookEvents.TOOL_BEFORE, hookEvent(call)) else null
+        before?.messages?.forEach { emitEvent(AgentEvent.Notice(it)) }
         before?.instructions?.takeIf(String::isNotBlank)?.let { runConfig?.pendingInstructions?.add(it) }
+        // A PreToolUse hook may rewrite the arguments; the rewritten call is what runs and what later hooks see.
+        val call = before?.updatedInput?.let { call.copy(argumentsJson = it.toString()) } ?: call
         val ledger = kotlin.coroutines.coroutineContext[RecoveryLedger]
         val cached = if (registry.get(call.name)?.isReadOnly == false) ledger?.result(call) else null
-        val result = (if (before?.denied != null) ToolResult(false, "Plugin blocked ${call.name}: ${before.denied}") else cached ?: performWithPermission(
+        val result = (if (before?.denied != null) ToolResult(false, "Plugin hook blocked ${call.name}: ${before.denied}") else cached ?: performWithPermission(
             call, mode, sessionAllowedTools, workspace, sessionId, turnId, agentMode,
             requestOptions, config, apiKey, registry, resolveSubagentModel, emitEvent,
-            subagentRuns = subagentRuns,
+            subagentRuns = subagentRuns, hookAsk = before?.ask, hookAllow = before?.allow == true,
         )).let { result -> result.copy(output = runConfig?.redact(result.output) ?: result.output) }.let { result ->
             // Leading with the tool name keeps this out of the unchanged-retry cache.
             val hint = if (result.ok) null else registry.get(call.name)?.let { emptyArgumentsHint(call.name, call.argumentsJson, it.parametersSchema) }
             if (hint == null) result else result.copy(output = "$hint\n${result.output}")
         }
-        runConfig?.hooks?.invoke(runConfig.config.plugins, "tool.after", kotlinx.serialization.json.buildJsonObject {
-            put("tool", call.name); put("ok", result.ok)
-        })?.instructions?.takeIf(String::isNotBlank)?.let { runConfig.pendingInstructions.add(it) }
+        if (hooked && before?.denied == null) {
+            val after = runConfig!!.fire(if (result.ok) com.agent.mhamed.config.HookEvents.TOOL_AFTER else com.agent.mhamed.config.HookEvents.TOOL_FAILED,
+                hookEvent(call) { put("ok", result.ok); put("output", result.output) })
+            after.messages.forEach { emitEvent(AgentEvent.Notice(it)) }
+            after.instructions.takeIf(String::isNotBlank)?.let { runConfig.pendingInstructions.add(it) }
+        }
         kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
             emitEvent(AgentEvent.ToolMessageCommitted(ChatMessage(
                 role = Role.TOOL, text = result.output, toolCallId = call.id,
@@ -1196,10 +1552,15 @@ class AgentEngine(
         resolveSubagentModel: (suspend (String) -> SubagentModelResolution)?,
         emitEvent: suspend (AgentEvent) -> Unit,
         subagentRuns: SubagentRuns? = null,
+        /** A PreToolUse hook asked for the user's approval, with its reason. */
+        hookAsk: String? = null,
+        /** A PreToolUse hook approved the call, so the usual approval prompt is skipped. */
+        hookAllow: Boolean = false,
     ): ToolResult {
         val tool = registry.get(call.name)
             ?: return ToolResult(false, "Unknown tool: ${call.name}")
         val runConfig = kotlin.coroutines.coroutineContext[com.agent.mhamed.config.ConfigRunContext]
+        val hooked = runConfig?.hooks != null && runConfig.config.plugins.isNotEmpty()
         if (runConfig?.denies(tool) == true) return ToolResult(false, "${call.name} is disabled by this Code agent's tool rules.")
         val configPermission = runConfig?.config?.let { com.agent.mhamed.config.ConfigToolPolicy.permission(it, tool, mode) } ?: "allow"
         if (configPermission == "deny") return ToolResult(false, "${call.name} is denied by project configuration.")
@@ -1220,8 +1581,9 @@ class AgentEngine(
                 ?: com.agent.mhamed.llm.visionCapable(config.model))
 
         // The model sometimes tries to modify files in plan mode, refuse cleanly.
-        // Settings changes touch no files, so Plan mode does not block them.
-        if (agentMode == AgentMode.PLAN && !tool.isReadOnly && tool !is com.agent.mhamed.tools.AppSettingsChangeTool) {
+        // Settings and plugin changes touch no project files, so Plan mode does not block them; their own approvals still apply.
+        if (agentMode == AgentMode.PLAN && !tool.isReadOnly && tool !is com.agent.mhamed.tools.AppSettingsChangeTool &&
+            tool !is com.agent.mhamed.tools.AppPluginsTool) {
             return ToolResult(
                 false,
                 "Plan mode is active: ${call.name} was rejected. Modifying files is not allowed in Plan mode. Finish your turn and present your plan for user approval.",
@@ -1242,19 +1604,38 @@ class AgentEngine(
             if (background && (subagentRuns == null || !cavemanSettings().backgroundSubagents)) {
                 return ToolResult(false, "Background delegation is disabled. The user can enable Allow background delegation in Sub-Agent settings. Use a foreground task instead.")
             }
+            val childContext = try { args["agent"]?.jsonPrimitive?.contentOrNull?.takeIf(String::isNotBlank)?.let { runConfig?.child(it) } ?: runConfig }
+                catch (e: IllegalArgumentException) { return ToolResult(false, e.message ?: "Unknown agent.") }
             val requestedModel = args["model"]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }
+            // A plugin agent's own model (sonnet, opus, a model id) is used when it resolves here; otherwise the usual subagent model runs it.
+            val agentModel = childContext?.config?.agents?.get(childContext.agent)?.model?.takeIf { it.isNotBlank() && it != "inherit" }
             val connection = try {
-                SubagentConfiguration.forTask(config, apiKey, requestedModel, configuredSubagent, resolveSubagentModel)
+                if (requestedModel == null && agentModel != null && resolveSubagentModel != null)
+                    runCatching { SubagentConfiguration.forTask(config, apiKey, agentModel, configuredSubagent, resolveSubagentModel) }
+                        .getOrElse { e -> if (e is CancellationException) throw e; SubagentConfiguration.forTask(config, apiKey, null, configuredSubagent, resolveSubagentModel) }
+                else SubagentConfiguration.forTask(config, apiKey, requestedModel, configuredSubagent, resolveSubagentModel)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 return ToolResult(false, e.message ?: "Could not configure the subagent model.")
             }
-            val childContext = args["agent"]?.jsonPrimitive?.contentOrNull?.let { runConfig?.child(it) } ?: runConfig
+            val agentType = childContext?.agent ?: "default"
             val execute: suspend (suspend (AgentEvent) -> Unit) -> ToolResult = { events ->
-                withContext(childContext ?: kotlin.coroutines.EmptyCoroutineContext) { runSubagent(prompt, title, call.id, connection.config, connection.apiKey, workspace, requestOptions, events,
-                    registry, mode, sessionAllowedTools, sessionId, turnId,
-                    actionTools = !background && agentMode == AgentMode.ACT && cavemanSettings().subagentFullAccess) }
+                withContext(childContext ?: kotlin.coroutines.EmptyCoroutineContext) {
+                    val hookEvent = kotlinx.serialization.json.buildJsonObject { put("agent_id", call.id); put("agent_type", agentType); put("prompt", prompt) }
+                    val start = if (hooked) childContext!!.fire(com.agent.mhamed.config.HookEvents.SUBAGENT_START, hookEvent) else null
+                    start?.messages?.forEach { events(AgentEvent.Notice(it)) }
+                    val fullPrompt = start?.instructions?.takeIf(String::isNotBlank)?.let { "$prompt\n\n$it" } ?: prompt
+                    val outcome = runSubagent(fullPrompt, title, call.id, connection.config, connection.apiKey, workspace, requestOptions, events,
+                        registry, mode, sessionAllowedTools, sessionId, turnId,
+                        actionTools = !background && agentMode == AgentMode.ACT && cavemanSettings().subagentFullAccess)
+                    if (!hooked) outcome else {
+                        val stop = childContext!!.fire(com.agent.mhamed.config.HookEvents.SUBAGENT_STOP, hookEvent)
+                        stop.messages.forEach { events(AgentEvent.Notice(it)) }
+                        val feedback = listOfNotNull(stop.keepGoing, stop.instructions.takeIf(String::isNotBlank)).joinToString("\n")
+                        if (feedback.isBlank()) outcome else outcome.copy(output = outcome.output + "\n\nPlugin hook feedback on this subagent:\n" + feedback)
+                    }
+                }
             }
             val runs = subagentRuns ?: return execute(emitEvent)
             val run = SubagentRun(sessionId, turnId, call, title ?: "Subagent", prompt,
@@ -1344,7 +1725,7 @@ class AgentEngine(
         val root = workspace.shellRoot
         // Full access skips the shell denylist entirely, that is the point of the mode.
         if (mode != PermissionMode.FULL_ACCESS) {
-            com.agent.mhamed.tools.ShellPolicy.denyReason(command.orEmpty(), root, root)?.let { reason ->
+            com.agent.mhamed.tools.ShellPolicy.denyReason(command.orEmpty(), root, root, runConfig?.skills?.folders().orEmpty())?.let { reason ->
                 if (com.agent.mhamed.tools.ShellPolicy.isShellTool(call.name)) {
                     return ToolResult(false, reason)
                 }
@@ -1354,12 +1735,31 @@ class AgentEngine(
         val grantKey = route.binding?.let { "workspace:${it.id}:$baseGrantKey" } ?: baseGrantKey
         val isSdkInstall = call.name == com.agent.mhamed.tools.AndroidSdkInstallTool.NAME
         val isPkgInstall = call.name == "pkg_install" || isSdkInstall
+        // Claude Code's PermissionRequest hook can answer an approval prompt; Notification hooks hear that one is shown.
+        suspend fun askUser(request: ApprovalRequest): Boolean {
+            if (hooked) {
+                val event = kotlinx.serialization.json.buildJsonObject {
+                    put("tool", call.name); put("call_id", call.id); put("arguments", runConfig!!.redact(call.argumentsJson))
+                }
+                val decision = runConfig!!.fire(com.agent.mhamed.config.HookEvents.PERMISSION, event)
+                decision.messages.forEach { emitEvent(AgentEvent.Notice(it)) }
+                if (decision.denied != null) return false
+                if (decision.allow) return true
+                runConfig.fire(com.agent.mhamed.config.HookEvents.NOTIFICATION, kotlinx.serialization.json.buildJsonObject {
+                    put("message", "VEXORA needs your permission to use ${com.agent.mhamed.config.claudeTools[call.name] ?: call.name}"); put("notification_type", "permission_prompt")
+                }).messages.forEach { emitEvent(AgentEvent.Notice(it)) }
+            }
+            emitEvent(AgentEvent.ApprovalNeeded(request))
+            return request.response.await()
+        }
         val approved = when {
+            hookAsk != null && !isPkgInstall && tool !is com.agent.mhamed.tools.AppSettingsChangeTool &&
+                tool !is com.agent.mhamed.tools.AppPluginsTool -> askUser(ApprovalRequest(call,
+                "Plugin hook asks for approval (${hookAsk.take(300)}) · ${tool.description}", computeDiffPreview(call, workspace) ?: command?.take(400), "hook:${call.id}"))
             configPermission == "ask" -> {
                 val request = ApprovalRequest(call, "Project configuration requires confirmation · ${tool.description}",
                     computeDiffPreview(call, workspace) ?: command?.take(400), "config:${runConfig?.config?.fingerprint}:$grantKey")
-                emitEvent(AgentEvent.ApprovalNeeded(request))
-                request.response.await()
+                askUser(request)
             }
             tool is com.agent.mhamed.tools.AppSettingsChangeTool -> {
                 // The tool decides: sensitive settings ask in every mode, the rest follow the user's choice.
@@ -1369,6 +1769,38 @@ class AgentEngine(
                     emitEvent(AgentEvent.ApprovalNeeded(request))
                     request.response.await()
                 }
+            }
+            tool is com.agent.mhamed.tools.AppPluginsTool -> {
+                // Installing, switching on, auto-updating and uninstalling can start or remove code, so they ask in every mode.
+                val preview = tool.approvalPreview(parsedArgs, mode)
+                if (preview == null) true else {
+                    val request = ApprovalRequest(call, "Manage plugins", preview, "app_plugins:${call.id}")
+                    emitEvent(AgentEvent.ApprovalNeeded(request))
+                    request.response.await()
+                }
+            }
+            call.name in com.agent.mhamed.tools.ReminderTools.confirmed -> {
+                // Confirmed every time, so nothing read in the chat can plant a reminder, alarm or timer on its own.
+                val preview = when (tool) {
+                    is com.agent.mhamed.tools.ReminderSetTool -> tool.approvalPreview(parsedArgs)
+                    is com.agent.mhamed.tools.AlarmSetTool -> tool.approvalPreview(parsedArgs)
+                    is com.agent.mhamed.tools.TimerSetTool -> tool.approvalPreview(parsedArgs)
+                    else -> call.argumentsJson.take(400)
+                }
+                val label = when (call.name) {
+                    com.agent.mhamed.tools.ReminderTools.ALARM -> "Set an alarm"
+                    com.agent.mhamed.tools.ReminderTools.TIMER -> "Start a timer"
+                    else -> "Set a reminder"
+                }
+                val request = ApprovalRequest(call, label, preview, "reminder:${call.id}")
+                emitEvent(AgentEvent.ApprovalNeeded(request))
+                request.response.await()
+            }
+            tool is com.agent.mhamed.tools.AutomationCreateTool -> {
+                // A schedule later runs unattended, so it is confirmed in every mode and never remembered.
+                val request = ApprovalRequest(call, "Schedule a message in this chat", tool.approvalPreview(parsedArgs), "automation:${call.id}")
+                emitEvent(AgentEvent.ApprovalNeeded(request))
+                request.response.await()
             }
             isPkgInstall -> {
                 // Mandatory confirmation: even in FULL_ACCESS or FULL_AUTO mode,
@@ -1383,6 +1815,7 @@ class AgentEngine(
                 request.response.await()
             }
             mode == PermissionMode.FULL_ACCESS -> true
+            hookAllow -> true
             (if (route.binding != null) grantKey in sessionAllowedTools else com.agent.mhamed.tools.ShellPolicy.isGranted(call.name, command, sessionAllowedTools)) -> true
             mode == PermissionMode.FULL_AUTO -> true
             // Saving a short memory touches only the app's memory table, never
@@ -1393,8 +1826,7 @@ class AgentEngine(
                 val preview = computeDiffPreview(call, workspace)
                     ?: command?.take(400)
                 val request = ApprovalRequest(call, route.label?.let { "$it · ${tool.description}" } ?: tool.description, preview, grantKey)
-                emitEvent(AgentEvent.ApprovalNeeded(request))
-                request.response.await()
+                askUser(request)
             }
         }
         if (!approved) {
@@ -1430,15 +1862,26 @@ class AgentEngine(
         kotlin.coroutines.coroutineContext[TaskBudget]?.check()
         val startedAt = System.currentTimeMillis()
         val linuxWasReady = linuxEnv.isReady
+        // Asked at most once per chat, when the user turned on "Ask before controlling the phone".
+        val phoneGate = com.agent.mhamed.data.env.PhoneControlGate(sessionId, turnId) { backend, privileged, risk ->
+            val request = ApprovalRequest(call, PHONE_CONTROL_TITLE,
+                com.agent.mhamed.data.env.PhoneControlPreview.describe(backend, privileged, risk),
+                if (risk == com.agent.mhamed.data.env.PhoneCommandRisk.DESTRUCTIVE) "$PHONE_CONTROL_KEY$PHONE_CONTROL_ONCE$sessionId"
+                else "$PHONE_CONTROL_KEY$sessionId")
+            emitEvent(AgentEvent.ApprovalNeeded(request))
+            request.response.await()
+        }
         var executed = try {
             if (call.name in setOf("git_push", "git_pull", "github_create_pull_request", "http_request", "shell", "shell_background") &&
                 workspace !is com.agent.mhamed.workspace.SshFs) prepareGitHub()
             val execute = suspend {
                 var outcome: ToolResult? = null
                 try {
-                    val completed = deviceAccess?.traceTool(route.binding?.id ?: (route.workspace as? ChatWorkspaceFs)?.primaryId, sessionId, args["access"]?.jsonPrimitive?.content == "root", args["access"]?.jsonPrimitive?.content == "shizuku") {
-                        tool.execute(args, toolContext)
-                    } ?: tool.execute(args, toolContext)
+                    val completed = kotlinx.coroutines.withContext(phoneGate) {
+                        deviceAccess?.traceTool(route.binding?.id ?: (route.workspace as? ChatWorkspaceFs)?.primaryId, sessionId, args["access"]?.jsonPrimitive?.content == "root", args["access"]?.jsonPrimitive?.content == "shizuku") {
+                            tool.execute(args, toolContext)
+                        } ?: tool.execute(args, toolContext)
+                    }
                     outcome = completed
                     completed
                 } finally {
@@ -1504,9 +1947,11 @@ class AgentEngine(
                     // Repaired: run the exact same command again for the model.
                     kotlin.coroutines.coroutineContext[TaskBudget]?.check()
                     val retry = try {
-                        deviceAccess?.traceTool(route.binding?.id ?: (route.workspace as? ChatWorkspaceFs)?.primaryId, sessionId, args["access"]?.jsonPrimitive?.content == "root", args["access"]?.jsonPrimitive?.content == "shizuku") {
-                            tool.execute(args, toolContext)
-                        } ?: tool.execute(args, toolContext)
+                        kotlinx.coroutines.withContext(phoneGate) {
+                            deviceAccess?.traceTool(route.binding?.id ?: (route.workspace as? ChatWorkspaceFs)?.primaryId, sessionId, args["access"]?.jsonPrimitive?.content == "root", args["access"]?.jsonPrimitive?.content == "shizuku") {
+                                tool.execute(args, toolContext)
+                            } ?: tool.execute(args, toolContext)
+                        }
                     } catch (ce: CancellationException) {
                         throw ce
                     } catch (e: Exception) {
@@ -1793,7 +2238,8 @@ class AgentEngine(
             }
             val subTools = subagentTools(registry.filter { runConfig?.denies(it) != true && (runConfig == null || com.agent.mhamed.config.ConfigToolPolicy.permission(runConfig.config, it, permissionMode) != "deny") }, ctx, actionTools)
             val liveSystem = system + (runConfig?.config?.prompt(runConfig.agent) ?: "") + runtimeEnvironment(workspace, sessionId,
-                if (actionTools) AgentMode.ACT else AgentMode.PLAN, permissionMode, subTools)
+                if (actionTools) AgentMode.ACT else AgentMode.PLAN, permissionMode, subTools) +
+                modelIdentity(config, requestOptions.modelCatalogs)
             val managedFallback = kotlin.coroutines.coroutineContext[com.agent.mhamed.llm.FallbackRun]?.policy()?.enabled == true
 
             // Same transient-failure retry policy as the main loop. Unlike the
@@ -1853,8 +2299,11 @@ class AgentEngine(
                 },
                 retryReason = { f -> "subagent: ${f.take(160)}" },
                 emitEvent = { emitEvent(it) },
-                stallTimeoutMs = if (managedFallback) 610_000 else 90_000,
+                stallTimeoutMs = if (managedFallback) maxOf(stallSettingMs(), 600_000) + 10_000 else stallSettingMs(),
+                firstOutputTimeoutMs = StreamRetrier.firstOutputWindow(
+                    if (managedFallback) maxOf(stallSettingMs(), 600_000) + 10_000 else stallSettingMs(), requestOptions, config),
                 allowRetries = !managedFallback,
+                retryStalls = !StreamRetrier.selfHosted(config),
             )
 
             if (text.isBlank() && calls.isEmpty()) {
@@ -1946,8 +2395,14 @@ class AgentEngine(
         working: List<ChatMessage>, maxContextTokens: Int, sessionId: String,
         chat: Boolean,
         compactThreshold: Int,
+        overflow: ContextOverflow.Recovery,
         emit: suspend (AgentEvent) -> Unit,
     ): List<ChatMessage>? {
+        if (overflow.forceCompaction) {
+            // Keeps the window a server named, so the next run budgets against it from the start.
+            overflow.learned?.let { runCatching { learnContextLimit(overflow.key, it) } }
+            emit(AgentEvent.Notice(overflow.notice()))
+        }
         var keepCount = minOf(8, working.size)
         // Leave room below the trigger for a summary and continued work, even with few large turns.
         val retainedBudget = (if (chat) maxContextTokens else compactThreshold) / 2
@@ -1963,6 +2418,7 @@ class AgentEngine(
         emit(AgentEvent.Compacting("Summarizing earlier messages…"))
         return try {
             val summary = HistoryCompactor.summarize(provider, config, apiKey, older, maxContextTokens, sessionId,
+                stallTimeoutMs = stallSettingMs(),
                 progress = { emit(AgentEvent.Compacting(it)) },
                 event = { event, cfg -> when (event) {
                     is StreamEvent.ProviderChanged -> emit(AgentEvent.ProviderChanged(event.config, event.reason, event.persistSelection))
@@ -1981,6 +2437,13 @@ class AgentEngine(
                 else "Compaction failed: ${e.message}. History was kept. Retry /compact or choose another model."))
             null
         }
+    }
+
+    /** Marks [key] as a buffered model when a round went silent after thinking, as a held-back write does. */
+    private suspend fun markSilentWrite(key: String, text: CharSequence, thinking: CharSequence, failure: String?, tools: List<com.agent.mhamed.llm.ToolSchema>) {
+        if (text.isNotBlank() || thinking.isBlank() || tools.none { it.name == "write_file" }) return
+        if (failure != null && !StreamRetrier.isStallFailure(failure)) return
+        runCatching { markBufferedToolCalls(key) }
     }
 
     /**
@@ -2057,6 +2520,7 @@ class AgentEngine(
             .let { if (conversation.isChat && searchDepth == com.agent.mhamed.data.SearchDepth.OFF) it.without(setOf("web_search")) else it }
             .let { if (memoryOn) it else it.without(memoryToolNames) }
             .let { if (conversation.personalizationEnabled) it else it.without(recallToolNames) }
+            .let { if (conversation.isChat && remindersEnabled()) it else it.without(com.agent.mhamed.tools.ReminderTools.names) }
             .schemas(readOnlyOnly = mode == AgentMode.PLAN, context = ToolContext(workspace, fullAccess, sessionId))
         val environment = runtimeEnvironment(workspace, sessionId, mode,
             if (fullAccess) PermissionMode.FULL_ACCESS else PermissionMode.CONFIRM_RISKY, tools, conversation.isChat)
@@ -2285,6 +2749,12 @@ ${if (appSettings.subagentsEnabled) "- For broad exploration whose raw output wo
         }?.take(16_000)
     }.getOrNull()
 
+    private fun modelIdentity(
+        config: com.agent.mhamed.llm.ProviderConfig,
+        catalogs: Map<String, List<com.agent.mhamed.llm.ModelEntry>>,
+    ): String = HarnessEnvironmentPrompt.modelIdentity(config.model,
+        catalogs[config.id]?.firstOrNull { it.id == config.model }?.displayName, config.name)
+
     /** No commands, permission requests or root-allowance consumption while describing the environment. */
     private suspend fun runtimeEnvironment(
         workspace: WorkspaceFs,
@@ -2373,6 +2843,11 @@ ${if (appSettings.subagentsEnabled) "- For broad exploration whose raw output wo
 
         /** How many times an Always-images chat answer without a picture is sent back for one. */
         const val MAX_IMAGE_NUDGES = 1
+        /** Pre-answer image reminders per turn, so a chat with no usable pictures is not nagged forever. */
+        const val MAX_IMAGE_REMINDERS = 2
+        private val IMAGE_SOURCE_TOOLS = setOf("web_search", "web_fetch", "browser_read")
+        private fun String.hasImageCandidate() = contains(com.agent.mhamed.tools.PageImageText.MARKER) ||
+            contains("display_url") || contains("image_attached")
         private val ANSWER_NUDGE =
             "Your previous reply ended without any visible answer: it was likely cut off " +
                 "mid-generation. Respond now with your actual answer (or the tool calls you intended)."

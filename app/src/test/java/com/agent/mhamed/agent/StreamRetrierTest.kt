@@ -1,8 +1,13 @@
 package com.agent.mhamed.agent
 
 import com.agent.mhamed.llm.ApiException
+import com.agent.mhamed.llm.ProviderConfig
+import com.agent.mhamed.llm.ProviderType
+import com.agent.mhamed.llm.RequestOptions
 import com.agent.mhamed.llm.StreamEvent
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -271,7 +276,7 @@ class StreamRetrierTest {
         )
         assertEquals(null, result)
         assertEquals(1, retries.size)
-        assertEquals("Generation stalled - no data received for 0s (timed out)", retries[0].reason)
+        assertEquals("Stream stalled - no data received for 0s (timed out)", retries[0].reason)
     }
 
     @Test
@@ -291,5 +296,137 @@ class StreamRetrierTest {
         )
         assertEquals("Invalid request", result)
         assertTrue(seen.isEmpty())
+    }
+
+    @Test
+    fun `keep-alive activity holds a quiet stream open past the window`() = runBlocking {
+        val seen = mutableListOf<StreamEvent>()
+        val result = StreamRetrier.run(
+            streamFor = {
+                flow {
+                    val activity = currentCoroutineContext()[StreamActivity]
+                    repeat(8) { delay(50); activity?.touch() }
+                    emit(StreamEvent.TextDelta("late"))
+                }
+            },
+            onAttemptStart = {}, hasOutput = { seen.isNotEmpty() }, handleEvent = { seen += it },
+            retryReason = { it }, emitEvent = { error("keep-alives must not stall: ${it.reason}") },
+            sleep = {}, stallTimeoutMs = 150,
+        )
+        assertEquals(null, result)
+        assertEquals(listOf<StreamEvent>(StreamEvent.TextDelta("late")), seen)
+    }
+
+    @Test
+    fun `nested guards pass keep-alive activity to the outer guard`() = runBlocking {
+        val seen = mutableListOf<StreamEvent>()
+        val inner = flow {
+            val activity = currentCoroutineContext()[StreamActivity]
+            repeat(8) { delay(50); activity?.touch() }
+            emit(StreamEvent.TextDelta("late"))
+        }.stallGuard(150)
+        val result = StreamRetrier.run(
+            streamFor = { inner }, onAttemptStart = {}, hasOutput = { seen.isNotEmpty() }, handleEvent = { seen += it },
+            retryReason = { it }, emitEvent = { error("outer guard must see inner activity: ${it.reason}") },
+            sleep = {}, stallTimeoutMs = 150,
+        )
+        assertEquals(null, result)
+        assertEquals(1, seen.size)
+    }
+
+    @Test
+    fun `the first output window allows a longer silence only before the first event`() = runBlocking {
+        val quietStart = StreamRetrier.run(
+            streamFor = { flow { delay(300); emit(StreamEvent.TextDelta("thought")) } },
+            onAttemptStart = {}, hasOutput = { false }, handleEvent = {},
+            retryReason = { it }, emitEvent = { error("first output window ignored") },
+            sleep = {}, stallTimeoutMs = 150, firstOutputTimeoutMs = 1_000,
+        )
+        assertEquals(null, quietStart)
+
+        val quietMiddle = StreamRetrier.run(
+            streamFor = { flow { emit(StreamEvent.TextDelta("a")); delay(400); emit(StreamEvent.TextDelta("b")) } },
+            onAttemptStart = {}, hasOutput = { true }, handleEvent = {},
+            retryReason = { it }, emitEvent = { error("output already shown, no retry") },
+            sleep = {}, stallTimeoutMs = 150, firstOutputTimeoutMs = 1_000,
+        )
+        assertEquals("Stream stalled - no data received for 0s (timed out)", quietMiddle)
+    }
+
+    @Test
+    fun `thinking gets a longer first output window`() {
+        assertEquals(90_000L, StreamRetrier.firstOutputWindow(90_000, ThinkingLevel.OFF))
+        assertEquals(StreamRetrier.REASONING_FIRST_OUTPUT_MS, StreamRetrier.firstOutputWindow(90_000, ThinkingLevel.HIGH))
+        assertEquals(610_000L, StreamRetrier.firstOutputWindow(610_000, ThinkingLevel.HIGH))
+    }
+
+    @Test
+    fun `a request's own notices do not consume the first output window`() = runBlocking {
+        val seen = mutableListOf<StreamEvent>()
+        val result = StreamRetrier.run(
+            streamFor = {
+                flow {
+                    // Every provider emits this before the request hits the wire.
+                    emit(StreamEvent.ThinkingConfigured("high"))
+                    delay(300)
+                    emit(StreamEvent.TextDelta("thought"))
+                }
+            },
+            onAttemptStart = {}, hasOutput = { seen.isNotEmpty() }, handleEvent = { seen += it },
+            retryReason = { it }, emitEvent = { error("a local notice must not shorten the reasoning window") },
+            sleep = {}, stallTimeoutMs = 150, firstOutputTimeoutMs = 1_000,
+        )
+        assertEquals(null, result)
+        assertEquals(listOf<StreamEvent>(StreamEvent.ThinkingConfigured("high"), StreamEvent.TextDelta("thought")), seen)
+    }
+
+    @Test
+    fun `the first output window follows the thinking level the request actually sends`() {
+        val alwaysOn = ProviderConfig("anthropic", "Anthropic", ProviderType.ANTHROPIC,
+            "https://api.anthropic.com", "claude-opus-5-5")
+        // Off is a selection, not the wire value: always-on models still reason.
+        assertEquals(StreamRetrier.REASONING_FIRST_OUTPUT_MS,
+            StreamRetrier.firstOutputWindow(90_000, RequestOptions(thinking = ThinkingLevel.OFF), alwaysOn))
+        val plain = alwaysOn.copy(model = "claude-3-5-haiku-20241022")
+        assertEquals(90_000L,
+            StreamRetrier.firstOutputWindow(90_000, RequestOptions(thinking = ThinkingLevel.OFF), plain))
+        // A model with no reasoning dial sends nothing, but the user still asked
+        // for thinking, so an unknown model keeps the request's own intent.
+        val unknown = alwaysOn.copy(id = "openrouter", type = ProviderType.OPENAI_COMPAT,
+            baseUrl = "https://openrouter.ai/api/v1", model = "acme-unknown-1")
+        assertEquals(StreamRetrier.REASONING_FIRST_OUTPUT_MS,
+            StreamRetrier.firstOutputWindow(90_000, RequestOptions(thinking = ThinkingLevel.HIGH), unknown))
+    }
+
+    @Test
+    fun `the default window keeps the stalled message`() {
+        assertEquals(StreamRetrier.STALLED_STREAM_MESSAGE, StreamStalledException(90_000).message)
+        assertTrue(RetryPolicy.isRetryable(null, StreamStalledException(90_000).message!!, null))
+    }
+    @Test
+    fun `a self-hosted stall is final instead of resending the prompt`() = runBlocking {
+        var builds = 0
+        val result = StreamRetrier.run(
+            streamFor = { builds++; flow<StreamEvent> { awaitCancellation() } },
+            onAttemptStart = {}, hasOutput = { false }, handleEvent = {}, retryReason = { it },
+            emitEvent = { error("A resend would restart the server's prompt processing") },
+            sleep = {}, stallTimeoutMs = 150, retryStalls = false,
+        )
+        assertEquals("Stream stalled - no data received for 0s (timed out)", result)
+        assertEquals(1, builds)
+    }
+
+    @Test
+    fun `self-hosted servers get time to read a long prompt before the first token`() {
+        val llama = com.agent.mhamed.llm.ProviderConfig("llama", "llama.cpp",
+            com.agent.mhamed.llm.ProviderType.OPENAI_COMPAT, "http://127.0.0.1:8080/v1", "qwen")
+        val lan = llama.copy(baseUrl = "http://192.168.1.20:8080/v1")
+        val cloud = llama.copy(baseUrl = "https://openrouter.ai/api/v1")
+        assertEquals(600_000L, StreamRetrier.firstOutputWindow(90_000, ThinkingLevel.OFF, llama))
+        assertEquals(600_000L, StreamRetrier.firstOutputWindow(90_000, ThinkingLevel.HIGH, lan))
+        assertEquals(90_000L, StreamRetrier.firstOutputWindow(90_000, ThinkingLevel.OFF, cloud))
+        assertEquals(300_000L, StreamRetrier.firstOutputWindow(90_000, ThinkingLevel.HIGH, cloud))
+        assertTrue(StreamRetrier.selfHosted(llama))
+        assertEquals(false, StreamRetrier.selfHosted(cloud))
     }
 }

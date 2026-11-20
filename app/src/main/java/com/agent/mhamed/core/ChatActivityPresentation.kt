@@ -102,8 +102,11 @@ internal object ChatActivityPresentation {
         for (call in calls(messages)) {
             val result = results[call.id] ?: continue
             when (call.name) {
-                "web_search" -> WebSearchText.parse(result.text.lineSequence().take(400).joinToString("\n"))
-                    .forEach { add(it.title, it.url, false) }
+                "web_search" -> {
+                    WebSearchText.parse(result.text.lineSequence().take(400).joinToString("\n"))
+                        .forEach { add(it.title, it.url, false) }
+                    com.agent.mhamed.tools.SearchPassages.readSources(result.text).forEach { add(it.title, it.url, true) }
+                }
                 "web_fetch", "browser_read" -> if (result.generation.research?.pageRead ?: ReadableWebPage.legacyRead(result.text)) {
                     val url = result.generation.research?.pageUrl ?: runCatching { Json.parseToJsonElement(call.argumentsJson).jsonObject["url"]?.jsonPrimitive?.content }.getOrNull()
                     if (url != null) add("", url, true)
@@ -118,7 +121,7 @@ internal object ChatActivityPresentation {
         val results = messages.filter { it.role == Role.TOOL && !it.isError }.associateBy { it.toolCallId }
         val out = linkedMapOf<String, String>()
         for (call in calls(messages)) {
-            if (call.name != "web_fetch" && call.name != "browser_read") continue
+            if (call.name != "web_fetch" && call.name != "browser_read" && call.name != "web_search") continue
             val text = results[call.id]?.text ?: continue
             for (image in PageImageText.parse(text)) out.putIfAbsent(image.imageUrl, image.pageUrl)
         }

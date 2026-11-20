@@ -196,7 +196,16 @@ fun toolPresentation(call: ToolCallData, result: ChatMessage? = null): ToolPrese
         "memory_read", "memory_search", "recall" -> ToolPresentation("Read memory", "Reading memory…", kind = ToolActivityKind.MEMORY)
         "app_settings_find" -> ToolPresentation("Looked up settings", "Looking up settings…", arg("query"), ToolActivityKind.READ)
         "app_settings_change" -> ToolPresentation("Changed settings", "Changing settings…", kind = ToolActivityKind.OTHER)
+        "app_plugins" -> ToolPresentation("Managed plugins", "Managing plugins…", arg("action"), ToolActivityKind.OTHER)
         "todo_write" -> ToolPresentation("Updated task list", "Updating task list…", kind = ToolActivityKind.OTHER)
+        "automation_create" -> ToolPresentation("Scheduled a message", "Scheduling a message…", arg("title"), ToolActivityKind.OTHER)
+        "automation_list" -> ToolPresentation("Checked schedules", "Checking schedules…", kind = ToolActivityKind.READ)
+        "reminder_set" -> ToolPresentation("Set a reminder", "Setting a reminder…", arg("text"), ToolActivityKind.OTHER)
+        "reminder_list" -> ToolPresentation("Checked reminders", "Checking reminders…", kind = ToolActivityKind.READ)
+        "reminder_cancel" -> ToolPresentation("Cancelled a reminder", "Cancelling a reminder…", kind = ToolActivityKind.OTHER)
+        "alarm_set" -> ToolPresentation("Set an alarm", "Setting an alarm…", arg("time"), ToolActivityKind.OTHER)
+        "timer_set" -> ToolPresentation("Started a timer", "Starting a timer…", arg("label"), ToolActivityKind.OTHER)
+        "automation_manage" -> ToolPresentation("Updated a schedule", "Updating a schedule…", arg("action"), ToolActivityKind.OTHER)
         "skill_view" -> {
             val name = arg("name") ?: "skill"
             ToolPresentation("Loaded $name", "Loading skill $name…", kind = ToolActivityKind.READ)

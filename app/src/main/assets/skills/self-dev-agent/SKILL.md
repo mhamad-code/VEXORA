@@ -24,7 +24,8 @@ You are operating on VEXORA's own source repository (mhamad-code/VEXORA, default
 2. **Inspect**: read the relevant files before editing.
 3. **Branch**: create `self-dev/<topic>` from main (git branch).
 4. **Edit**: use file tools (read_file/write_file/edit_file) on the workspace files. Bump versionCode in app/build.gradle.kts.
-5. **Commit & push**: git add + git commit + git push to the feature branch (git_commit, git_push). Show the diff to the user first and get approval before pushing.
+5. **Review before commit**: run the `code_review` tool (and `/review`) on the pending diff. Fix every Blocker; obtain explicit user approval before overriding. In `SECRETS_ONLY` mode the deterministic scan still runs.
+6. **Commit & push**: git add + git commit + git push to the feature branch (git_commit, git_push). Show the diff to the user first and get approval before pushing.
 6. **Dispatch build**: call `github_workflow_dispatch` (owner=mhamad-code, repo=VEXORA, workflow=build.yml, ref=<branch>).
 7. **Monitor**: poll `github_workflow_runs` until conclusion is success or failure. Report status and the run URL.
 8. **On success**: call `github_artifact_download` with the run_id to get the local APK path.

@@ -3,6 +3,7 @@ package com.agent.mhamed.ui.chat
 import com.agent.mhamed.ui.theme.*
 import com.kyant.backdrop.backdrops.rememberCombinedBackdrop
 import androidx.compose.ui.layout.layout
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.heightIn
@@ -49,6 +50,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -62,6 +64,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyItemScope
@@ -102,6 +107,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import com.agent.mhamed.ui.common.formatTokenCount
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -137,7 +143,6 @@ import kotlinx.serialization.json.jsonPrimitive
 import com.agent.mhamed.ui.chat.components.AgentStatusBar
 import com.agent.mhamed.ui.chat.components.ApprovalCard
 import com.agent.mhamed.ui.chat.components.AssistantText
-import com.agent.mhamed.ui.chat.components.AttachmentChips
 import com.agent.mhamed.ui.chat.components.EmptyState
 import com.agent.mhamed.ui.chat.components.EnvSheet
 import com.agent.mhamed.ui.chat.components.EnvironmentInstallCard
@@ -151,7 +156,6 @@ import com.agent.mhamed.skills.slashSkillInstruction
 import com.agent.mhamed.ui.chat.components.CompactionBanner
 import com.agent.mhamed.ui.chat.components.CompactionResultCard
 import com.agent.mhamed.ui.chat.components.CompactionNoticeLine
-import com.agent.mhamed.ui.chat.components.FileAttachmentChips
 import com.agent.mhamed.ui.chat.components.MentionSuggestions
 import com.agent.mhamed.ui.chat.components.SkillsPickerSheet
 import com.agent.mhamed.ui.chat.components.SkillUsedBadge
@@ -177,10 +181,13 @@ import com.agent.mhamed.ui.theme.motionBlur
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import com.agent.mhamed.ui.common.Button
 import com.agent.mhamed.ui.common.IconButton
+import androidx.compose.material.icons.outlined.Edit
 import com.agent.mhamed.ui.common.TextButton
 
 /**
@@ -204,7 +211,11 @@ fun ChatScreen(
     onNavigateToMessage: (String, String?) -> Unit = { sid, _ -> onNavigateToSession(sid) },
 ) {
     ChatAppearance {
-        val appearance by viewModel.container.settings.settings.collectAsStateWithLifecycle(initialValue = AppSettings())
+        // Start from the canvas the previous screen was showing; the bare default would paint
+        // one frame without it while the settings flow catches up.
+        val appearance by viewModel.container.settings.settings.collectAsStateWithLifecycle(initialValue = remember {
+            AppSettings(harnessCanvas = com.agent.mhamed.ui.theme.HarnessCanvasMemory.settings ?: com.agent.mhamed.data.HarnessCanvasSettings())
+        })
         val conversation by viewModel.state.collectAsStateWithLifecycle()
         com.agent.mhamed.ui.theme.HarnessCanvasBackdrop(appearance.harnessCanvas, conversation.conversation.isChat, Modifier.fillMaxSize()) {
         ChatScreenContent(viewModel, onOpenDrawer, onOpenFile, onNewChat, onOpenTerminal,
@@ -237,12 +248,50 @@ private fun ChatScreenContent(
             .map { list -> list.associate { it.id to (it.status to it.output) } }.distinctUntilChanged() }
             ?: kotlinx.coroutines.flow.flowOf(emptyMap())
     }.collectAsStateWithLifecycle(initialValue = emptyMap())
+    // A turn's subagents settle into one card once every one of them has stopped; the floating popup covers them until then.
+    val finishedSubagentsByTurn by remember(state.sessionId) {
+        state.sessionId?.let { sid -> viewModel.container.runManager.subagents.forSession(sid)
+            .map { list -> list.groupBy { it.turnId }.filterValues { runs -> runs.none { it.status.active } } }.distinctUntilChanged() }
+            ?: kotlinx.coroutines.flow.flowOf(emptyMap())
+    }.collectAsStateWithLifecycle(initialValue = emptyMap())
     val globalSettings by viewModel.container.settings.settings.collectAsStateWithLifecycle(initialValue = AppSettings())
     val savedAnswerIds by remember(state.sessionId) {
         state.sessionId?.let { viewModel.container.sessions.savedAnswerIds(it) } ?: kotlinx.coroutines.flow.flowOf(emptySet())
     }.collectAsStateWithLifecycle(initialValue = emptySet())
-    val showChatStartControls = state.conversation.isChat && state.conversationReady && !state.isLoadingMessages &&
+    val conversationStart = state.conversationReady && !state.isLoadingMessages &&
         state.messages.isEmpty() && !state.busy && state.streamingText == null
+    val showChatStartControls = state.conversation.isChat && conversationStart
+    var addingStartWorkspace by remember { mutableStateOf(false) }
+    // The system folder picker for the add sheet's "System picker" choice.
+    val startFolderPicker = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) viewModel.addStartFolder(uri)
+    }
+    if (addingStartWorkspace) {
+        com.agent.mhamed.ui.common.AddWorkspaceDialog(viewModel.container,
+            onDismiss = { addingStartWorkspace = false },
+            onPickSaf = {
+                addingStartWorkspace = false
+                startFolderPicker.launch(null)
+            },
+            onSelected = viewModel::chooseStartWorkspace,
+            activateWorkspace = state.sessionId == null)
+    }
+    // Code gets a workspace picker in the same place, with a way to add another workspace.
+    val startWorkspaces by remember(state.conversation.isChat) {
+        if (state.conversation.isChat) kotlinx.coroutines.flow.flowOf(emptyList()) else viewModel.workspaces
+    }.collectAsStateWithLifecycle(initialValue = emptyList())
+    val startProject by remember(state.sessionId, state.conversation.isChat) {
+        if (state.conversation.isChat) kotlinx.coroutines.flow.flowOf(null)
+        else viewModel.container.workspace.workProjectForChat(state.sessionId)
+    }.collectAsStateWithLifecycle(initialValue = null)
+    val startSelection by remember(state.sessionId, state.conversation.isChat) {
+        if (state.conversation.isChat) kotlinx.coroutines.flow.flowOf(null)
+        else viewModel.container.workspace.selectionForChat(state.sessionId)
+    }.collectAsStateWithLifecycle(initialValue = null)
+    // Project chats and multi-folder chats keep their own access, edited from the workspace sheet.
+    val showCodeWorkspacePicker = !state.conversation.isChat && conversationStart && startWorkspaces.isNotEmpty() &&
+        startProject == null && (startSelection?.grants?.size ?: 1) <= 1
     val effectiveImageFrequency = com.agent.mhamed.core.ChatExperience
         .effectiveImageFrequency(state.conversation.imageFrequency, globalSettings.chatImageFrequency)
     var showCodeHandoff by remember(state.sessionId) { mutableStateOf(false) }
@@ -277,6 +326,7 @@ private fun ChatScreenContent(
     val snackbar = remember { SnackbarHostState() }
     var showContext by remember { mutableStateOf(false) }
     var showResumePrompt by rememberSaveable { mutableStateOf(false) }
+    var showStallTimeout by rememberSaveable { mutableStateOf(false) }
 
     githubProject?.let { (id, name) ->
         GitHubWorkspaceDialog(viewModel.container, id, name,
@@ -313,6 +363,10 @@ private fun ChatScreenContent(
     fun watchBrowser(target: String?) {
         webPreviewUrl = target ?: viewModel.container.browser.getActiveUrl()?.takeUnless { it == "about:blank" }
         showWebPreview = true
+    }
+    // browser_screenshot asks for the preview when it is hidden, so a screenshot never needs a tap.
+    LaunchedEffect(viewModel.container.browser) {
+        viewModel.container.browser.previewRequests.collect { if (!showWebPreview) watchBrowser(null) }
     }
     val browserTargets = remember(state.messages) { BrowserToolActivity.targets(state.messages) }
     val latestBrowserActivity = remember(state.messages, state.runningCalls, state.pendingApproval, browserTargets) {
@@ -594,6 +648,25 @@ private fun ChatScreenContent(
     var findPosition by remember(state.sessionId) { mutableStateOf(0) }
     var findTargetId by remember(state.sessionId) { mutableStateOf<String?>(null) }
     val activeFindId = if (findOpen) findTargetId else searchMessageId
+    // An answer the model pulls back to do more research stays on screen,
+    // dimmed, until the new answer starts streaming over it. Without this the
+    // reply vanished mid-read and the turn looked cut off.
+    var withdrawnDraft by remember(state.sessionId, state.currentTurnId) { mutableStateOf<String?>(null) }
+    val lastLiveText = remember(state.sessionId, state.currentTurnId) { arrayOf("") }
+    val liveChatText = if (state.conversation.isChat && state.busy) state.streamingText.orEmpty() else ""
+    val turnHasFinalAnswer = state.conversation.isChat && state.currentTurnId != null && state.messages.any {
+        it.turnId == state.currentTurnId && it.role == Role.ASSISTANT && it.toolCalls.isEmpty() && it.text.isNotBlank()
+    }
+    SideEffect {
+        if (liveChatText.isNotBlank()) {
+            lastLiveText[0] = liveChatText
+            if (withdrawnDraft != null) withdrawnDraft = null
+        } else if (lastLiveText[0].isNotBlank()) {
+            if (state.busy && !turnHasFinalAnswer && lastLiveText[0].length >= KEEP_DRAFT_MIN_CHARS) withdrawnDraft = lastLiveText[0]
+            lastLiveText[0] = ""
+        }
+        if (withdrawnDraft != null && (!state.busy || turnHasFinalAnswer)) withdrawnDraft = null
+    }
     // A real drag pauses following until the reader returns to the bottom.
     var pinnedToBottom by remember(state.sessionId) { mutableStateOf(false) }
     var returnToQuestion by remember(state.sessionId) { mutableStateOf(true) }
@@ -613,15 +686,18 @@ private fun ChatScreenContent(
     // stays anchored during streaming and after a short answer finishes.
     var chatViewportHeight by remember(state.sessionId) { mutableStateOf(0) }
     val chatItemHeights = remember(state.sessionId, latestUserTurnId) { androidx.compose.runtime.mutableStateMapOf<Any, Int>() }
-    var chatTrailingSpace by remember(state.sessionId, latestUserTurnId) { mutableStateOf(0) }
-    val liveTailPx = if (state.conversation.isChat) chatTrailingSpace else 0
+    // Read only inside effects, layout and snapshot flows. It changes with every
+    // new line of a streaming answer, and reading it here would recompose the
+    // whole screen and restart the scroll effects on each one.
+    val chatTrailingSpace = remember(state.sessionId, latestUserTurnId) { androidx.compose.runtime.mutableIntStateOf(0) }
+    val isChatList = state.conversation.isChat
+    val liveTail = remember(chatTrailingSpace, isChatList) { { if (isChatList) chatTrailingSpace.intValue else 0 } }
     val chatGapPx = with(density) { 12.dp.roundToPx() }
     val chatPaddingPx = with(density) { 48.dp.roundToPx() }
     fun remainingTurnSpace(keys: List<Any>): Int =
         (chatViewportHeight - chatPaddingPx - keys.sumOf { chatItemHeights[it] ?: 0 } - chatGapPx * keys.size).coerceAtLeast(0)
     val previewOffset = with(density) { 64.dp.roundToPx() }
     val hideJumpAt = with(density) { 96.dp.toPx() }
-    val currentTail = androidx.compose.runtime.rememberUpdatedState(liveTailPx)
     val userScrollObserver = remember(state.sessionId) {
         UserScrollObserver { deltaY ->
             if (detailScroll.reading) return@UserScrollObserver
@@ -634,7 +710,7 @@ private fun ChatScreenContent(
         }.apply {
             onUserScrollApplied = {
                 if (!detailScroll.reading && lastDragTowardBottom &&
-                    isAtBottom(listState.layoutInfo, listState.canScrollForward, tolerance = 1, tail = currentTail.value)) {
+                    isAtBottom(listState.layoutInfo, listState.canScrollForward, tolerance = 1, tail = liveTail())) {
                     userReachedBottom = true
                 }
             }
@@ -647,7 +723,7 @@ private fun ChatScreenContent(
     val searchItemIndex = remember(activeFindId) { mutableStateOf<Int?>(null) }
     val searchTurnId = state.messages.firstOrNull { it.id == activeFindId }?.turnId
     var diffFile by remember { mutableStateOf<Pair<String, String>?>(null) }
-    var imagePreview by remember { mutableStateOf<com.agent.mhamed.core.ImageRef?>(null) }
+    var imagePreview by remember { mutableStateOf<Pair<List<com.agent.mhamed.core.ImageRef>, Int>?>(null) }
     diffFile?.let { (turnId, path) ->
         ChatFileDiffSheet(
             path = path,
@@ -656,9 +732,10 @@ private fun ChatScreenContent(
             onDismiss = { diffFile = null },
         )
     }
-    imagePreview?.let { ref ->
+    imagePreview?.let { (refs, start) ->
         com.agent.mhamed.ui.chat.components.ImagePreviewDialog(
-            ref = ref,
+            refs = refs,
+            startIndex = start,
             dir = viewModel.container.images.imagesDir,
             onDismiss = { imagePreview = null },
         )
@@ -740,6 +817,14 @@ private fun ChatScreenContent(
         TaskSettingsSheet(state = state, onDismiss = { showContext = false },
             onSave = viewModel::saveTaskControls, onRecoveryChange = viewModel::saveRecoverySettings,
             onResumePrompt = viewModel::saveResumePrompt)
+    }
+    if (showStallTimeout) {
+        com.agent.mhamed.ui.settings.StallTimeoutSheet(
+            currentSeconds = state.streamStallTimeoutSeconds,
+            onPick = { showStallTimeout = false; viewModel.waitLongerAndResume(it) },
+            onDismiss = { showStallTimeout = false },
+            confirmLabel = androidx.compose.ui.res.stringResource(R.string.stall_timeout_save_resume),
+        )
     }
     if (showResumePrompt) {
         val chatPrompt = state.taskControl.resumePrompt
@@ -873,13 +958,14 @@ private fun ChatScreenContent(
     liveSession?.let { session ->
         LiveModeOverlay(session, onClose = viewModel::closeLive)
     }
-    val sideQuestion by viewModel.sideQuestion.collectAsStateWithLifecycle()
-    sideQuestion?.let { side ->
+    val sideThread by viewModel.sideThread.collectAsStateWithLifecycle()
+    sideThread?.takeIf { it.visible && it.sessionId == state.sessionId }?.let { thread ->
         com.agent.mhamed.ui.chat.components.SideQuestionSheet(
-            state = side,
+            thread = thread,
             onAsk = { viewModel.askAside(it) },
             onStop = viewModel::stopAside,
-            onDismiss = viewModel::dismissAside,
+            onHide = viewModel::hideAside,
+            onClear = viewModel::clearAside,
             onOpenUrl = { url -> webPreviewUrl = url; showWebPreview = true },
         )
     }
@@ -943,21 +1029,30 @@ private fun ChatScreenContent(
     // Prefilled editor for a user message.
     editingMessage?.let { msg ->
         var text by remember(msg) { mutableStateOf(UserMessageContent.visibleText(msg.text)) }
+        // The message's photos ride along with the edit; removing one here drops it from the resend.
+        var keptImages by remember(msg) { mutableStateOf(msg.images) }
         AlertDialog(
             onDismissRequest = { editingMessage = null },
             title = { Text(uiContext.getString(R.string.ui_edit_message)) },
             text = {
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3,
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (keptImages.isNotEmpty()) com.agent.mhamed.ui.chat.components.EditMessagePhotos(
+                        images = keptImages,
+                        dir = viewModel.container.images.imagesDir,
+                        onRemove = { ref -> keptImages = keptImages - ref },
+                    )
+                    OutlinedTextField(
+                        value = text,
+                        onValueChange = { text = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                    )
+                }
             },
             confirmButton = {
                 Button(onClick = {
                     if (text.isNotBlank()) {
-                        confirmingEdit = msg to UserMessageContent.edit(text, msg.text)
+                        confirmingEdit = msg.copy(images = keptImages) to UserMessageContent.edit(text, msg.text)
                         editingMessage = null
                     }
                 }) { Text(uiContext.getString(R.string.settings_action_continue)) }
@@ -1208,16 +1303,23 @@ private fun ChatScreenContent(
         returnToQuestion = true
         pinnedToBottom = !state.conversation.isChat
         withFrameNanos { }
-        if (pinnedToBottom) listState.scrollToEnd(liveTailPx) { pinnedToBottom && !gestureActive.value }
+        if (pinnedToBottom) listState.scrollToEnd(liveTail()) { pinnedToBottom && !gestureActive.value }
         else if (returnToQuestion && !gestureActive.value) userItemIndexes[turnId]?.let { listState.scrollToItem(it) }
     }
-    // Reapply the question anchor once its measured trailing room is available.
-    LaunchedEffect(liveTailPx, latestUserTurnId) {
-        if (liveTailPx <= 0 || !returnToQuestion) return@LaunchedEffect
+    // Reapply the question anchor once its measured trailing room is available,
+    // and again only if the question actually drifted off the top. Snapping on
+    // every trailing-room change made the list twitch with each streamed line.
+    LaunchedEffect(latestUserTurnId) {
         val turnId = latestUserTurnId ?: return@LaunchedEffect
-        withFrameNanos { }
-        if (returnToQuestion && !gestureActive.value && !detailScroll.reading && latestUserTurnId == turnId) {
-            userItemIndexes[turnId]?.let { listState.scrollToItem(it) }
+        snapshotFlow { liveTail() }.filter { it > 0 }.conflate().collect {
+            if (!returnToQuestion) return@collect
+            withFrameNanos { }
+            val index = userItemIndexes[turnId] ?: return@collect
+            val drifted = listState.firstVisibleItemIndex != index || listState.firstVisibleItemScrollOffset != 0
+            if (drifted && returnToQuestion && !gestureActive.value && !detailScroll.reading &&
+                !listState.isScrollInProgress && latestUserTurnId == turnId) {
+                listState.scrollToItem(index)
+            }
         }
     }
     LaunchedEffect(state.busy, latestUserTurnId) {
@@ -1266,8 +1368,34 @@ private fun ChatScreenContent(
             }
     }
 
+    // Resting at the true bottom means following. A tap on a working-log card or a
+    // trip to another app can pause following without moving the list, and Code's
+    // logs grow inside their cards, so nothing else would ever resume it.
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            !pinnedToBottom && !returnToQuestion && !gestureActive.value && !detailScroll.reading &&
+                !listState.isScrollInProgress && listState.layoutInfo.totalItemsCount > 0 &&
+                isAtBottom(listState.layoutInfo, listState.canScrollForward, tolerance = 1, tail = liveTail())
+        }.distinctUntilChanged().collect { resting -> if (resting) pinnedToBottom = true }
+    }
+    // A drag the system cut off while the app left the screen may never report its end.
+    var pinnedBeforeStop by remember(state.sessionId) { mutableStateOf(false) }
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_STOP) {
+        pinnedBeforeStop = pinnedToBottom
+        gestureActive.value = false
+        mainListDragged = false
+        userReachedBottom = false
+    }
+    androidx.lifecycle.compose.LifecycleEventEffect(androidx.lifecycle.Lifecycle.Event.ON_START) {
+        gestureActive.value = false
+        if (pinnedBeforeStop) {
+            pinnedToBottom = true
+            scope.launch { listState.scrollToEnd(liveTail()) { pinnedToBottom && !gestureActive.value } }
+        }
+    }
+
     // While pinned, keep the newest content in view with small exact deltas.
-    LaunchedEffect(pinnedToBottom, listState, liveTailPx) {
+    LaunchedEffect(pinnedToBottom, listState) {
         if (!pinnedToBottom) return@LaunchedEffect
         var lastFollowAt = 0L
         snapshotFlow {
@@ -1285,19 +1413,19 @@ private fun ChatScreenContent(
             if (total == 0) return@collect
             val last = info.visibleItemsInfo.lastOrNull()
             if (last == null || last.index != total - 1) {
-                listState.scrollToEnd(liveTailPx) { pinnedToBottom && !gestureActive.value && !listState.isScrollInProgress }
+                listState.scrollToEnd(liveTail()) { pinnedToBottom && !gestureActive.value && !listState.isScrollInProgress }
             } else {
-                val delta = last.offset + last.size + info.afterContentPadding - liveTailPx - info.viewportEndOffset
+                val delta = last.offset + last.size + info.afterContentPadding - liveTail() - info.viewportEndOffset
                 if (delta > 0) listState.scrollBy(delta.toFloat())
             }
         }
     }
 
     // The down button always refers to the bottom, regardless of which bubble is visible.
-    LaunchedEffect(listState, liveTailPx) {
+    LaunchedEffect(listState) {
         snapshotFlow {
             !pinnedToBottom && !isAtBottom(listState.layoutInfo, listState.canScrollForward,
-                tolerance = hideJumpAt.toInt(), tail = liveTailPx)
+                tolerance = hideJumpAt.toInt(), tail = liveTail())
         }.distinctUntilChanged().collect { away ->
             showJumpToLatest = away
             if (!away) unreadWhileAway = false
@@ -1327,8 +1455,9 @@ private fun ChatScreenContent(
         }
     }
 
+    // The system photo picker: grid of recent photos, albums and multi-select, no storage permission.
     val galleryLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetMultipleContents()
+        ActivityResultContracts.PickMultipleVisualMedia()
     ) { uris: List<Uri> -> uris.forEach { viewModel.attachImage(it) } }
 
     val fileLauncher = rememberLauncherForActivityResult(
@@ -1412,7 +1541,12 @@ private fun ChatScreenContent(
         if (LocalHarnessGlass.current.mode == HarnessGlassMode.LIQUID) .26f else 1f)
     val floatingGlass = glassScene != null && !desktopLayout
     var glassComposerHeight by remember { mutableIntStateOf(0) }
+    val historyLinks = remember(state.messages) {
+        com.agent.mhamed.ui.chat.components.ChatHistoryLinks(
+            com.agent.mhamed.core.ChatHistoryPresentation.found(state.messages), ::openHistoryMatch)
+    }
     CompositionLocalProvider(
+        com.agent.mhamed.ui.chat.components.LocalChatHistoryLinks provides historyLinks,
         LocalHarnessGlassChromeBackdrop provides glassChrome,
         LocalChatDetailScroll provides detailScroll,
         com.agent.mhamed.ui.chat.rich.LocalResponseFileOpen provides (if (state.conversation.isChat) null else onOpenFile),
@@ -1551,6 +1685,19 @@ private fun ChatScreenContent(
                     }
                 }
             }
+            if (showCodeWorkspacePicker) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically) {
+                    com.agent.mhamed.ui.chat.components.CodeWorkspaceDropdown(
+                        workspaces = startWorkspaces,
+                        selectedId = currentProject?.id,
+                        enabled = !state.busy && !state.conversationSaving,
+                        describe = viewModel::workspaceDescription,
+                        onSelect = viewModel::chooseStartWorkspace,
+                        onAdd = { addingStartWorkspace = true },
+                    )
+                }
+            }
             if (findOpen) {
                 com.agent.mhamed.ui.chat.components.FindInChatBar(
                     query = findQuery,
@@ -1632,6 +1779,14 @@ private fun ChatScreenContent(
                     }
                     map
                 }
+                // Every model that answered in a turn, in order, so a fallback mid-turn shows both.
+                val turnModels = remember(state.messages) {
+                    state.messages.filter { it.turnId != null && it.role == Role.ASSISTANT }
+                        .groupBy { it.turnId!! }
+                        .mapValues { (_, messages) -> messages.mapNotNull { m ->
+                            m.generation.model?.let { com.agent.mhamed.core.ChatExperience.modelLabel(it) ?: it }
+                        }.distinct() }
+                }
                 val turnSpeeds = remember(state.messages) {
                     state.messages.filter { it.turnId != null }
                         .groupBy { it.turnId!! }
@@ -1640,8 +1795,24 @@ private fun ChatScreenContent(
                 val turnActivities = remember(state.messages) {
                     completedTurnActivities(state.messages)
                 }
+                // Code feed: runs of read-only steps fold into one explore card while a turn works.
+                val codePlan = remember(state.messages, state.conversation.isChat) {
+                    if (state.conversation.isChat) com.agent.mhamed.agent.CodeActivityGroups.Plan.EMPTY
+                    else com.agent.mhamed.agent.CodeActivityGroups.plan(state.messages)
+                }
                 val chatTurns = remember(state.messages, state.conversation.isChat) {
                     if (state.conversation.isChat) state.messages.groupBy { it.turnId } else emptyMap()
+                }
+                // The answer places past chat cards itself with a chats block. When it found chats
+                // and placed none, the ones it settled on go under the finished answer, so cards
+                // never pop in while it is still searching.
+                val turnHistory = remember(state.messages) {
+                    state.messages.filter { it.turnId != null }.groupBy { it.turnId!! }
+                        .mapValues { (_, messages) ->
+                            val answer = messages.lastOrNull { it.role == Role.ASSISTANT && it.text.isNotBlank() }?.text.orEmpty()
+                            com.agent.mhamed.core.ChatHistoryPresentation.fallback(messages, answer)
+                        }
+                        .filterValues { it.isNotEmpty() }
                 }
                 val turnVerification = remember(state.messages) {
                     state.messages.filter { it.turnId != null }.groupBy { it.turnId }
@@ -1735,10 +1906,14 @@ private fun ChatScreenContent(
                     } else {
                         LazyColumn(
                             state = listState,
-                            modifier = Modifier.motionBlur().fillMaxSize().glassViewportExtra(if (floatingGlass) glassComposerHeight else 0)
+                            modifier = Modifier.fillMaxSize().glassViewportExtra(if (floatingGlass) glassComposerHeight else 0)
                                 .recordHarnessGlassScene(glassScene,
                                     fadeTop = if (floatingGlass) with(density) { padding.calculateTopPadding().toPx() } else 0f,
                                     fadeBottom = if (floatingGlass) glassComposerHeight.toFloat() else 0f)
+                                // After the viewport growth so the blur layer covers the rows under
+                                // a floating composer, and inside the glass recording so the glass
+                                // shows the same smear as the list.
+                                .motionBlur(listState)
                                 .nestedScroll(userScrollObserver),
                             contentPadding = PaddingValues(
                                 start = 18.dp, top = 24.dp + (if (floatingGlass) padding.calculateTopPadding() else 0.dp), end = 18.dp,
@@ -1747,6 +1922,8 @@ private fun ChatScreenContent(
                             // Top-anchored: a sent question stays put while the
                             // answer grows below; short chats no longer sit at the bottom.
                             verticalArrangement = Arrangement.spacedBy(12.dp),
+                            // A new conversation has nothing to scroll; its empty state scrolls itself if it must.
+                            userScrollEnabled = !(state.messages.isEmpty() && state.streamingText == null && !state.isLoadingOlderMessages),
                         ) {
                             // Indices are recorded while the item scope is built,
                             // so a brand-new question can be anchored before it
@@ -1770,7 +1947,7 @@ private fun ChatScreenContent(
                                         Box(Modifier.onSizeChanged {
                                             if (measureTurn) {
                                                 chatItemHeights[key] = it.height
-                                                chatTrailingSpace = remainingTurnSpace(latestTurnKeys) + chatGapPx
+                                                chatTrailingSpace.intValue = remainingTurnSpace(latestTurnKeys) + chatGapPx
                                             }
                                         }) { content(itemScope) }
                                     } else content()
@@ -1779,6 +1956,10 @@ private fun ChatScreenContent(
                             // One composition path keeps the disclosure and its inner scroll
                             // position intact when live activity becomes a saved message.
                             fun chatActivityItem(activityKey: String?, messages: List<ChatMessage>, running: Boolean, committed: Boolean) {
+                                // The grouped header reports how long the turn took ("Worked for 17m 53s").
+                                val workedLabel = messages.firstOrNull { it.role == Role.USER }?.createdAt
+                                    ?.let { start -> messages.lastOrNull()?.createdAt?.takeIf { it > start }?.let { formatDuration(it - start) } }
+                                    .orEmpty()
                                 indexedItem(key = "chat-turn-$activityKey-activity", contentType = ChatListContentType.Thinking) {
                                     com.agent.mhamed.ui.chat.components.ChatActivity(messages, live = running,
                                         showThinkingMetrics = true,
@@ -1786,16 +1967,15 @@ private fun ChatScreenContent(
                                         reasoningTokens = state.reasoningTokens.takeIf { running && !committed },
                                         turnStartedAt = state.turnStartedAt.takeIf { running },
                                         autoExpand = !appSettings.chatKeepThinkingCollapsed,
+                                        grouped = true,
+                                        workedLabel = workedLabel,
+                                        pendingApprovalCallId = state.pendingApproval?.call?.id,
                                         onStep = rumble,
                                         runningCalls = if (running) state.runningCalls else emptyList(),
                                         streamingThinking = if (running && !committed) state.streamingThinking.orEmpty() else "",
                                         writing = running && !state.streamingText.isNullOrBlank(),
                                         streamId = state.streamingMessageId ?: "live",
                                         onOpenUrl = { url -> webPreviewUrl = url; showWebPreview = true })
-                                }
-                                val historyMatches = com.agent.mhamed.core.ChatHistoryPresentation.matches(messages)
-                                if (historyMatches.isNotEmpty()) indexedItem(key = "chat-turn-$activityKey-history", contentType = ChatListContentType.History) {
-                                    com.agent.mhamed.ui.chat.components.ChatHistoryCards(historyMatches, ::openHistoryMatch)
                                 }
                             }
                             if (state.hasOlderMessages) {
@@ -1809,8 +1989,18 @@ private fun ChatScreenContent(
                             }
                             if (state.messages.isEmpty() && state.streamingText == null) {
                                 indexedItem(key = "empty-state", contentType = ChatListContentType.Empty) {
+                                    // Exactly the visible area between the list's top and bottom padding
+                                    // (top bar, floating composer), so it centers there and never scrolls.
+                                    val emptyHeightPx by remember(listState) { derivedStateOf {
+                                        listState.layoutInfo.let { it.viewportSize.height - it.beforeContentPadding - it.afterContentPadding }
+                                    } }
                                     EmptyState(
-                                        modifier = Modifier.fillParentMaxHeight(),
+                                        // Fade out under the first message instead of vanishing in one frame.
+                                        modifier = (if (emptyHeightPx > 0) Modifier.height(with(density) { emptyHeightPx.toDp() })
+                                            else Modifier.fillParentMaxHeight()).animateItem(
+                                            fadeInSpec = null, placementSpec = null,
+                                            fadeOutSpec = com.agent.mhamed.ui.theme.fastEffectsSpec(),
+                                        ),
                                         hasProvider = state.activeProvider != null,
                                         chatOnly = state.conversation.isChat,
                                         agent = state.conversation.agent,
@@ -1825,6 +2015,12 @@ private fun ChatScreenContent(
                                             )
                                         },
                                         onSuggestion = { viewModel.send(it) },
+                                        onStarter = { prefill ->
+                                            setComposerText(prefill)
+                                            quoteComposerFocus?.requestFocus()
+                                            scheduleKeyboard?.show()
+                                        },
+                                        startersVisible = composerText.isBlank(),
                                         onAddProvider = { addProviderInitially = true; activeProviderManagerTarget = ModelSelectionTarget.ACTIVE },
                                     )
                                 }
@@ -1891,7 +2087,19 @@ private fun ChatScreenContent(
                                 if (message.turnId != null && message.turnId == latestUserTurnId) latestTurnStarted = true
                                 val userIndex = nextItemIndex
                                 indexedItem(key = "message-$messageKey-user", contentType = ChatListContentType.User) {
-                                    Box(Modifier.animateItem(fadeInSpec = fastEffectsSpec(), placementSpec = null, fadeOutSpec = null)) {
+                                    // A message the user just sent rises out of the composer instead of appearing in place.
+                                    val justSent = message.turnId == latestUserTurnId &&
+                                        (message.createdAt == 0L || System.currentTimeMillis() - message.createdAt < 2_000)
+                                    val rise = remember(messageKey) { androidx.compose.animation.core.Animatable(if (justSent) 0f else 1f) }
+                                    LaunchedEffect(messageKey) { rise.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = 0.78f, stiffness = 360f)) }
+                                    Box(Modifier.animateItem(fadeInSpec = fastEffectsSpec(), placementSpec = null, fadeOutSpec = null).graphicsLayer {
+                                        val p = rise.value
+                                        translationY = (1f - p) * 72.dp.toPx()
+                                        scaleX = 0.92f + 0.08f * p
+                                        scaleY = 0.92f + 0.08f * p
+                                        transformOrigin = androidx.compose.ui.graphics.TransformOrigin(1f, 1f)
+                                        alpha = (0.3f + 0.7f * p).coerceIn(0f, 1f)
+                                    }) {
                                         Column(horizontalAlignment = Alignment.End) {
                                             val (visibleText, fileChips) = FileAttachments.splitForDisplay(
                                                 slashSkillInstruction(UserMessageContent.visibleText(message.text))
@@ -1908,10 +2116,21 @@ private fun ChatScreenContent(
                                                 message.images,
                                                 fileChips,
                                                 imageDir = viewModel.container.images.imagesDir,
-                                                onOpenImage = { imagePreview = it },
+                                                onOpenImage = { index -> imagePreview = message.images to index },
                                                 onLongPress = { actionsMessage = message },
                                             )
-
+                                            // The latest question gets a visible edit button; long-press still opens every action.
+                                            AnimatedVisibility(state.conversation.isChat && message.turnId == latestUserTurnId && !state.busy,
+                                                enter = fadeIn(fastEffectsSpec()) + scaleIn(initialScale = 0.8f, animationSpec = fastEffectsSpec()),
+                                                exit = fadeOut(fastEffectsSpec())) {
+                                                com.agent.mhamed.ui.common.FilledTonalIconButton(onClick = { editingMessage = message },
+                                                    modifier = Modifier.padding(top = 4.dp).size(34.dp),
+                                                    colors = androidx.compose.material3.IconButtonDefaults.filledTonalIconButtonColors(
+                                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant)) {
+                                                    Icon(Icons.Outlined.Edit, uiContext.getString(R.string.settings_action_edit), Modifier.size(16.dp))
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -1930,9 +2149,15 @@ private fun ChatScreenContent(
                                         chatActivityItem(activityKey, conversationTurn, isTurnRunning, chatStreamCommitted)
                                     }
                                     // Progress prose stays in the chronological disclosure; only the answer renders here.
+                                    val answerItemIndex = nextItemIndex
                                     if (message.text.isNotBlank() && message.toolCalls.isEmpty() && (isTurnFinal || message.turnId == null)) indexedItem(key = "chat-$messageKey-answer", contentType = ChatListContentType.AssistantText) {
-                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        val headingAnchors = remember(message.text) { com.agent.mhamed.ui.chat.components.HeadingAnchors() }
+                                        Column(Modifier.onGloballyPositioned { headingAnchors.root = it }, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                             val replyText = remember(message.text) { com.agent.mhamed.core.response.ChatRichResponse.normalize(message.text) }
+                                            if (!isTurnRunning) com.agent.mhamed.ui.chat.components.AnswerOutlineButton(headingAnchors) { y ->
+                                                pinnedToBottom = false
+                                                scope.launch { listState.animateScrollToItem(answerItemIndex, (y - 12 * density.density).toInt().coerceAtLeast(0)) }
+                                            }
                                             com.agent.mhamed.ui.chat.components.QuoteReplySelection(onQuote = { selected ->
                                                 attachedConceptJson = null
                                                 attachedResponseJson = ResponseAttachment(uiContext.getString(R.string.chat_quoted_text), selected.take(1500)).encode()
@@ -1945,6 +2170,7 @@ private fun ChatScreenContent(
                                                     com.agent.mhamed.ui.chat.components.LocalChatImageSources provides imageSources,
                                                     com.agent.mhamed.ui.chat.components.LocalChatImageOpen provides { url -> viewerImageUrl = url },
                                                     LocalChatImagesEnabled provides (effectiveImageFrequency != com.agent.mhamed.data.ImageFrequency.NONE),
+                                                    com.agent.mhamed.ui.chat.components.LocalHeadingAnchors provides headingAnchors,
                                                 ) {
                                                     AssistantText(replyText, showPreviewChip = false, chatImages = responseImages,
                                                         onFollowUp = { action ->
@@ -1957,8 +2183,10 @@ private fun ChatScreenContent(
                                             if (isTurnFinal && message.toolCalls.isEmpty() && !isTurnRunning) {
                                                 if (message.turnId == latestUserTurnId) {
                                                     val followUps = message.generation.followUps
-                                                    if (followUps.isNotEmpty()) {
-                                                        com.agent.mhamed.ui.chat.components.FollowUpChips(followUps) { suggestion ->
+                                                    val searched = conversationTurn.any { turnMessage -> turnMessage.toolCalls.any { it.name == "web_search" } }
+                                                    val digDeeper: (() -> Unit)? = if (searched && !state.busy) ({ viewModel.digDeeper() }) else null
+                                                    if (followUps.isNotEmpty() || digDeeper != null) {
+                                                        com.agent.mhamed.ui.chat.components.FollowUpChips(followUps, digDeeper) { suggestion ->
                                                             attachedConceptJson = null
                                                             attachedResponseJson = null
                                                             setComposerText(suggestion)
@@ -2016,6 +2244,9 @@ private fun ChatScreenContent(
                                                 if (com.agent.mhamed.core.ChatActivityPresentation.savedMemory(conversationTurn)) {
                                                     com.agent.mhamed.ui.chat.components.ChatMemoryReceipt(conversationTurn, viewModel.container, state.busy)
                                                 }
+                                                message.turnId?.let { turnHistory[it] }?.let { matches ->
+                                                    com.agent.mhamed.ui.chat.components.ChatHistoryCards(matches, ::openHistoryMatch)
+                                                }
                                             }
                                         }
                                     }
@@ -2025,7 +2256,7 @@ private fun ChatScreenContent(
                                 val isSearchTurn = activeFindId != null && message.turnId == searchTurnId
                                 val hasFinishedActivity = !isTurnRunning && !isSearchTurn && activity.isNotEmpty()
                                 if (hasFinishedActivity && !isTurnFinal) continue
-                                if (!hasFinishedActivity && (message.thinking.isNotBlank() || (message.generation.reasoningTokens ?: 0) > 0)) {
+                                if (!hasFinishedActivity && message.id !in codePlan.foldedThinking && (message.thinking.isNotBlank() || (message.generation.reasoningTokens ?: 0) > 0)) {
                                     indexedItem(key = "message-$messageKey-thinking", contentType = ChatListContentType.Thinking) {
                                         Box(Modifier.animateItem(fadeInSpec = fastEffectsSpec(), placementSpec = null, fadeOutSpec = null)) {
                                             ThinkingBlock(message.thinking, thinkingMs = message.thinkingMs, reasoningTokens = message.generation.reasoningTokens)
@@ -2088,6 +2319,7 @@ private fun ChatScreenContent(
                                                             workedLabel = userAt?.let { formatDuration((message.createdAt - it).coerceAtLeast(0)) }.orEmpty(),
                                                             activity = activity, onOpenFile = onOpenFile, showLiveCode = state.showLiveCode,
                                                             onWatchBrowser = ::watchBrowser, browserTargets = browserTargets,
+                                                            grouped = true,
                                                         )
                                                     }
                                                 }
@@ -2142,17 +2374,30 @@ private fun ChatScreenContent(
                                                             android.text.format.DateFormat.getTimeFormat(toastContext)
                                                                 .format(java.util.Date(it))
                                                         }
+                                                        val models = turnModels[message.turnId].orEmpty()
                                                         val label = listOfNotNull(
                                                             duration?.let { formatDuration(it.coerceAtLeast(0)) },
                                                             timestamp,
                                                         ).joinToString(" · ")
-                                                        if (label.isNotBlank()) {
+                                                        if (label.isNotBlank() || models.isNotEmpty()) {
                                                             Spacer(Modifier.weight(1f))
-                                                            Text(
-                                                                label,
-                                                                style = MaterialTheme.typography.labelSmall,
-                                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                            )
+                                                            // The model sits on its own quieter line, so a long id never squeezes the time.
+                                                            Column(Modifier.weight(1f, fill = false), horizontalAlignment = Alignment.End) {
+                                                                if (label.isNotBlank()) Text(
+                                                                    label,
+                                                                    style = MaterialTheme.typography.labelSmall,
+                                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                    maxLines = 1,
+                                                                    overflow = TextOverflow.Ellipsis,
+                                                                )
+                                                                if (models.isNotEmpty()) Text(
+                                                                    models.joinToString(", "),
+                                                                    style = MaterialTheme.typography.labelSmall,
+                                                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                                                    maxLines = 1,
+                                                                    overflow = TextOverflow.MiddleEllipsis,
+                                                                )
+                                                            }
                                                         }
                                                     }
                                                 }
@@ -2161,6 +2406,18 @@ private fun ChatScreenContent(
                                                         speed = turnSpeeds[message.turnId])
                                                 }
                                             }
+                                        }
+                                    }
+                                }
+                                if (isTurnFinal && !isTurnRunning) message.turnId?.let { turnHistory[it] }?.let { matches ->
+                                    indexedItem(key = "message-$messageKey-history", contentType = ChatListContentType.History) {
+                                        com.agent.mhamed.ui.chat.components.ChatHistoryCards(matches, ::openHistoryMatch)
+                                    }
+                                }
+                                if (isTurnFinal && !isTurnRunning && !state.conversation.isChat) message.turnId?.let { finishedSubagentsByTurn[it] }?.let { runs ->
+                                    indexedItem(key = "message-$messageKey-subagent-tree", contentType = ChatListContentType.Subagents) {
+                                        Box(Modifier.animateItem(fadeInSpec = fastEffectsSpec(), placementSpec = null, fadeOutSpec = null)) {
+                                            com.agent.mhamed.ui.chat.components.SubagentTreeCard(runs, onOpenSubagent)
                                         }
                                     }
                                 }
@@ -2194,7 +2451,45 @@ private fun ChatScreenContent(
                                             }
                                         }
                                     }
-                                    if (otherCalls.size >= 3 && otherCalls.none { BrowserToolActivity.isBrowserTool(it.name) || it.name == "pkg_install" || it.name == "android_sdk_install" || it.name == "github_create_pull_request" } && !(state.showLiveCode && otherCalls.any {
+                                    val slots = message.id?.let { codePlan.slots[it] }
+                                    if (slots != null) {
+                                        for (slot in slots) when (slot) {
+                                            is com.agent.mhamed.agent.CodeActivityGroups.Slot.Explore ->
+                                                indexedItem(key = "message-${slot.group.key}", contentType = ChatListContentType.Tools) {
+                                                    Box(Modifier.animateItem(fadeInSpec = fastEffectsSpec(), placementSpec = null, fadeOutSpec = null)) {
+                                                        com.agent.mhamed.ui.chat.components.ExploreGroupCard(
+                                                            group = slot.group,
+                                                            results = toolResults,
+                                                            runningIds = runningIds,
+                                                            live = isTurnRunning,
+                                                            onOpenFile = onOpenFile,
+                                                            awaitingApprovalId = state.pendingApproval?.call?.id.takeIf { isTurnRunning },
+                                                            onWatchBrowser = ::watchBrowser,
+                                                            browserTargets = browserTargets,
+                                                        )
+                                                    }
+                                                }
+                                            is com.agent.mhamed.agent.CodeActivityGroups.Slot.Single -> {
+                                                val call = slot.call
+                                                indexedItem(key = "message-$messageKey-tool-${call.id}", contentType = ChatListContentType.Tool) {
+                                                    Box(Modifier.animateItem(fadeInSpec = fastEffectsSpec(), placementSpec = null, fadeOutSpec = null)) {
+                                                        ToolCallCard(
+                                                            call = call,
+                                                            result = toolResults[call.id],
+                                                            running = call.id in runningIds,
+                                                            onOpenFile = onOpenFile,
+                                                            showLiveCode = state.showLiveCode,
+                                                            codeDraft = if (isTurnRunning) state.codeDrafts[call.id] else null,
+                                                            awaitingApproval = isTurnRunning && state.pendingApproval?.call?.id == call.id,
+                                                            onWatchBrowser = ::watchBrowser,
+                                                            browserTarget = browserTargets[call.id],
+                                                            packageProgress = state.packageProgress[call.id],
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    } else if (otherCalls.size >= 3 && otherCalls.none { BrowserToolActivity.isBrowserTool(it.name) || it.name == "pkg_install" || it.name == "android_sdk_install" || it.name == "github_create_pull_request" } && !(state.showLiveCode && otherCalls.any {
                                             it.name in com.agent.mhamed.agent.LiveCodePreview.tools })) {
                                         indexedItem(key = "message-$messageKey-tools", contentType = ChatListContentType.Tools) {
                                             Box(Modifier.animateItem(fadeInSpec = fastEffectsSpec(), placementSpec = null, fadeOutSpec = null)) {
@@ -2240,12 +2535,6 @@ private fun ChatScreenContent(
                                         com.agent.mhamed.ui.chat.components.StorageAccessCard(receipt)
                                     }
                                 }
-                            } else if (!state.conversation.isChat && message.generation.chatHistory != null) {
-                                val call = state.messages.firstOrNull { it.role == Role.ASSISTANT && it.toolCalls.any { call -> call.id == message.toolCallId } }
-                                val matches = com.agent.mhamed.core.ChatHistoryPresentation.matches(listOfNotNull(call, message))
-                                if (matches.isNotEmpty()) indexedItem(key = "message-$messageKey-history", contentType = ChatListContentType.History) {
-                                    com.agent.mhamed.ui.chat.components.ChatHistoryCards(matches, ::openHistoryMatch)
-                                }
                             }
                             Role.SYSTEM -> {
                                 if (state.conversation.isChat) continue
@@ -2288,6 +2577,21 @@ private fun ChatScreenContent(
                         }
                     }
 
+                    if (!state.conversation.isChat && shouldShowTaskProgress(state.taskControl, state.busy)) {
+                        indexedItem(key = "task-progress", contentType = ChatListContentType.Approval) {
+                            TaskProgressCard(
+                                record = state.taskControl, busy = state.busy,
+                                onResume = viewModel::resumeInterruptedTask,
+                                onSettings = { showContext = true },
+                                onEditPrompt = { showResumePrompt = true },
+                                onResetPrompt = state.taskControl.resumePrompt?.let { { viewModel.saveResumePrompt(null) } },
+                                customPrompt = state.taskControl.resumePrompt != null || state.resumePrompt.isNotBlank(),
+                                onDismiss = viewModel::dismissPausedTask,
+                                onWaitLonger = { showStallTimeout = true },
+                            )
+                        }
+                    }
+
                     // Live streaming items are rendered only while not yet in the committed list.
                     val streamAlreadyCommitted = state.streamingMessageId != null &&
                         state.messages.any { it.id == state.streamingMessageId }
@@ -2317,16 +2621,36 @@ private fun ChatScreenContent(
                                 // Preserve the item identity and scroll offset when the same response is saved.
                                 val answerKey = if (state.conversation.isChat) "chat-$streamKey-answer" else "message-$streamKey-text"
                                 indexedItem(key = answerKey, contentType = ChatListContentType.AssistantText) {
+                                    // Chat paces bursty chunks into a steady flow; Code shows output as it lands.
+                                    val shownText = if (state.conversation.isChat) rememberPacedText(streaming, live = !state.streamingCommitted) else streaming
+                                    Column(if (state.conversation.isChat) Modifier.keepLiveHeight(!state.streamingCommitted, shownText.length) else Modifier) {
                                     AssistantText(
                                         chatImages = responseImages,
-                                        text = if (state.conversation.isChat) com.agent.mhamed.core.response.ChatRichResponse.normalize(streaming, !state.streamingCommitted) else streaming,
+                                        text = if (state.conversation.isChat) com.agent.mhamed.core.response.ChatRichResponse.normalize(shownText, !state.streamingCommitted) else shownText,
                                         streaming = !state.streamingCommitted,
                                         onOpenUrl = { url ->
                                             webPreviewUrl = url
                                             showWebPreview = true
                                         },
                                     )
+                                    // The sites the answer is built from, hopping in one by one under the live text.
+                                    if (state.conversation.isChat && !state.streamingCommitted) {
+                                        val liveSources = remember(liveTurn) { com.agent.mhamed.core.ChatActivityPresentation.sources(liveTurn) }
+                                        com.agent.mhamed.ui.chat.components.LiveSourceChips(liveSources, state.currentTurnId,
+                                            onOpenUrl = { url -> webPreviewUrl = url; showWebPreview = true },
+                                            modifier = Modifier.padding(top = 6.dp))
+                                    }
+                                    }
                                 }
+                            }
+                        }
+                    }
+
+                    withdrawnDraft?.takeIf { state.streamingText.isNullOrBlank() }?.let { draft ->
+                        indexedItem(key = "chat-${state.currentTurnId}-draft", contentType = ChatListContentType.AssistantText) {
+                            Box(Modifier.animateItem(fadeInSpec = fastEffectsSpec(), placementSpec = null, fadeOutSpec = fastEffectsSpec())) {
+                                com.agent.mhamed.ui.chat.components.WithdrawnDraft(
+                                    remember(draft) { com.agent.mhamed.core.response.ChatRichResponse.normalize(draft) })
                             }
                         }
                     }
@@ -2402,7 +2726,7 @@ private fun ChatScreenContent(
                     if (state.conversation.isChat && latestTurnStarted) {
                         item(key = "chat-turn-space", contentType = ChatListContentType.Empty) {
                             val space = remainingTurnSpace(latestTurnKeys)
-                            androidx.compose.runtime.SideEffect { chatTrailingSpace = space + chatGapPx }
+                            androidx.compose.runtime.SideEffect { chatTrailingSpace.intValue = space + chatGapPx }
                             Spacer(Modifier.fillMaxWidth().height(with(density) { space.toDp() }))
                         }
                     }
@@ -2460,16 +2784,26 @@ private fun ChatScreenContent(
                     targetValue = if (snackbar.currentSnackbarData != null) 68.dp else 10.dp,
                     label = "fab-bottom-pad",
                 )
+                // Lines of reply that landed since the reader scrolled away, shown on the button.
+                val latestAssistant = state.messages.lastOrNull { it.role == Role.ASSISTANT && it.toolCallId == null }
+                val latestReplyId = state.streamingMessageId ?: latestAssistant?.id
+                val latestReply = state.streamingText ?: latestAssistant?.text.orEmpty()
+                var awayFrom by remember { mutableStateOf<Pair<String?, Int>?>(null) }
+                LaunchedEffect(showJumpToLatest) { awayFrom = if (showJumpToLatest) latestReplyId to latestReply.length else null }
+                val newLines = awayFrom?.let { (id, length) ->
+                    (if (id == latestReplyId) latestReply.drop(length) else latestReply).lines().count { it.isNotBlank() }
+                } ?: 0
                 ScrollToBottomFab(
                     visible = showJumpToLatest,
                     unread = unreadWhileAway,
+                    newLines = newLines,
                     onJump = {
                         showJumpToLatest = false
                         unreadWhileAway = false
                         returnToQuestion = false
                         pinnedToBottom = true
                         lastAnchoredTurnId = latestUserTurnId
-                        scope.launch { listState.scrollToEnd(liveTailPx) { pinnedToBottom && !gestureActive.value } }
+                        scope.launch { listState.scrollToEnd(liveTail()) { pinnedToBottom && !gestureActive.value } }
                     },
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
@@ -2506,14 +2840,6 @@ private fun ChatScreenContent(
                         CacheUsageFooter(state.turnCacheUsage[state.currentTurnId].orEmpty(), running = true)
                     }
                 }
-                if (!state.conversation.isChat) TaskProgressCard(
-                    record = state.taskControl, busy = state.busy,
-                    onResume = viewModel::resumeInterruptedTask,
-                    onSettings = { showContext = true },
-                    onEditPrompt = { showResumePrompt = true },
-                    onResetPrompt = state.taskControl.resumePrompt?.let { { viewModel.saveResumePrompt(null) } },
-                    customPrompt = state.taskControl.resumePrompt != null || state.resumePrompt.isNotBlank(),
-                )
                 RunTipHost(
                     busy = state.busy,
                     isChat = state.conversation.isChat,
@@ -2529,7 +2855,7 @@ private fun ChatScreenContent(
                     queue = state.taskControl.queue,
                     onEdit = viewModel::editQueued, onMove = viewModel::moveQueued,
                     onSendNow = viewModel::sendQueuedNow,
-                    readAtNextStep = state.busy && globalSettings.steeringMode == SteeringMode.AH_AUTO,
+                    readAtNextStep = state.busy && state.taskControl.queue.any { (it.steering ?: globalSettings.steeringMode) == SteeringMode.AH_AUTO },
                 )
 
                 if (desktopLayout) {
@@ -2537,25 +2863,59 @@ private fun ChatScreenContent(
                     attachedConcept?.let { concept ->
                         com.agent.mhamed.ui.chat.components.ConceptAttachmentChip(concept) { attachedConceptJson = null }
                     }
-                    if (state.attachments.isNotEmpty()) AttachmentChips(state.attachments, viewModel::removeAttachment)
-                    if (state.fileAttachments.isNotEmpty()) FileAttachmentChips(state.fileAttachments, viewModel::removeFileAttachment)
                 }
 
                 state.compactionNote?.let { note ->
                     CompactionBanner(note, Modifier.padding(bottom = 6.dp))
                 }
 
-                if (!state.conversation.isChat) AgentStatusBar(action = state.currentAction, busy = state.busy)
+                if (!state.conversation.isChat) {
+                    // The last tool's outline lingers while its "Editing…" line does, instead of snapping back.
+                    var lastToolShape by remember { mutableStateOf<com.agent.mhamed.ui.common.LogoShape?>(null) }
+                    val runningCall = state.runningCalls.lastOrNull()
+                    LaunchedEffect(runningCall?.id, state.busy) {
+                        if (runningCall != null) lastToolShape = com.agent.mhamed.ui.chat.components.toolLogoShape(runningCall)
+                        else if (!state.busy) lastToolShape = null
+                    }
+                    val statusShape = com.agent.mhamed.ui.chat.components.codeLogoShape(
+                        runningCall = runningCall,
+                        waiting = state.pendingApproval != null || state.pendingQuestion != null,
+                        drafting = state.codeDrafts.values.any { it.stage == com.agent.mhamed.agent.CodeDraftStage.GENERATING },
+                        thinking = state.streamingThinking != null && state.streamingText.isNullOrEmpty(),
+                        writing = state.streamingText != null,
+                        lastTool = lastToolShape.takeIf { state.currentToolAction != null },
+                    )
+                    AgentStatusBar(action = state.currentAction, busy = state.busy, shape = statusShape)
+                }
                 com.agent.mhamed.ui.automation.ScheduledMessageRow(chatSchedules, scheduleConnection, scheduleNow) {
                     if (chatSchedules.size == 1) scheduleDraft = chatSchedules.first() else showScheduledList = true
                 }
+                val sendComposer: (SteeringMode?) -> Unit = { steering ->
+                    val payload = ResponseAttachment.attach(ArtifactAttachment.attach(SlashCommands.composeSend(attachedSkill,
+                        composerText.ifBlank { if (attachedConcept != null) "Revise this concept." else if (attachedResponse != null) "Help me with this response." else "" }), attachedConcept), attachedResponse)
+                    if (payload.isNotBlank() || state.fileAttachments.isNotEmpty() || state.attachments.isNotEmpty()) {
+                        // Keep the draft when a selection is still loading/saving or unavailable.
+                        if (viewModel.send(payload, steering)) {
+                            setComposerText("")
+                            viewModel.saveDraft("", immediate = true)
+                            attachedSkill = null
+                            attachedConceptJson = null
+                            attachedResponseJson = null
+                            slashExpanded = false
+                        }
+                    }
+                }
                 MessageComposer(
-                    contextControl = if (state.conversation.isChat) null else {
+                    contextRing = com.agent.mhamed.ui.chat.components.rememberContextRing(
+                        state = state,
+                        onOpenLimits = { showContext = true },
+                        onCompact = { viewModel.send("/compact") },
+                    ),
+                    permissionControl = if (state.conversation.isChat) null else {
                         {
-                            com.agent.mhamed.ui.chat.components.ContextWindowButton(
-                                state = state,
-                                onOpenLimits = { showContext = true },
-                                onCompact = { viewModel.send("/compact") },
+                            com.agent.mhamed.ui.chat.components.PermissionModeButton(
+                                mode = state.permissionMode,
+                                onSetMode = viewModel::setPermissionMode,
                             )
                         }
                     },
@@ -2567,16 +2927,18 @@ private fun ChatScreenContent(
                         attachedConcept?.let { concept ->
                             com.agent.mhamed.ui.chat.components.ConceptAttachmentChip(concept) { attachedConceptJson = null }
                         }
-                        if (state.conversation.isChat) {
-                            com.agent.mhamed.ui.chat.components.ChatAttachmentReadiness(state, viewModel::removeAttachment,
-                                viewModel::removeFileAttachment, viewModel::removeAttachmentImport)
-                        } else {
-                            if (state.attachments.isNotEmpty()) AttachmentChips(state.attachments, viewModel::removeAttachment)
-                            if (state.fileAttachments.isNotEmpty()) FileAttachmentChips(state.fileAttachments, viewModel::removeFileAttachment)
-                            if (state.attachmentImports.isNotEmpty()) com.agent.mhamed.ui.chat.components.ChatAttachmentReadiness(
-                                state.copy(attachments = emptyList(), fileAttachments = emptyList()), viewModel::removeAttachment,
-                                viewModel::removeFileAttachment, viewModel::removeAttachmentImport)
-                        }
+                        com.agent.mhamed.ui.chat.components.ComposerAttachmentTray(
+                            images = state.attachments,
+                            files = state.fileAttachments,
+                            imports = state.attachmentImports,
+                            imageDir = viewModel.container.images.imagesDir,
+                            // Code models fall back gracefully, so only Chat warns about image support.
+                            imageSupport = if (state.conversation.isChat) state.imageInputSupport() else true,
+                            onRemoveImage = viewModel::removeAttachment,
+                            onRemoveFile = viewModel::removeFileAttachment,
+                            onRemoveImport = viewModel::removeAttachmentImport,
+                            onOpenImage = { refs, index -> imagePreview = refs to index },
+                        )
 
                     },
                     busy = state.busy,
@@ -2587,21 +2949,8 @@ private fun ChatScreenContent(
                         slashExpanded = !state.conversation.isChat && attachedSkill == null && input.text.startsWith("/")
                     },
                     onClearSkill = { attachedSkill = null },
-                    onSend = {
-                        val payload = ResponseAttachment.attach(ArtifactAttachment.attach(SlashCommands.composeSend(attachedSkill,
-                            composerText.ifBlank { if (attachedConcept != null) "Revise this concept." else if (attachedResponse != null) "Help me with this response." else "" }), attachedConcept), attachedResponse)
-                        if (payload.isNotBlank() || state.fileAttachments.isNotEmpty() || state.attachments.isNotEmpty()) {
-                            // Keep the draft when a selection is still loading/saving or unavailable.
-                            if (viewModel.send(payload)) {
-                                setComposerText("")
-                                viewModel.saveDraft("", immediate = true)
-                                attachedSkill = null
-                                attachedConceptJson = null
-                                attachedResponseJson = null
-                                slashExpanded = false
-                            }
-                        }
-                    },
+                    onSend = { sendComposer(null) },
+                    onSendSteered = if (state.conversation.isChat) null else { mode -> sendComposer(mode) },
                     onSchedule = if (state.conversation.isChat) null else fun() {
                         currentProject?.let { project ->
                             scheduleDraft = com.agent.mhamed.automation.AutomationTask(
@@ -2639,7 +2988,8 @@ private fun ChatScreenContent(
                             slashExpanded = false
                         }
                     } else null,
-                    onAttachImage = { galleryLauncher.launch("image/*") },
+                    onPasteImages = { uris -> uris.forEach { viewModel.attachImage(it) } },
+                    onAttachImage = { galleryLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
                     onAttachFile = { fileLauncher.launch("*/*") },
                     onLiveMode = startLive,
                     voiceEngine = state.voiceEngine,
@@ -2876,85 +3226,74 @@ private fun FileEditsCard(
         }
     }
     var expanded by remember { mutableStateOf(false) }
-    val chevronRotation by animateFloatAsState(
-        targetValue = if (expanded) 180f else 0f,
-        animationSpec = fastEffectsSpec(),
-        label = "file edits chevron",
-    )
 
-    Surface(
-        shape = RoundedCornerShape(13.dp),
-        color = scheme.surface,
-        border = BorderStroke(1.dp, scheme.outlineVariant),
-        modifier = modifier.fillMaxWidth(),
+    com.agent.mhamed.ui.chat.components.CodeCard(
+        onClick = { expanded = !expanded }, expanded = expanded, modifier = modifier,
     ) {
-        Column {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { expanded = !expanded }
-                    .padding(horizontal = 12.dp, vertical = 9.dp),
-            ) {
-                Icon(painterResource(R.drawable.ic_chat_file_code_2), null, Modifier.size(18.dp), tint = scheme.onSurfaceVariant)
-                Text(
-                    if (merged.size == 1) merged.first().first.substringAfterLast('/') else uiContext.getString(R.string.ui_edited_files, (merged.size).toString()),
-                    maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.weight(1f),
+        com.agent.mhamed.ui.chat.components.CodeCardHeader(
+            badge = {
+                com.agent.mhamed.ui.chat.components.MorphingStatusBadge(
+                    com.agent.mhamed.ui.chat.components.WorkState.Done,
+                    painterResource(R.drawable.ic_chat_file_code_2), showOutcome = false,
                 )
-                DiffStatText(merged.sumOf { it.second.first }, merged.sumOf { it.second.second })
-                Icon(
-                    Icons.Filled.KeyboardArrowDown,
-                    contentDescription = if (expanded) uiContext.getString(R.string.ui_collapse_edited_files) else uiContext.getString(R.string.ui_expand_edited_files),
-                    tint = scheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .size(20.dp)
-                        .graphicsLayer { rotationZ = chevronRotation },
-                )
-            }
-            AnimatedVisibility(
-                visible = expanded,
-                enter = fadeIn(fastEffectsSpec()) + expandVertically(fastEffectsSpec()),
-                exit = fadeOut(fastEffectsSpec()) + shrinkVertically(fastEffectsSpec()),
+            },
+            title = if (merged.size == 1) merged.first().first.substringAfterLast('/') else uiContext.getString(R.string.ui_edited_files, (merged.size).toString()),
+            subtitle = if (merged.size == 1) merged.first().first.substringBeforeLast('/', "").takeIf { it.isNotBlank() } else null,
+            subtitleMono = true,
+            trailing = {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(Modifier.background(scheme.surfaceContainerHighest, CircleShape).padding(horizontal = 9.dp, vertical = 3.dp)) {
+                        DiffStatText(merged.sumOf { it.second.first }, merged.sumOf { it.second.second })
+                    }
+                    com.agent.mhamed.ui.chat.components.ExpandChevron(expanded,
+                        if (expanded) uiContext.getString(R.string.ui_collapse_edited_files) else uiContext.getString(R.string.ui_expand_edited_files))
+                }
+            },
+        )
+        AnimatedVisibility(
+            visible = expanded,
+            enter = fadeIn(fastEffectsSpec()) + expandVertically(com.agent.mhamed.ui.chat.components.bouncySpec()),
+            exit = fadeOut(fastEffectsSpec()) + shrinkVertically(fastEffectsSpec()),
+        ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(3.dp),
+                modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
             ) {
-                Column {
-                    merged.forEachIndexed { index, (path, counts) ->
-                        val (added, removed) = counts
-                        if (index > 0) {
-                            HorizontalDivider(color = scheme.outlineVariant.copy(alpha = 0.5f))
-                        }
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onReviewFile(path) }
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                        ) {
-                            Column(Modifier.weight(1f)) {
+                merged.forEachIndexed { index, (path, counts) ->
+                    val (added, removed) = counts
+                    val top = if (index == 0) 18.dp else 6.dp
+                    val bottom = if (index == merged.lastIndex) 18.dp else 6.dp
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(topStart = top, topEnd = top, bottomStart = bottom, bottomEnd = bottom))
+                            .background(scheme.surfaceContainerLowest)
+                            .clickable { onReviewFile(path) }
+                            .padding(start = 14.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                path.substringAfterLast('/'),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontFamily = HarnessMono,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            val parent = path.substringBeforeLast('/')
+                            if (parent != path) {
                                 Text(
-                                    path.substringAfterLast('/'),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontFamily = HarnessMono,
+                                    parent,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = scheme.onSurfaceVariant,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                 )
-                                val parent = path.substringBeforeLast('/')
-                                if (parent != path) {
-                                    Text(
-                                        parent,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = scheme.onSurfaceVariant,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
-                                }
                             }
-                            DiffStatText(added, removed)
-                            TextButton(onClick = { onOpenFile(path, null) }) { Text(uiContext.getString(R.string.ui_open)) }
                         }
+                        DiffStatText(added, removed)
+                        TextButton(onClick = { onOpenFile(path, null) }) { Text(uiContext.getString(R.string.ui_open)) }
                     }
                 }
             }
@@ -3003,11 +3342,15 @@ private suspend fun LazyListState.snapToEndIfDrifted(tail: Int = 0) {
 // content with small scrollBy deltas at most this often (ms between scrolls).
 private const val FOLLOW_MIN_INTERVAL_MS = 16L
 
+/** Shorter pulled-back text is a "let me check" note that already lives in the working log. */
+private const val KEEP_DRAFT_MIN_CHARS = 200
+
 /** Floating jump-to-latest button; pulses when content landed while away. */
 @Composable
 private fun ScrollToBottomFab(
     visible: Boolean,
     unread: Boolean,
+    newLines: Int = 0,
     onJump: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -3054,6 +3397,19 @@ private fun ScrollToBottomFab(
                     else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(22.dp),
                 )
+            }
+        }
+        // A small count of new lines rides on the button's corner and rolls as it grows.
+        AnimatedVisibility(newLines > 0, enter = scaleIn(fastEffectsSpec()) + fadeIn(fastEffectsSpec()),
+            exit = scaleOut(fastEffectsSpec()) + fadeOut(fastEffectsSpec()),
+            modifier = Modifier.offset(x = 30.dp, y = (-6).dp)) {
+            androidx.compose.material3.Badge(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary) {
+                androidx.compose.animation.AnimatedContent(newLines.coerceAtMost(99), transitionSpec = {
+                    (androidx.compose.animation.slideInVertically(tween(160)) { it / 2 } + fadeIn(tween(160))) togetherWith
+                        (androidx.compose.animation.slideOutVertically(tween(120)) { -it / 2 } + fadeOut(tween(120)))
+                }, label = "new lines") { count ->
+                    Text(if (count >= 99) "99+" else "+$count", style = MaterialTheme.typography.labelSmall)
+                }
             }
         }
     }

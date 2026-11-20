@@ -80,7 +80,23 @@ object RichResponse {
         data class Evidence(val title: String, val items: List<EvidenceItem>) : Node
         data class Diff(val title: String, val before: String, val after: String, val path: String, val line: Int?, val language: String) : Node
         data class Writing(val title: String, val text: String, val language: String) : Node
+        /** Past conversations the agent found with its chat recall tools, by session ID. The app draws only ones it really found. */
+        data class Chats(val title: String, val ids: List<String>) : Node
         data object Divider : Node
+    }
+
+    /** Session IDs of every chats block in [text], in order; empty when the answer places none. */
+    fun chatIds(text: String): List<String> = if (!text.contains(LANGUAGE)) emptyList() else buildList {
+        fun visit(node: Node) {
+            when (node) {
+                is Node.Chats -> addAll(node.ids)
+                is Node.Card -> node.children.forEach(::visit)
+                is Node.Layout -> node.children.forEach(::visit)
+                is Node.Tabs -> node.tabs.forEach { it.children.forEach(::visit) }
+                else -> Unit
+            }
+        }
+        parse(text).filterIsInstance<Part.Content>().forEach { visit(it.node) }
     }
 
     /** True while the last rich fence of streaming [text] is still open, i.e. a visual is being written. */
@@ -204,22 +220,27 @@ object RichResponse {
                     Tab(tab.str("title", 60, true), tab.array("children", 12).map { child -> node(child.jsonObject, depth + 1) })
                 } })
                 // The overall JSON size bounds galleries; image count is a presentation choice.
-                "gallery" -> Node.Gallery(o.str("title", 100, true), o.array("images").map { it.jsonObject.let { image ->
-                    GalleryImage(image.str("url", 2048, true).also(::requireWebUrl), image.str("caption", 500), image.str("source", 2048).also { url -> if (url.isNotBlank()) requireWebUrl(url) })
-                } })
+                // One broken picture drops that picture, not the whole gallery.
+                "gallery" -> Node.Gallery(o.loose("title", 100, true), o.array("images").mapNotNull { element -> runCatching { element.jsonObject.let { image ->
+                    GalleryImage(image.str("url", 2048, true).also(::requireWebUrl), image.loose("caption", 500),
+                        runCatching { image.str("source", 2048).also { url -> if (url.isNotBlank()) requireWebUrl(url) } }.getOrDefault(""))
+                } }.getOrNull() }.also { require(it.isNotEmpty()) })
                 "profile" -> {
-                    val sources = o.array("sources", 6).map { it.jsonObject.let { source ->
+                    // A profile is one card built from many small parts. One malformed
+                    // fact, source or picture drops that part, not the whole card.
+                    val sources = o.array("sources").mapNotNull { element -> runCatching { element.jsonObject.let { source ->
                         ProfileSource(source.str("title", 100, true), source.str("url", 2048, true).also(::requireWebUrl))
-                    } }
-                    val image = o.str("image", 2048).also { if (it.isNotBlank()) requireWebUrl(it) }
-                    val imageSource = o.str("image_source", 2048).also { if (it.isNotBlank()) requireWebUrl(it) }
-                    require(image.isBlank() || imageSource.isNotBlank())
-                    val facts = o.array("facts", 8, false).map { it.jsonObject.let { fact ->
-                        ProfileFact(fact.str("label", 60, true), fact.str("value", 500, true),
+                    } }.getOrNull() }.take(6)
+                    require(sources.isNotEmpty())
+                    val imageSource = runCatching { o.str("image_source", 2048).also { if (it.isNotBlank()) requireWebUrl(it) } }.getOrDefault("")
+                        .ifBlank { sources.first().url }
+                    val image = runCatching { o.str("image", 2048).also { if (it.isNotBlank()) requireWebUrl(it) } }.getOrDefault("")
+                    val facts = o.array("facts", required = false).mapNotNull { element -> runCatching { element.jsonObject.let { fact ->
+                        ProfileFact(fact.loose("label", 60, true), fact.loose("value", 500, true),
                             fact.str("source", 2048, true).also(::requireWebUrl))
-                    } }
-                    Node.Profile(o.str("name", 120, true), o.str("subtitle", 160), o.str("description", 2000, true),
-                        image, imageSource, facts, sources)
+                    } }.getOrNull() }.take(8)
+                    Node.Profile(o.loose("name", 120, true), o.loose("subtitle", 160), o.loose("description", 2000, true),
+                        image, if (image.isBlank()) "" else imageSource, facts, sources)
                 }
                 "calculator" -> {
                     val inputs = o.array("inputs", 6).map { it.jsonObject.let { input ->
@@ -243,6 +264,9 @@ object RichResponse {
                 "diff" -> Node.Diff(o.str("title", 100, true), o.str("before", 24000), o.str("after", 24000), o.str("path", 1024).also(::requireFilePath), o.lineNumber(), o.str("language", 30)).also {
                     require(it.before.lines().size <= 400 && it.after.lines().size <= 400)
                 }
+                "chats" -> Node.Chats(o.loose("title", 100), o.array("ids", 8).map { id ->
+                    (id as? JsonPrimitive)?.takeIf { it.isString }?.content?.trim()?.takeIf { it.isNotEmpty() && it.length <= 100 } ?: error("Expected a session ID")
+                }.distinct())
                 "writing" -> Node.Writing(o.str("title", 100, true), o.str("text", 24000, true), o.str("language", 30))
                 "choices" -> Node.Choices(o.str("title", 100, true), o.array("options", 6).map { it.jsonObject.let { c -> Choice(c.str("label", 100, true), c.str("description", 1000), c.str("prompt", 1000)) } })
                 "steps" -> Node.Steps(o.str("title", 100), o.array("items", 12).map { it.jsonObject.let { s -> Step(s.str("title", 100, true), s.str("text", 1000), (s["done"] as? JsonPrimitive)?.booleanOrNull ?: false) } },
@@ -273,12 +297,25 @@ object RichResponse {
         require(value.length <= max && (!required || value.isNotBlank()))
         return value
     }
+    /** Like [str], but text that runs long is clipped instead of rejected. */
+    private fun JsonObject.loose(key: String, max: Int, required: Boolean = false): String {
+        val element = this[key]
+        if (element == null) { require(!required); return "" }
+        val value = (element as? JsonPrimitive)?.takeIf { it.isString }?.content?.trim() ?: error("Expected text")
+        require(!required || value.isNotBlank())
+        return if (value.length <= max) value else value.take(max - 1).trimEnd() + "…"
+    }
     private fun JsonObject.array(key: String, max: Int = Int.MAX_VALUE, required: Boolean = true): JsonArray {
         val value = this[key] ?: return JsonArray(emptyList()).also { require(!required) }
         return (value as? JsonArray ?: error("Expected a list")).also { require(it.size <= max && (!required || it.isNotEmpty())) }
     }
 
-    fun plainText(text: String, streaming: Boolean = false): String = if (!hasRichFence(text, streaming)) text else parse(text, streaming).joinToString("\n\n") {
+    /** Claim check markers ("[reason](check:urls)") are UI, not prose; copy and read-aloud leave them out. */
+    private val claimMarker = Regex("""\s?\[[^\]]*]\(check:[^)\s]*\)""")
+
+    fun plainText(text: String, streaming: Boolean = false): String = plainTextWithMarkers(claimMarker.replace(text, ""), streaming)
+
+    private fun plainTextWithMarkers(text: String, streaming: Boolean): String = if (!hasRichFence(text, streaming)) text else parse(text, streaming).joinToString("\n\n") {
         when (it) {
             is Part.Markdown -> it.text; is Part.Content -> describe(it.node)
             Part.Pending, is Part.PendingVisual -> "Preparing content…"; Part.Unavailable -> "Rich content unavailable"
@@ -324,6 +361,7 @@ object RichResponse {
         is Node.Evidence -> node.title + "\n" + node.items.joinToString("\n") { "${it.title} ${it.status}\n${it.text}\n${it.url.ifBlank { it.path + (it.line?.let { line -> ":$line" } ?: "") }}" }
         is Node.Diff -> node.title + "\n" + ResponseDiff.lines(node.before, node.after).joinToString("\n") { "${it.marker}${it.text}" }
         is Node.Writing -> node.title + "\n" + node.text
+        is Node.Chats -> node.title.ifBlank { "Past chats" }
         Node.Divider -> ""
     }.trim()
     fun number(value: Double): String = if (value == value.toLong().toDouble()) value.toLong().toString() else String.format(java.util.Locale.getDefault(), "%.2f", value)

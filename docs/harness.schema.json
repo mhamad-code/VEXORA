@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/Sanuu7/VEXORA/main/docs/harness.schema.json",
+  "$id": "https://raw.githubusercontent.com/mhamad-code/VEXORA/main/docs/harness.schema.json",
   "title": "VEXORA workspace configuration",
   "type": "object",
   "properties": {

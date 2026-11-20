@@ -54,6 +54,8 @@ class HarnessApp : Application() {
             }
         }
         memoryScope.launch { container.settings.ensureRumbleCombo() }
+        // A force stop clears every alarm without telling the app, so set them again on each start.
+        memoryScope.launch { runCatching { container.reminders.rescheduleAll() } }
     }
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
@@ -148,6 +150,13 @@ class AppContainer(val appContext: Context) {
     }
     val configuration = com.agent.mhamed.config.HarnessConfigRepository(appContext, keys, pluginManager, configurationRevision)
     val pluginHooks = com.agent.mhamed.config.PluginHooks(appContext) { linuxEnv.shellProcessBuilder(it) }
+    init {
+        // Plugins with automatic updates are checked shortly after start, away from the first screen's work.
+        kotlinx.coroutines.CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            kotlinx.coroutines.delay(30_000)
+            runCatching { pluginManager.autoUpdate() }
+        }
+    }
     internal val runtimePolicy = AppRuntimePolicy(appContext, settings)
     /** Voice providers (speech-to-text and text-to-speech) with per-provider keys. */
     val voiceProviders = com.agent.mhamed.data.audio.VoiceProviderRepository(appContext, keys)
@@ -189,7 +198,7 @@ class AppContainer(val appContext: Context) {
 
     private val db = Room.databaseBuilder(appContext, AppDatabase::class.java, "harness.db")
         .addMigrations(
-            AppDatabase.MIGRATION_25_26, AppDatabase.MIGRATION_24_25, AppDatabase.MIGRATION_23_24, AppDatabase.MIGRATION_22_23, AppDatabase.MIGRATION_21_22, AppDatabase.MIGRATION_20_21, AppDatabase.MIGRATION_19_20, AppDatabase.MIGRATION_18_19, AppDatabase.MIGRATION_4_5, AppDatabase.MIGRATION_5_6,
+            AppDatabase.MIGRATION_26_27, AppDatabase.MIGRATION_25_26, AppDatabase.MIGRATION_24_25, AppDatabase.MIGRATION_23_24, AppDatabase.MIGRATION_22_23, AppDatabase.MIGRATION_21_22, AppDatabase.MIGRATION_20_21, AppDatabase.MIGRATION_19_20, AppDatabase.MIGRATION_18_19, AppDatabase.MIGRATION_4_5, AppDatabase.MIGRATION_5_6,
             AppDatabase.MIGRATION_6_7, AppDatabase.MIGRATION_7_8,
             AppDatabase.MIGRATION_8_9, AppDatabase.MIGRATION_9_10, AppDatabase.MIGRATION_10_11, AppDatabase.MIGRATION_11_12, AppDatabase.MIGRATION_12_13, AppDatabase.MIGRATION_13_14, AppDatabase.MIGRATION_14_15, AppDatabase.MIGRATION_15_16, AppDatabase.MIGRATION_16_17, AppDatabase.MIGRATION_17_18,
         )
@@ -238,11 +247,25 @@ class AppContainer(val appContext: Context) {
         projectForSession = { sessions.session(it)?.projectId }, dhizuku = dhizuku)
     val shellRouter = com.agent.mhamed.data.env.ShellTierRouter(appContext, shizuku, linuxEnv, deviceAccess)
     val codeGraph = com.agent.mhamed.data.env.CodeGraphManager(linuxEnv, shellRouter)
+    private val deployScope = kotlinx.coroutines.CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     init {
         // Package-set changes must invalidate the deployed-copy cache, or the
         // privileged tier keeps serving the old toolchain until a restart.
-        linuxEnv.deployStateListener = { shizuku.invalidateDeployState() }
+        // The new package set is also re-staged and deployed right away, in the
+        // background, so the work overlaps the model's next turn instead of
+        // stalling the first privileged shell command after an install.
+        linuxEnv.deployStateListener = {
+            shizuku.invalidateDeployState()
+            if (shizuku.state.value == com.agent.mhamed.data.env.ShizukuState.GRANTED &&
+                shizuku.serviceState.value.isReady
+            ) {
+                deployScope.launch {
+                    runCatching { linuxEnv.ensureShellDeploy(shizuku) }
+                        .onFailure { android.util.Log.e("HarnessApp", "background shell-tier deploy failed", it) }
+                }
+            }
+        }
     }
 
     val updates = com.agent.mhamed.data.update.UpdateManager(appContext, deviceAccess)
@@ -262,18 +285,27 @@ class AppContainer(val appContext: Context) {
     private var projectSkillsDir: java.io.File? = null
     private val disabledSkills = AtomicReference<Set<String>>(emptySet())
     private val webSearchProvider = AtomicReference("keyless")
+    private val disabledSearchProviders = AtomicReference<Set<String>>(emptySet())
     private val searchKeyMigrated = AtomicBoolean(false)
 
     /**
-     * web_search backend config, resolved per call so Settings changes apply
-     * to the very next search without a restart. Null = keyless engines.
+     * Every search provider web_search may use, resolved per call so Settings changes
+     * apply to the very next search without a restart. Tool descriptions read this
+     * without rotating keys so listing the tools does not skip a key's turn.
      */
+    val searchSetup: com.agent.mhamed.tools.SearchSetup
+        get() = buildSearchSetup(disabledSearchProviders.get(), rotate = false)
+
+    /** The provider web_fetch borrows page extraction from: Tavily when it is on, else the first ready one. */
     val searchApiConfig: com.agent.mhamed.tools.SearchApiConfig?
-        get() {
-            val provider = webSearchProvider.get()
-            if (provider == "keyless") return null
-            return searchApiConfigFor(provider, rotate = false).takeIf { it.keys.isNotEmpty() }
+        get() = searchSetup.let { it.config("tavily") ?: it.apis.firstOrNull() }
+
+    private fun buildSearchSetup(disabled: Set<String>, rotate: Boolean): com.agent.mhamed.tools.SearchSetup {
+        val apis = com.agent.mhamed.tools.SearchProviders.apis.filter { it.id !in disabled }.mapNotNull { info ->
+            searchApiConfigFor(info.id, rotate).takeIf { it.keys.isNotEmpty() || info.sharedKey != null }
         }
+        return com.agent.mhamed.tools.SearchSetup(apis, keyless = com.agent.mhamed.tools.SearchProviders.KEYLESS !in disabled)
+    }
 
     /**
      * Enabled keys in this call's order: rotation moves the start key, the rest are
@@ -287,13 +319,16 @@ class AppContainer(val appContext: Context) {
         return com.agent.mhamed.tools.SearchApiConfig(provider, ordered.firstOrNull().orEmpty(), ordered.drop(1))
     }
 
-    private suspend fun resolveSearchApiConfig(): com.agent.mhamed.tools.SearchApiConfig? {
-        val provider = settings.settings.first().webSearchProvider
-        keys.migrateLegacySearchKey(provider)
-        webSearchProvider.set(provider)
-        if (provider == "keyless") return null
-        return searchApiConfigFor(provider)
+    private suspend fun resolveSearchSetup(): com.agent.mhamed.tools.SearchSetup {
+        val current = settings.settings.first()
+        keys.migrateLegacySearchKey(current.webSearchProvider)
+        webSearchProvider.set(current.webSearchProvider)
+        disabledSearchProviders.set(current.disabledSearchProviders)
+        return buildSearchSetup(current.disabledSearchProviders, rotate = true)
     }
+
+    private suspend fun resolveSearchApiConfig(): com.agent.mhamed.tools.SearchApiConfig? =
+        resolveSearchSetup().let { it.config("tavily") ?: it.apis.firstOrNull() }
 
     private val cavemanSettings = AtomicReference(com.agent.mhamed.data.AppSettings())
     val skills = com.agent.mhamed.skills.SkillStore(
@@ -312,6 +347,8 @@ class AppContainer(val appContext: Context) {
         browserController = browser,
         searchApi = { searchApiConfig },
         searchApiRefresh = ::resolveSearchApiConfig,
+        searchSetup = { searchSetup },
+        searchSetupRefresh = ::resolveSearchSetup,
         artifactLoader = sessions::artifacts,
         toolOutputLoader = sessions::toolOutput,
         fileHistory = fileHistory,
@@ -322,6 +359,19 @@ class AppContainer(val appContext: Context) {
         pullRequests = { githubRepositories },
         sessionMessages = { sessions.messages(it) },
         appSettings = settings,
+        plugins = pluginManager,
+        // Declared below; resolved on each call, after construction.
+        automations = com.agent.mhamed.tools.AutomationToolHost(
+            target = { sid ->
+                val session = sessions.session(sid)
+                val project = session?.projectId?.let { db.dao().project(it) }
+                if (project == null) null else {
+                    val provider = runManager.controls.flow(sid).value.provider
+                    com.agent.mhamed.tools.AutomationTarget(project.id, project.name, provider?.id, provider?.model)
+                }
+            },
+            manager = { automation },
+        ),
     )
     val mcp = com.agent.mhamed.tools.mcp.McpManager(appContext, linuxEnv, keys, codeGraph, configuration)
     val github = com.agent.mhamed.github.GitHubAuth(BuildConfig.GITHUB_CLIENT_ID,
@@ -334,6 +384,8 @@ class AppContainer(val appContext: Context) {
                 com.agent.mhamed.tools.GitHubWorkflowRunsTool({ github }),
                 com.agent.mhamed.tools.GitHubArtifactDownloadTool({ github }, appContext),
                 com.agent.mhamed.tools.InstallApkTool(appContext),
+            com.agent.mhamed.tools.CodeReviewTool(shellRouter, linuxEnv, { settings.settings.first() }),
+            *com.agent.mhamed.tools.DeviceControlTools(shellRouter, linuxEnv, { settings.settings.first() }, images).tools().toTypedArray(),
             )
         )
     }
@@ -358,6 +410,9 @@ class AppContainer(val appContext: Context) {
                         com.agent.mhamed.llm.HarnessProvider.pool[config.model]?.baseUrl ?: config.baseUrl
                     else config.baseUrl
                 },
+                currentStallTimeoutMs = {
+                    com.agent.mhamed.agent.StreamRetrier.stallTimeoutMs(settings.settings.first().streamStallTimeoutSeconds)
+                },
         )
 
     val engine: AgentEngine = AgentEngine(
@@ -370,6 +425,9 @@ class AppContainer(val appContext: Context) {
         skills = skills,
         resolveConfiguration = { configuration.load(it) },
         pluginHooks = pluginHooks,
+        markBufferedToolCalls = { settings.markBufferedToolCalls(it) },
+        markFileBlocksDeclined = { settings.markFileBlocksDeclined(it) },
+        learnContextLimit = { key, tokens -> settings.learnContextLimit(key, tokens) },
         todoStore = todoStore,
         repoMap = repoMap,
         cavemanSettings = { settings.settings.first().also { cavemanSettings.set(it); disabledSkills.set(it.disabledSkills) } },
@@ -396,7 +454,10 @@ class AppContainer(val appContext: Context) {
             com.agent.mhamed.tools.OfferCodeHandoffTool(),
             com.agent.mhamed.tools.GitHubApiTool(fetchClient) { github.accessToken() },
             com.agent.mhamed.tools.GitHubSearchTool(fetchClient) { github.accessToken() },
-            com.agent.mhamed.tools.GitHubFileTool(fetchClient) { github.accessToken() }),
+            com.agent.mhamed.tools.GitHubFileTool(fetchClient) { github.accessToken() }) +
+            // Resolved on each call: the manager is declared below.
+            com.agent.mhamed.tools.ReminderTools.all({ reminders }, { clockAlarms }),
+        remindersEnabled = { settings.settings.first().chatRemindersEnabled },
     )
     val runManager = com.agent.mhamed.agent.RunManager(
         context = appContext,
@@ -415,6 +476,8 @@ class AppContainer(val appContext: Context) {
     )
     val githubRepositories = com.agent.mhamed.github.GitHubWorkspaces(this)
     val automation = com.agent.mhamed.automation.AutomationManager(this)
+    val reminders = com.agent.mhamed.reminders.ReminderManager(appContext)
+    val clockAlarms = com.agent.mhamed.reminders.ClockAlarms(appContext)
     val projectDeletion = com.agent.mhamed.workspace.ProjectDeletion(this)
     internal var telegram = com.agent.mhamed.telegram.TelegramManager(this)
     val interactiveTerminal = com.agent.mhamed.terminal.InteractiveTerminalManager(linuxEnv, runManager)
@@ -491,6 +554,7 @@ class AppContainer(val appContext: Context) {
                     keys.migrateLegacySearchKey(it.webSearchProvider)
                 }
                 webSearchProvider.set(it.webSearchProvider)
+                disabledSearchProviders.set(it.disabledSearchProviders)
             }
         }
         kotlinx.coroutines.CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {

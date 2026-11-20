@@ -21,7 +21,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.PhoneAndroid
+import com.agent.mhamed.agent.isPhoneControl
+import com.agent.mhamed.agent.isRiskyPhoneControl
+import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.Merge
+import androidx.compose.material.icons.outlined.Alarm
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.outlined.WarningAmber
@@ -61,10 +67,9 @@ import com.agent.mhamed.ui.common.TextButton
 
 /**
  * One shared skeleton for every "agent needs you" card (approvals, plans,
- * environment installs): flat hairline card, quiet title row,
- * content, and a right-aligned action row with a single filled accent button.
- * The old design gave each card its own colors, icons and elevation, the
- *sameness here is what makes the feed readable.
+ * environment installs). A clover badge slowly turns while the agent waits on
+ * you, the card itself lifts to a brighter tonal surface with roomy corners,
+ * and the actions sit as pill buttons on the right.
  */
 @Composable
 private fun ActionCard(
@@ -73,26 +78,19 @@ private fun ActionCard(
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
     iconTint: Color = MaterialTheme.colorScheme.primary,
+    state: WorkState = WorkState.Waiting,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val scheme = MaterialTheme.colorScheme
-    Surface(
-        color = scheme.surfaceContainerLow,
-        shape = MaterialTheme.shapes.large,
-        border = BorderStroke(1.dp, scheme.outlineVariant.copy(alpha = 0.5f)),
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        Column(Modifier.padding(16.dp)) {
+    CodeCard(modifier = modifier, accent = WorkState.Waiting, collapsedRadius = 28.dp) {
+        Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (icon != null) {
-                    Icon(icon, contentDescription = null, modifier = Modifier.size(17.dp), tint = iconTint)
-                    Spacer(Modifier.width(8.dp))
-                }
-                Text(title, style = MaterialTheme.typography.titleSmallEmphasized)
+                MorphingStatusBadge(state, icon ?: Icons.Outlined.Shield, size = 40.dp, showOutcome = false)
+                Spacer(Modifier.width(12.dp))
+                Text(title, style = MaterialTheme.typography.titleMediumEmphasized, modifier = Modifier.weight(1f))
             }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(12.dp))
             content()
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(16.dp))
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                 verticalAlignment = Alignment.CenterVertically,
@@ -104,6 +102,9 @@ private fun ActionCard(
     }
 }
 
+private const val PHONE_FIRST_COMMAND = "First command:"
+private const val PHONE_ONE_COMMAND = "\n\nCommand:"
+
 @Composable
 internal fun ApprovalCard(
     approval: ApprovalRequest,
@@ -113,42 +114,83 @@ internal fun ApprovalCard(
     val uiContext = androidx.compose.ui.platform.LocalContext.current
     val isPkg = approval.call.name == "pkg_install" || approval.call.name == com.agent.mhamed.tools.AndroidSdkInstallTool.NAME
     val isPullRequest = approval.call.name == "github_create_pull_request"
+    // A schedule is approved one at a time, so there is no "Always" for it.
+    val isReminder = approval.call.name in com.agent.mhamed.tools.ReminderTools.confirmed
+    val isSchedule = approval.call.name == com.agent.mhamed.tools.AutomationCreateTool.NAME || isReminder
+    // Phone control is allowed for the whole chat at once, so it has one Allow button.
+    val isPhone = approval.isPhoneControl
+    val isRiskyPhone = approval.isRiskyPhoneControl
     val scheme = MaterialTheme.colorScheme
     ActionCard(
         title = when {
             isPkg -> uiContext.getString(R.string.ui_install_linux_package)
             isPullRequest -> uiContext.getString(R.string.pr_approval_title)
+            isReminder -> uiContext.getString(when (approval.call.name) {
+                com.agent.mhamed.tools.ReminderTools.ALARM -> R.string.alarm_approval_title
+                com.agent.mhamed.tools.ReminderTools.TIMER -> R.string.timer_approval_title
+                else -> R.string.reminders_approval_title
+            })
+            isSchedule -> uiContext.getString(R.string.automation_approval_title)
+            isRiskyPhone -> uiContext.getString(R.string.phone_control_risky_title)
+            isPhone -> uiContext.getString(R.string.phone_control_approval_title)
             else -> uiContext.getString(R.string.ui_approve_this_action)
         },
         icon = when {
             isPkg -> Icons.Outlined.Inventory2
             isPullRequest -> Icons.Outlined.Merge
+            isReminder -> Icons.Outlined.Alarm
+            isSchedule -> Icons.Outlined.Schedule
+            isRiskyPhone -> Icons.Outlined.Shield
+            isPhone -> Icons.Outlined.PhoneAndroid
             else -> Icons.Outlined.Shield
         },
-        iconTint = if (isPkg) scheme.tertiary else scheme.primary,
+        iconTint = if (isRiskyPhone) scheme.error else if (isPkg) scheme.tertiary else scheme.primary,
         actions = {
             TextButton(onClick = onDeny) { Text(if (isPkg) uiContext.getString(R.string.ui_decline) else uiContext.getString(R.string.ui_deny)) }
-            if (!isPkg) {
+            if (!isPkg && !isSchedule && !isPhone) {
                 // Only approvals that are safe to keep are saved, anything else lasts for this run.
                 val saved = com.agent.mhamed.agent.GrantPolicy.canSave(approval.grantKey)
                 FilledTonalButton(onClick = { onApprove(true) }) {
                     Text(uiContext.getString(if (saved) R.string.ui_always else R.string.approval_for_this_run))
                 }
             }
-            Button(onClick = { onApprove(false) }) { Text(uiContext.getString(R.string.ui_allow)) }
+            Button(onClick = { onApprove(false) }) {
+                Text(uiContext.getString(when {
+                    isRiskyPhone -> R.string.phone_control_allow_once
+                    isPhone -> R.string.phone_control_allow
+                    approval.call.name == com.agent.mhamed.tools.ReminderTools.ALARM -> R.string.alarm_set
+                    approval.call.name == com.agent.mhamed.tools.ReminderTools.TIMER -> R.string.timer_start
+                    isReminder -> R.string.reminders_set
+                    else -> R.string.ui_allow
+                }))
+            }
         },
     ) {
+        if (isPhone) {
+            val preview = approval.diffPreview.orEmpty()
+            val marker = if (PHONE_FIRST_COMMAND in preview) PHONE_FIRST_COMMAND else PHONE_ONE_COMMAND
+            val command = preview.substringAfter(marker, "").trim()
+            Text(
+                preview.substringBefore(marker).trim(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = scheme.onSurfaceVariant,
+            )
+            if (command.isNotEmpty()) {
+                Spacer(Modifier.height(10.dp))
+                CodePanel(command, label = approval.call.name)
+            }
+            return@ActionCard
+        }
         if (isPkg) {
             Surface(
-                color = scheme.errorContainer.copy(alpha = 0.25f),
-                shape = MaterialTheme.shapes.small,
-                border = BorderStroke(1.dp, scheme.error.copy(alpha = 0.4f)),
+                color = scheme.errorContainer.copy(alpha = 0.6f),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 10.dp),
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
@@ -173,12 +215,13 @@ internal fun ApprovalCard(
         Text(
             describeToolCall(approval.call),
             style = MaterialTheme.typography.bodyMedium,
+            color = scheme.onSurfaceVariant,
         )
         approval.diffPreview?.let { preview ->
             if (preview.isNotBlank()) {
                 Spacer(Modifier.height(10.dp))
                 if (isPkg) {
-                    MonoBlock(preview)
+                    CodePanel(preview)
                 } else {
                     DiffView(preview)
                 }
@@ -186,7 +229,7 @@ internal fun ApprovalCard(
         }
         if (approval.diffPreview == null) {
             Spacer(Modifier.height(10.dp))
-            MonoBlock(prettyArgs(approval.call.argumentsJson))
+            CodePanel(prettyArgs(approval.call.argumentsJson), label = approval.call.name)
         }
     }
 }
@@ -202,6 +245,7 @@ internal fun PlanApprovalCard(
     val longPlan = plan.length > 2_000
     ActionCard(
         title = uiContext.getString(R.string.ui_plan_ready_to_run),
+        icon = Icons.Outlined.Checklist,
         actions = {
             TextButton(onClick = onDiscard) { Text(uiContext.getString(R.string.settings_action_discard)) }
             Button(onClick = onApprove) {
@@ -220,9 +264,11 @@ internal fun PlanApprovalCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 8, overflow = TextOverflow.Ellipsis)
         } else {
-            androidx.compose.foundation.text.selection.SelectionContainer {
-                Column(Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState())) {
-                    com.agent.mhamed.ui.chat.MarkdownText(plan)
+            Surface(color = MaterialTheme.colorScheme.surfaceContainerLowest, shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp)) {
+                androidx.compose.foundation.text.selection.SelectionContainer {
+                    Column(Modifier.fillMaxWidth().heightIn(max = 400.dp).verticalScroll(rememberScrollState()).padding(14.dp)) {
+                        com.agent.mhamed.ui.chat.MarkdownText(plan)
+                    }
                 }
             }
         }
@@ -254,6 +300,7 @@ internal fun EnvironmentInstallCard(
             uiContext.getString(R.string.ui_linux_environment_needed)
         },
         icon = Icons.Outlined.Terminal,
+        state = if (envState is EnvState.Failed) WorkState.Failed else if (installing) WorkState.Running else WorkState.Waiting,
         actions = {
             if (!installing) {
                 TextButton(onClick = onSkip) { Text(uiContext.getString(R.string.ui_skip)) }
@@ -318,9 +365,13 @@ internal fun EnvironmentInstallCard(
 
 @Composable
 internal fun DiffView(diff: String) {
-    VisualDiffViewer(
-        diffText = diff,
-        maxHeight = 260.dp,
-        showFileHeader = false,
-    )
+    Surface(color = MaterialTheme.colorScheme.surfaceContainerLowest, shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)) {
+        Column(Modifier.padding(6.dp)) {
+            VisualDiffViewer(
+                diffText = diff,
+                maxHeight = 260.dp,
+                showFileHeader = false,
+            )
+        }
+    }
 }

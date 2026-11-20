@@ -4,6 +4,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import com.agent.mhamed.ui.theme.LocalHarnessGlassBackdrop
 import com.agent.mhamed.ui.theme.LocalHarnessGlassChromeBackdrop
 import com.agent.mhamed.ui.theme.harnessGlassChrome
+import com.agent.mhamed.ui.theme.harnessGlass
+import com.agent.mhamed.data.SteeringMode
 import com.agent.mhamed.ui.theme.LocalHarnessGlass
 import com.agent.mhamed.ui.theme.HarnessGlassMode
 import com.agent.mhamed.ui.common.ExpressiveDropdownMenu as DropdownMenu
@@ -44,6 +46,9 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.indication
@@ -69,9 +74,22 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.content.MediaType
+import androidx.compose.foundation.content.consume
+import androidx.compose.foundation.content.contentReceiver
+import androidx.compose.foundation.content.hasMediaType
+import androidx.compose.foundation.text.input.TextFieldDecorator
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.text.TextRange
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AltRoute
+import androidx.compose.material.icons.rounded.HourglassTop
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.automirrored.outlined.Send
@@ -153,7 +171,7 @@ private val LockDistance = 68.dp
  * - Compact waveform capsule and gesture guidance for Groq Whisper
  * - Inbuilt audio fallback
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 internal fun MessageComposer(
     busy: Boolean,
@@ -195,10 +213,16 @@ internal fun MessageComposer(
     onToggleAutoSend: (() -> Unit)? = null,
     /** Whether to show the Auto Send item in the + menu. */
     autoSendShowInPlus: Boolean = true,
-    /** Coding-only context meter, anchored immediately to the left of the text field. */
-    contextControl: (@Composable () -> Unit)? = null,
+    /** Coding-only context ring drawn around the + button; long-press opens its details. */
+    contextRing: ContextRing? = null,
+    /** Coding-only permission mode control, anchored immediately to the left of the text field. */
+    permissionControl: (@Composable () -> Unit)? = null,
     modifier: Modifier = Modifier,
     attachments: @Composable () -> Unit = {},
+    /** Images pasted or inserted from the keyboard; null leaves image paste off. */
+    onPasteImages: ((List<android.net.Uri>) -> Unit)? = null,
+    /** Coding-only: holding send while the agent works picks when this one message is read. */
+    onSendSteered: ((SteeringMode) -> Unit)? = null,
 ) {
     val uiContext = androidx.compose.ui.platform.LocalContext.current
     val desktop = com.agent.mhamed.ui.LocalDesktopLayout.current
@@ -209,6 +233,36 @@ internal fun MessageComposer(
     var focused by remember { mutableStateOf(false) }
     var inputLineCount by remember { mutableIntStateOf(1) }
     val inputAlignment = if (inputLineCount > 1) Alignment.Bottom else Alignment.CenterVertically
+
+    // The field keeps its own TextFieldState (the only kind that can receive pasted
+    // images), mirrored to the caller's TextFieldValue in both directions.
+    val fieldState = rememberTextFieldState(value.text, value.selection)
+    val echo = remember { arrayOf(value) }
+    val latestOnValueChange by rememberUpdatedState(onValueChange)
+    SideEffect {
+        // Only a value the caller set itself (clear after send, voice, slash pick) is
+        // pushed in. Echoes of our own edits are skipped so typing is never rewound.
+        val last = echo[0]
+        if (value.text != last.text || value.selection != last.selection) {
+            echo[0] = value
+            if (fieldState.text.toString() != value.text || fieldState.selection != value.selection) {
+                fieldState.edit {
+                    replace(0, length, value.text)
+                    selection = TextRange(value.selection.start.coerceIn(0, length), value.selection.end.coerceIn(0, length))
+                }
+            }
+        }
+    }
+    LaunchedEffect(fieldState) {
+        snapshotFlow { TextFieldValue(fieldState.text.toString(), fieldState.selection, fieldState.composition) }
+            .collect { next ->
+                val last = echo[0]
+                if (next.text != last.text || next.selection != last.selection) {
+                    echo[0] = next
+                    latestOnValueChange(next)
+                }
+            }
+    }
 
     val isGroq = voiceEngine != AppSettings.VOICE_ENGINE_INBUILT
     val isGroqActive = isGroq && groqRecordState != GroqRecordState.IDLE
@@ -307,6 +361,7 @@ internal fun MessageComposer(
                 autoSendShowInPlus = autoSendShowInPlus,
                 onToggleAutoSend = onToggleAutoSend,
                 size = actionSize,
+                contextRing = if (chatOnly) null else contextRing,
             )
         }
 
@@ -367,14 +422,24 @@ internal fun MessageComposer(
                     val lineHeight = measuredLineHeight ?: with(density) { inputTextStyle.lineHeight.toDp() }
                     val visibleLines = ((heightLimit - inputPadding * 2) / lineHeight).toInt().coerceIn(1, 6)
                     BasicTextField(
-                        value = value,
-                        onValueChange = onValueChange,
+                        state = fieldState,
                         modifier = Modifier
                             .weight(1f)
                             .heightIn(max = lineHeight * visibleLines + inputPadding * 2)
                             .then(inputFocus?.let { Modifier.focusRequester(it) } ?: Modifier)
                             .semantics { contentDescription = uiContext.getString(R.string.ui_message_input) }
                             .onFocusChanged { focused = it.isFocused }
+                            // Images from the keyboard (Gboard clipboard, stickers) or a long-press Paste
+                            // become attachments; any text in the same clip still pastes as text.
+                            .then(if (onPasteImages == null) Modifier else Modifier.contentReceiver { content ->
+                                if (!content.hasMediaType(MediaType.Image)) content
+                                else {
+                                    val uris = mutableListOf<android.net.Uri>()
+                                    val rest = content.consume { item -> item.uri?.also { uris += it } != null }
+                                    if (uris.isNotEmpty()) onPasteImages(uris)
+                                    rest
+                                }
+                            })
                             .onPreviewKeyEvent { event ->
                                 if (desktopInput && !event.isCtrlPressed && event.key == Key.Tab) {
                                     if (event.type == KeyEventType.KeyDown) focusManager.moveFocus(
@@ -386,20 +451,20 @@ internal fun MessageComposer(
                                 } else false
                             },
                         textStyle = inputTextStyle,
-                        onTextLayout = {
-                            inputLineCount = it.lineCount
-                            if (it.lineCount > 0) measuredLineHeight = with(density) {
-                                (it.getLineBottom(0) - it.getLineTop(0)).toDp()
+                        onTextLayout = { getResult ->
+                            getResult()?.let { result ->
+                                inputLineCount = result.lineCount
+                                if (result.lineCount > 0) measuredLineHeight =
+                                    (result.getLineBottom(0) - result.getLineTop(0)).toDp()
                             }
                         },
-                        minLines = 1,
-                        maxLines = visibleLines,
+                        lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 1, maxHeightInLines = visibleLines),
                         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                         keyboardOptions = KeyboardOptions(
                             capitalization = KeyboardCapitalization.Sentences,
                             imeAction = ImeAction.Default,
                         ),
-                        decorationBox = { innerTextField ->
+                        decorator = TextFieldDecorator { innerTextField ->
                             // Placeholder, glyphs and cursor share one padded viewport.
                             // BasicTextField owns scrolling, selection and IME composition.
                             Box(
@@ -408,7 +473,7 @@ internal fun MessageComposer(
                                     .padding(vertical = inputPadding),
                                 contentAlignment = Alignment.CenterStart,
                             ) {
-                                if (value.text.isEmpty()) Text(
+                                if (fieldState.text.isEmpty()) Text(
                                     text = when {
                                         isInbuiltListening -> uiContext.getString(R.string.ui_listening)
                                         !attachedSkill.isNullOrBlank() -> uiContext.getString(R.string.ui_add_a_note_or_send)
@@ -518,6 +583,13 @@ internal fun MessageComposer(
 
             isGroqActive -> voice()
 
+            showQueueSend && onSendSteered != null -> QueueSendButton(
+                size = actionSize,
+                enabled = sendAllowed,
+                onSend = onSend,
+                onSendSteered = onSendSteered,
+            )
+
             showQueueSend -> {
                 ExpressiveIconButton(preserveFill = true,
                     onClick = { if (sendAllowed) { haptics.performHapticFeedback(HapticFeedbackType.Confirm); onSend() } },
@@ -581,7 +653,7 @@ internal fun MessageComposer(
                 verticalAlignment = if (isGroqActive) Alignment.CenterVertically else inputAlignment,
             ) {
                 Box(Modifier.width(slotSize), contentAlignment = Alignment.Center) { leading() }
-                if (!chatOnly && !isGroqActive) contextControl?.let { control ->
+                if (!chatOnly && !isGroqActive) permissionControl?.let { control ->
                     Box(Modifier.width(48.dp), contentAlignment = Alignment.Center) { control() }
                 }
                 field()
@@ -925,13 +997,21 @@ private fun ComposerLeadingButton(
     autoSendShowInPlus: Boolean = true,
     onToggleAutoSend: (() -> Unit)? = null,
     size: Dp = 52.dp,
+    contextRing: ContextRing? = null,
 ) {
     val uiContext = androidx.compose.ui.platform.LocalContext.current
     val haptics = LocalHapticFeedback.current
     var expanded by remember { mutableStateOf(false) }
+    var contextOpen by remember { mutableStateOf(false) }
 
     Box {
-        ExpressiveIconButton(
+        if (contextRing != null) ContextRingPlusButton(
+            meter = contextRing.meter,
+            active = expanded || contextOpen,
+            size = size,
+            onClick = { haptics.performHapticFeedback(HapticFeedbackType.Confirm); expanded = true },
+            onLongClick = { haptics.performHapticFeedback(HapticFeedbackType.LongPress); contextOpen = true },
+        ) else ExpressiveIconButton(
             onClick = { haptics.performHapticFeedback(HapticFeedbackType.Confirm); expanded = true },
             glassDecoration = false,
             modifier = Modifier.size(size)
@@ -949,6 +1029,21 @@ private fun ComposerLeadingButton(
             expanded = expanded,
             onDismissRequest = { expanded = false },
         ) {
+            if (contextRing != null) {
+                DropdownMenuItem(
+                    text = {
+                        Column {
+                            Text(uiContext.getString(R.string.ui_context_and_usage))
+                            Text(contextRing.meter.summary, style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    },
+                    leadingIcon = { ContextRingGlyph(contextRing.meter) },
+                    onClick = { expanded = false; contextOpen = true },
+                    modifier = Modifier.testTag("composer-context-item"),
+                )
+                androidx.compose.material3.HorizontalDivider()
+            }
             DropdownMenuItem(
                 text = { Text(uiContext.getString(R.string.ui_photo_or_image)) },
                 leadingIcon = { ImageGlyph(color = MaterialTheme.colorScheme.onSurfaceVariant, size = 18.dp) },
@@ -1009,7 +1104,177 @@ private fun ComposerLeadingButton(
                 )
             }
         }
+        contextRing?.popover?.invoke(contextOpen) { contextOpen = false }
     }
+}
+
+/**
+ * The + button for coding conversations: the context window fills a ring around it.
+ * Tap opens the + menu, long-press jumps straight to context and usage.
+ */
+@Composable
+private fun ContextRingPlusButton(
+    meter: ContextMeter,
+    active: Boolean,
+    size: Dp,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+) {
+    val uiContext = androidx.compose.ui.platform.LocalContext.current
+    val scheme = MaterialTheme.colorScheme
+    val interactions = remember { MutableInteractionSource() }
+    val pressed by interactions.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (pressed) .88f else 1f, expressiveSpatialSpec(), label = "plusRingScale")
+    val progress by animateFloatAsState(meter.fraction, expressiveEffectsSpec(), label = "plusRingProgress")
+    val container by animateColorAsState(if (active) scheme.secondaryContainer else Color.Transparent,
+        expressiveEffectsSpec(), label = "plusRingContainer")
+    val glyph by animateColorAsState(if (active) scheme.onSecondaryContainer else scheme.onSurfaceVariant,
+        expressiveEffectsSpec(), label = "plusRingGlyph")
+    val ringSize = (size - 6.dp).coerceIn(30.dp, 40.dp)
+    val actions = uiContext.getString(R.string.ui_message_actions)
+    val contextLabel = uiContext.getString(R.string.ui_context_and_usage)
+    Box(
+        Modifier.size(size)
+            .combinedClickable(
+                interactionSource = interactions,
+                indication = null,
+                onClickLabel = actions,
+                role = androidx.compose.ui.semantics.Role.Button,
+                onLongClickLabel = contextLabel,
+                onLongClick = onLongClick,
+                onClick = onClick,
+            )
+            .semantics {
+                contentDescription = actions
+                stateDescription = "$contextLabel: ${meter.summary}"
+            }
+            .testTag("composer-plus"),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            Modifier.size(ringSize)
+                .graphicsLayer { scaleX = scale; scaleY = scale }
+                .clip(CircleShape)
+                .background(container)
+                .indication(interactions, ripple())
+                .drawWithContent {
+                    drawContent()
+                    drawContextRing(meter, 2.5.dp, progress)
+                },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(painterResource(R.drawable.ic_chat_plus), null, Modifier.size(18.dp), tint = glyph)
+        }
+    }
+}
+
+/**
+ * Send while the agent works. Tap queues with the Settings steering mode;
+ * holding opens a menu to steer at the next step or wait for the task to end.
+ */
+@Composable
+private fun QueueSendButton(
+    size: Dp,
+    enabled: Boolean,
+    onSend: () -> Unit,
+    onSendSteered: (SteeringMode) -> Unit,
+) {
+    val uiContext = androidx.compose.ui.platform.LocalContext.current
+    val haptics = LocalHapticFeedback.current
+    val scheme = MaterialTheme.colorScheme
+    var menuOpen by remember { mutableStateOf(false) }
+    val interactions = remember { MutableInteractionSource() }
+    val pressed by interactions.collectIsPressedAsState()
+    val held = pressed || menuOpen
+    val corner by animateDpAsState(if (held) 12.dp else size / 2, expressiveSpatialSpec(), label = "queueSendCorner")
+    val scale by animateFloatAsState(if (pressed) .9f else 1f, expressiveSpatialSpec(), label = "queueSendScale")
+    val glass = LocalHarnessGlass.current.mode != HarnessGlassMode.OFF
+    val face = if (glass) 40.dp else size
+    val shape = RoundedCornerShape(corner.coerceAtMost(face / 2))
+    val fill = if (enabled) scheme.primary else scheme.primary.copy(alpha = .38f)
+    val sendLabel = uiContext.getString(R.string.ui_queue_message)
+    val chooseLabel = uiContext.getString(R.string.steering_send_menu_label)
+    Box {
+        Box(
+            Modifier.size(size)
+                .combinedClickable(
+                    interactionSource = interactions,
+                    indication = null,
+                    enabled = enabled,
+                    role = androidx.compose.ui.semantics.Role.Button,
+                    onClickLabel = sendLabel,
+                    onLongClickLabel = chooseLabel,
+                    onLongClick = { haptics.performHapticFeedback(HapticFeedbackType.LongPress); menuOpen = true },
+                    onClick = { haptics.performHapticFeedback(HapticFeedbackType.Confirm); onSend() },
+                )
+                .semantics { contentDescription = sendLabel }
+                .testTag("composer-queue-send"),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                Modifier.size(face)
+                    .graphicsLayer { scaleX = scale; scaleY = scale }
+                    .then(if (glass) Modifier.harnessGlass(fill, shape) else Modifier)
+                    .clip(shape)
+                    .background(if (glass) fill.copy(alpha = fill.alpha * .88f) else fill)
+                    .indication(interactions, ripple(color = scheme.onPrimary)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(painterResource(R.drawable.ic_chat_arrow_up), null, Modifier.size(20.dp), tint = scheme.onPrimary)
+            }
+        }
+        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+            Text(
+                chooseLabel,
+                style = MaterialTheme.typography.labelLarge,
+                color = scheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 18.dp, end = 18.dp, top = 8.dp, bottom = 4.dp),
+            )
+            SteerMenuItem(
+                icon = Icons.Rounded.AltRoute,
+                title = uiContext.getString(R.string.steering_send_steer),
+                detail = uiContext.getString(R.string.steering_send_steer_desc),
+                container = scheme.primaryContainer,
+                content = scheme.onPrimaryContainer,
+                tag = "composer-steer-next-step",
+            ) { menuOpen = false; haptics.performHapticFeedback(HapticFeedbackType.Confirm); onSendSteered(SteeringMode.AH_AUTO) }
+            SteerMenuItem(
+                icon = Icons.Rounded.HourglassTop,
+                title = uiContext.getString(R.string.steering_send_after),
+                detail = uiContext.getString(R.string.steering_send_after_desc),
+                container = scheme.tertiaryContainer,
+                content = scheme.onTertiaryContainer,
+                tag = "composer-steer-after-task",
+            ) { menuOpen = false; haptics.performHapticFeedback(HapticFeedbackType.Confirm); onSendSteered(SteeringMode.AFTER_TASK) }
+        }
+    }
+}
+
+@Composable
+private fun SteerMenuItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    detail: String,
+    container: Color,
+    content: Color,
+    tag: String,
+    onClick: () -> Unit,
+) {
+    DropdownMenuItem(
+        text = {
+            Column(Modifier.padding(vertical = 8.dp)) {
+                Text(title, style = MaterialTheme.typography.titleSmall)
+                Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
+        leadingIcon = {
+            Box(Modifier.size(36.dp).clip(RoundedCornerShape(12.dp)).background(container), contentAlignment = Alignment.Center) {
+                Icon(icon, null, Modifier.size(20.dp), tint = content)
+            }
+        },
+        onClick = onClick,
+        modifier = Modifier.testTag(tag),
+    )
 }
 
 @Composable

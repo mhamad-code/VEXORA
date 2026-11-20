@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.map
 
 val Context.settingsStore by preferencesDataStore(name = "settings")
 
-private val WEB_SEARCH_PROVIDERS = setOf("keyless", "brave", "tavily")
+private val WEB_SEARCH_PROVIDERS = com.agent.mhamed.tools.SearchProviders.ids.toSet()
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK, AMOLED }
 
@@ -87,8 +87,13 @@ data class AppSettings(
     val sameModelAcrossChats: Boolean = true,
     /** Skill names hidden from the catalog and slash picker. */
     val disabledSkills: Set<String> = emptySet(),
-    /** web_search backend: "keyless" (default) | "brave" | "tavily". */
+    /**
+     * The search provider picked before several could be on at once. Kept for backups and
+     * older builds; web_search now uses every provider that is not in [disabledSearchProviders].
+     */
     val webSearchProvider: String = "keyless",
+    /** Search providers the user switched off. Everything else that is ready (has keys, or needs none) can be used. */
+    val disabledSearchProviders: Set<String> = emptySet(),
     /**
      * Screenshots are allowed by default outside credential screens. Off blocks
      * them app wide; screens that show keys and tokens always block.
@@ -146,6 +151,8 @@ data class AppSettings(
     /** Chat opens a fresh conversation unless the user asks to continue the latest one. */
     val chatStart: ChatStartMode = ChatStartMode.NEW_CHAT,
     val chatKeepThinkingCollapsed: Boolean = true,
+    /** Lets Chat set reminders that show as notifications. */
+    val chatRemindersEnabled: Boolean = true,
     val chatSearchCodeChats: Boolean = true,
     val codeSearchChatChats: Boolean = true,
     /** AH Rumble: a haptic pulse whenever a Chat turn moves to a new step. */
@@ -204,6 +211,19 @@ data class AppSettings(
     val subagentsEnabled: Boolean = true,
     /** Lets the agent show a card with buttons to Android's storage access pages. Never grants anything itself. */
     val storageAccessCards: Boolean = true,
+    /** Seconds a stream may stay silent before the run pauses with a stall error. */
+    val streamStallTimeoutSeconds: Int = com.agent.mhamed.agent.StreamRetrier.DEFAULT_STALL_TIMEOUT_SECONDS,
+    /**
+     * For models whose server holds a tool call back until it is finished, ask
+     * for file contents as streamed reply text so the write shows live.
+     */
+    val streamFileWritesAsText: Boolean = true,
+    /** "providerId|model" keys seen delivering a whole write in one chunk. */
+    val bufferedToolCallModels: Set<String> = emptySet(),
+    /** Models that called write_file with the file block marker but never wrote the block. */
+    val fileBlockDeclinedModels: Set<String> = emptySet(),
+    /** "providerId|model" to the input window its server named when it rejected a request as too long. */
+    val learnedContextLimits: Map<String, Int> = emptyMap(),
     /** ID of the last active chat session. */
     val lastActiveSessionId: String? = null,
     /** Generate and inject compact codebase symbol index (Repo map) into agent context. */
@@ -221,6 +241,20 @@ data class AppSettings(
     val cavemanInstalled: Boolean = false,
     val cavemanIntensity: com.agent.mhamed.caveman.CavemanIntensity = com.agent.mhamed.caveman.CavemanIntensity.OFF,
     val cavemanWenyan: Boolean = false,
+    /** Activity presentation: NEW grouped lines (default) or CLASSIC cards. */
+    val activityDisplay: com.agent.mhamed.data.ActivityDisplay = com.agent.mhamed.data.ActivityDisplay.NEW,
+    /** Code review before commit/push: OFF, SECRETS_ONLY, FULL (default FULL). */
+    val codeReviewBeforeCommit: com.agent.mhamed.data.CodeReviewLevel = com.agent.mhamed.data.CodeReviewLevel.FULL,
+    /** Minimum changed lines before the AI review runs (avoids trivial diffs). */
+    val codeReviewMinDiffLines: Int = 10,
+    /** Master switch for Android device-control tools (disabled by default). */
+    val deviceControlEnabled: Boolean = false,
+    /** Package names the agent may not control without a separate explicit approval. */
+    val deviceControlBlockedPackages: Set<String> = DEFAULT_DEVICE_CONTROL_BLOCKED,
+    /** Maximum steps per device-control task. */
+    val deviceControlMaxSteps: Int = 50,
+    /** Maximum duration (seconds) per device-control task. */
+    val deviceControlMaxDurationSeconds: Int = 300,
 ) {
     /** Backwards-compat accessor: timeout in seconds (for old callers / backups). */
     val voiceAutoSendTimeoutSeconds: Int get() = voiceAutoSendTimeoutMs / 1000
@@ -250,6 +284,13 @@ data class VoiceSelection(
     val sttModel: String = "",
     val ttsModel: String = "",
     val ttsVoice: String = "",
+)
+
+val DEFAULT_DEVICE_CONTROL_BLOCKED: Set<String> = setOf(
+    "com.android.settings", "com.google.android.gms", "com.android.vending",
+    "com.keepersecurity.passwordmanager", "com.agilebits.onepassword", "com.bitwarden.desktop",
+    "com.paypal.android.p2pmobile", "com.venmo", "com.zellepay.zelle",
+    "com.chase.sig.android", "com.bankofamerica.mobilebanking",
 )
 
 class SettingsRepository(private val context: Context) {
@@ -355,6 +396,7 @@ class SettingsRepository(private val context: Context) {
         val SAME_MODEL_ACROSS_CHATS = booleanPreferencesKey("same_model_across_chats")
         val DISABLED_SKILLS = stringSetPreferencesKey("disabled_skills")
         val WEB_SEARCH_PROVIDER = stringPreferencesKey("web_search_provider")
+        val DISABLED_SEARCH_PROVIDERS = stringSetPreferencesKey("disabled_search_providers")
         val ALLOW_SCREENSHOTS = booleanPreferencesKey("allow_screenshots")
         val PLANNING_MODELS_ENABLED = booleanPreferencesKey("planning_models_enabled")
         val PLANNING_PROVIDER = stringPreferencesKey("planning_provider_id")
@@ -384,6 +426,7 @@ class SettingsRepository(private val context: Context) {
         val RESUME_LAST_CHAT = booleanPreferencesKey("resume_last_chat")
         val START_SCREEN = stringPreferencesKey("start_screen")
         val CHAT_KEEP_THINKING_COLLAPSED = booleanPreferencesKey("chat_keep_thinking_collapsed")
+        val CHAT_REMINDERS_ENABLED = booleanPreferencesKey("chat_reminders_enabled")
         val RUMBLE_ENABLED = booleanPreferencesKey("rumble_enabled")
         val RUMBLE_STRENGTH = intPreferencesKey("rumble_strength")
         val RUMBLE_SMOOTHNESS = intPreferencesKey("rumble_smoothness")
@@ -420,6 +463,11 @@ class SettingsRepository(private val context: Context) {
         val SHOW_TODO_LIST = booleanPreferencesKey("show_todo_list")
         val SUBAGENTS_ENABLED = booleanPreferencesKey("subagents_enabled")
         val STORAGE_ACCESS_CARDS = booleanPreferencesKey("storage_access_cards")
+        val STREAM_STALL_TIMEOUT_SECONDS = intPreferencesKey("stream_stall_timeout_seconds")
+        val STREAM_FILE_WRITES_AS_TEXT = booleanPreferencesKey("stream_file_writes_as_text")
+        val BUFFERED_TOOL_CALL_MODELS = stringSetPreferencesKey("buffered_tool_call_models")
+        val FILE_BLOCK_DECLINED_MODELS = stringSetPreferencesKey("file_block_declined_models")
+        val LEARNED_CONTEXT_LIMITS = stringSetPreferencesKey("learned_context_limits")
         val LAST_ACTIVE_SESSION = stringPreferencesKey("last_active_session_id")
         val REPO_MAP_ENABLED = booleanPreferencesKey("repo_map_enabled")
         val LOCAL_MODEL_AGENT_CONTEXT = booleanPreferencesKey("local_model_agent_context")
@@ -427,6 +475,13 @@ class SettingsRepository(private val context: Context) {
         val CAVEMAN_INSTALLED = booleanPreferencesKey("caveman_installed")
         val CAVEMAN_INTENSITY = stringPreferencesKey("caveman_intensity")
         val CAVEMAN_WENYAN = booleanPreferencesKey("caveman_wenyan")
+        val ACTIVITY_DISPLAY = stringPreferencesKey("activity_display")
+        val CODE_REVIEW_BEFORE_COMMIT = stringPreferencesKey("code_review_before_commit")
+        val CODE_REVIEW_MIN_DIFF_LINES = intPreferencesKey("code_review_min_diff_lines")
+        val DEVICE_CONTROL_ENABLED = booleanPreferencesKey("device_control_enabled")
+        val DEVICE_CONTROL_BLOCKED_PACKAGES = stringSetPreferencesKey("device_control_blocked_packages")
+        val DEVICE_CONTROL_MAX_STEPS = intPreferencesKey("device_control_max_steps")
+        val DEVICE_CONTROL_MAX_DURATION_SECONDS = intPreferencesKey("device_control_max_duration_seconds")
     }
 
     /** Device-local dismissal shared by the empty Chat and Code screens. */
@@ -497,6 +552,7 @@ class SettingsRepository(private val context: Context) {
             webSearchProvider = prefs[Keys.WEB_SEARCH_PROVIDER]
                 ?.takeIf { it in WEB_SEARCH_PROVIDERS }
                 ?: "keyless",
+            disabledSearchProviders = prefs[Keys.DISABLED_SEARCH_PROVIDERS].orEmpty().filterTo(HashSet()) { it in WEB_SEARCH_PROVIDERS },
             allowScreenshots = prefs[Keys.ALLOW_SCREENSHOTS] ?: true,
             planningModelsEnabled = prefs[Keys.PLANNING_MODELS_ENABLED] ?: false,
             planningProviderId = prefs[Keys.PLANNING_PROVIDER],
@@ -529,6 +585,7 @@ class SettingsRepository(private val context: Context) {
             chatSearchCodeChats = prefs[Keys.CHAT_SEARCH_CODE_CHATS] ?: true,
             codeSearchChatChats = prefs[Keys.CODE_SEARCH_CHAT_CHATS] ?: true,
             chatKeepThinkingCollapsed = prefs[Keys.CHAT_KEEP_THINKING_COLLAPSED] ?: true,
+            chatRemindersEnabled = prefs[Keys.CHAT_REMINDERS_ENABLED] ?: true,
             rumbleEnabled = prefs[Keys.RUMBLE_ENABLED] ?: true,
             rumbleStrength = (prefs[Keys.RUMBLE_STRENGTH] ?: RUMBLE_DEFAULT_STRENGTH).coerceIn(0, 100),
             rumbleSmoothness = (prefs[Keys.RUMBLE_SMOOTHNESS] ?: RUMBLE_DEFAULT_SMOOTHNESS).coerceIn(0, 100),
@@ -565,6 +622,12 @@ class SettingsRepository(private val context: Context) {
             showTodoList = prefs[Keys.SHOW_TODO_LIST] ?: true,
             subagentsEnabled = prefs[Keys.SUBAGENTS_ENABLED] ?: true,
             storageAccessCards = prefs[Keys.STORAGE_ACCESS_CARDS] ?: true,
+            streamStallTimeoutSeconds = prefs[Keys.STREAM_STALL_TIMEOUT_SECONDS]
+                ?: com.agent.mhamed.agent.StreamRetrier.DEFAULT_STALL_TIMEOUT_SECONDS,
+            streamFileWritesAsText = prefs[Keys.STREAM_FILE_WRITES_AS_TEXT] ?: true,
+            bufferedToolCallModels = prefs[Keys.BUFFERED_TOOL_CALL_MODELS] ?: emptySet(),
+            fileBlockDeclinedModels = prefs[Keys.FILE_BLOCK_DECLINED_MODELS] ?: emptySet(),
+            learnedContextLimits = decodeContextLimits(prefs[Keys.LEARNED_CONTEXT_LIMITS]),
             lastActiveSessionId = prefs[Keys.LAST_ACTIVE_SESSION],
             repoMapEnabled = prefs[Keys.REPO_MAP_ENABLED] ?: true,
             localModelAgentContext = prefs[Keys.LOCAL_MODEL_AGENT_CONTEXT] ?: false,
@@ -574,6 +637,17 @@ class SettingsRepository(private val context: Context) {
                 runCatching { com.agent.mhamed.caveman.CavemanIntensity.valueOf(it) }.getOrNull()
             } ?: com.agent.mhamed.caveman.CavemanIntensity.OFF,
             cavemanWenyan = prefs[Keys.CAVEMAN_WENYAN] ?: false,
+            activityDisplay = prefs[Keys.ACTIVITY_DISPLAY]
+                ?.let { runCatching { com.agent.mhamed.data.ActivityDisplay.valueOf(it) }.getOrNull() }
+                ?: com.agent.mhamed.data.ActivityDisplay.NEW,
+            codeReviewBeforeCommit = prefs[Keys.CODE_REVIEW_BEFORE_COMMIT]
+                ?.let { runCatching { com.agent.mhamed.data.CodeReviewLevel.valueOf(it) }.getOrNull() }
+                ?: com.agent.mhamed.data.CodeReviewLevel.FULL,
+            codeReviewMinDiffLines = prefs[Keys.CODE_REVIEW_MIN_DIFF_LINES] ?: 10,
+            deviceControlEnabled = prefs[Keys.DEVICE_CONTROL_ENABLED] ?: false,
+            deviceControlBlockedPackages = prefs[Keys.DEVICE_CONTROL_BLOCKED_PACKAGES] ?: DEFAULT_DEVICE_CONTROL_BLOCKED,
+            deviceControlMaxSteps = prefs[Keys.DEVICE_CONTROL_MAX_STEPS] ?: 50,
+            deviceControlMaxDurationSeconds = prefs[Keys.DEVICE_CONTROL_MAX_DURATION_SECONDS] ?: 300,
             debugConsoleEnabled = prefs[Keys.DEBUG_CONSOLE_ENABLED] ?: false,
             debugConsoleBodies = prefs[Keys.DEBUG_CONSOLE_BODIES] ?: false,
             debugConsolePersist = prefs[Keys.DEBUG_CONSOLE_PERSIST] ?: false,
@@ -620,6 +694,7 @@ class SettingsRepository(private val context: Context) {
             p[Keys.SUBAGENT_COMPLETION_NOTIFICATIONS] = s.subagentCompletionNotifications
             p[Keys.DISABLED_SKILLS] = s.disabledSkills
             p[Keys.WEB_SEARCH_PROVIDER] = s.webSearchProvider
+            p[Keys.DISABLED_SEARCH_PROVIDERS] = s.disabledSearchProviders.filterTo(HashSet()) { it in WEB_SEARCH_PROVIDERS }
             p[Keys.VOICE_ENGINE] = s.voiceEngine
             p[Keys.GROQ_WHISPER_MODEL] = s.groqWhisperModel
             p[Keys.TTS_ENGINE] = s.ttsEngine
@@ -639,6 +714,7 @@ class SettingsRepository(private val context: Context) {
             p[Keys.CHAT_SEARCH_CODE_CHATS] = s.chatSearchCodeChats
             p[Keys.CODE_SEARCH_CHAT_CHATS] = s.codeSearchChatChats
             p[Keys.CHAT_KEEP_THINKING_COLLAPSED] = s.chatKeepThinkingCollapsed
+            p[Keys.CHAT_REMINDERS_ENABLED] = s.chatRemindersEnabled
             p[Keys.RUMBLE_ENABLED] = s.rumbleEnabled
             p[Keys.RUMBLE_STRENGTH] = s.rumbleStrength.coerceIn(0, 100)
             p[Keys.RUMBLE_SMOOTHNESS] = s.rumbleSmoothness.coerceIn(0, 100)
@@ -670,6 +746,11 @@ class SettingsRepository(private val context: Context) {
             p[Keys.SHOW_TODO_LIST] = s.showTodoList
             p[Keys.SUBAGENTS_ENABLED] = s.subagentsEnabled
             p[Keys.STORAGE_ACCESS_CARDS] = s.storageAccessCards
+            p[Keys.STREAM_STALL_TIMEOUT_SECONDS] = s.streamStallTimeoutSeconds
+            p[Keys.STREAM_FILE_WRITES_AS_TEXT] = s.streamFileWritesAsText
+            p[Keys.BUFFERED_TOOL_CALL_MODELS] = s.bufferedToolCallModels
+            p[Keys.FILE_BLOCK_DECLINED_MODELS] = s.fileBlockDeclinedModels
+            p[Keys.LEARNED_CONTEXT_LIMITS] = encodeContextLimits(s.learnedContextLimits)
             p[Keys.REPO_MAP_ENABLED] = s.repoMapEnabled
             p[Keys.LOCAL_MODEL_AGENT_CONTEXT] = s.localModelAgentContext
             p[Keys.LOCAL_MODEL_EXPERIMENTAL] = s.localModelExperimental
@@ -689,6 +770,15 @@ class SettingsRepository(private val context: Context) {
     suspend fun setWebSearchProvider(provider: String) {
         if (provider !in WEB_SEARCH_PROVIDERS) return
         context.settingsStore.edit { it[Keys.WEB_SEARCH_PROVIDER] = provider }
+    }
+
+    /** Turns one search provider on or off for web_search. */
+    suspend fun setSearchProviderEnabled(provider: String, enabled: Boolean) {
+        if (provider !in WEB_SEARCH_PROVIDERS) return
+        context.settingsStore.edit { prefs ->
+            val disabled = prefs[Keys.DISABLED_SEARCH_PROVIDERS].orEmpty()
+            prefs[Keys.DISABLED_SEARCH_PROVIDERS] = if (enabled) disabled - provider else disabled + provider
+        }
     }
 
     suspend fun setProviderEnabled(id: String, enabled: Boolean) {
@@ -729,6 +819,38 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setStorageAccessCards(enabled: Boolean) {
         context.settingsStore.edit { it[Keys.STORAGE_ACCESS_CARDS] = enabled }
+    }
+
+    suspend fun setStreamStallTimeoutSeconds(seconds: Int) {
+        context.settingsStore.edit {
+            it[Keys.STREAM_STALL_TIMEOUT_SECONDS] =
+                if (seconds == com.agent.mhamed.agent.StreamRetrier.STALL_TIMEOUT_NEVER) seconds
+                else seconds.coerceIn(
+                    com.agent.mhamed.agent.StreamRetrier.MIN_STALL_TIMEOUT_SECONDS,
+                    com.agent.mhamed.agent.StreamRetrier.MAX_STALL_TIMEOUT_SECONDS)
+        }
+    }
+
+    suspend fun setStreamFileWritesAsText(enabled: Boolean) {
+        context.settingsStore.edit { it[Keys.STREAM_FILE_WRITES_AS_TEXT] = enabled }
+    }
+
+    /** Remembers a model whose server delivered a whole file write in one chunk. */
+    suspend fun markBufferedToolCalls(key: String) {
+        context.settingsStore.edit { it[Keys.BUFFERED_TOOL_CALL_MODELS] = it[Keys.BUFFERED_TOOL_CALL_MODELS].orEmpty() + key }
+    }
+
+    /** Remembers a model that would not write file blocks, so it goes back to plain write_file calls. */
+    /** Remembers the input window a server named when it rejected a request from this model as too long. */
+    suspend fun learnContextLimit(key: String, tokens: Int) {
+        context.settingsStore.edit {
+            it[Keys.LEARNED_CONTEXT_LIMITS] = encodeContextLimits(
+                decodeContextLimits(it[Keys.LEARNED_CONTEXT_LIMITS]) + (key to tokens))
+        }
+    }
+
+    suspend fun markFileBlocksDeclined(key: String) {
+        context.settingsStore.edit { it[Keys.FILE_BLOCK_DECLINED_MODELS] = it[Keys.FILE_BLOCK_DECLINED_MODELS].orEmpty() + key }
     }
 
     suspend fun setSubagentsEnabled(enabled: Boolean) {
@@ -1241,6 +1363,10 @@ class SettingsRepository(private val context: Context) {
         context.settingsStore.edit { it[Keys.CHAT_KEEP_THINKING_COLLAPSED] = value }
     }
 
+    suspend fun setChatRemindersEnabled(value: Boolean) {
+        context.settingsStore.edit { it[Keys.CHAT_REMINDERS_ENABLED] = value }
+    }
+
     suspend fun setRumbleEnabled(value: Boolean) {
         context.settingsStore.edit { it[Keys.RUMBLE_ENABLED] = value }
     }
@@ -1398,6 +1524,34 @@ class SettingsRepository(private val context: Context) {
         context.settingsStore.edit { it[Keys.RUN_TIP_CURSOR] = cursor }
     }
 
+    suspend fun setActivityDisplay(display: com.agent.mhamed.data.ActivityDisplay) {
+        context.settingsStore.edit { it[Keys.ACTIVITY_DISPLAY] = display.name }
+    }
+
+    suspend fun setCodeReviewBeforeCommit(level: com.agent.mhamed.data.CodeReviewLevel) {
+        context.settingsStore.edit { it[Keys.CODE_REVIEW_BEFORE_COMMIT] = level.name }
+    }
+
+    suspend fun setCodeReviewMinDiffLines(lines: Int) {
+        context.settingsStore.edit { it[Keys.CODE_REVIEW_MIN_DIFF_LINES] = lines }
+    }
+
+    suspend fun setDeviceControlEnabled(enabled: Boolean) {
+        context.settingsStore.edit { it[Keys.DEVICE_CONTROL_ENABLED] = enabled }
+    }
+
+    suspend fun setDeviceControlBlockedPackages(packages: Set<String>) {
+        context.settingsStore.edit { it[Keys.DEVICE_CONTROL_BLOCKED_PACKAGES] = packages }
+    }
+
+    suspend fun setDeviceControlMaxSteps(steps: Int) {
+        context.settingsStore.edit { it[Keys.DEVICE_CONTROL_MAX_STEPS] = steps }
+    }
+
+    suspend fun setDeviceControlMaxDurationSeconds(seconds: Int) {
+        context.settingsStore.edit { it[Keys.DEVICE_CONTROL_MAX_DURATION_SECONDS] = seconds }
+    }
+
     suspend fun setLastConversationKind(value: ConversationKind) {
         context.settingsStore.edit { it[Keys.LAST_CONVERSATION_KIND] = value.name }
     }
@@ -1416,3 +1570,14 @@ class SettingsRepository(private val context: Context) {
         }
     }
 }
+
+/** Entries are "providerId|model=tokens"; the key itself may hold "=", so split on the last one. */
+internal fun decodeContextLimits(entries: Set<String>?): Map<String, Int> =
+    entries.orEmpty().mapNotNull { entry ->
+        val at = entry.lastIndexOf('=')
+        if (at <= 0) return@mapNotNull null
+        entry.substring(at + 1).toIntOrNull()?.takeIf { it > 0 }?.let { entry.substring(0, at) to it }
+    }.toMap()
+
+internal fun encodeContextLimits(limits: Map<String, Int>): Set<String> =
+    limits.mapTo(LinkedHashSet()) { (key, tokens) -> "$key=$tokens" }

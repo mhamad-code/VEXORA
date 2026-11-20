@@ -114,6 +114,8 @@
     <string name="ui_authentication_failed">"තහවුරු කිරීම අසාර්ථකයි"</string>
     <string name="ui_run_results">"ධාවන ප්‍රතිඵල"</string>
     <string name="ui_notified_when_a_background_agent_run_finishes">"පසුබිම නියෝජිතයා ක්‍රියාත්මක වන විට නිවේදනය කිරීම"</string>
+    <string name="ui_run_errors">"ධාවන දෝෂ"</string>
+    <string name="ui_notified_when_a_background_agent_run_fails">"පසුබිම නියෝජිතයා දෝෂයකින් නතර වූ විට නිවේදනය කිරීම"</string>
     <string name="ui_run_finished">"Run ඉවරයි"</string>
     <string name="ui_run_needs_attention">"ධාවනය අවධානය යොමු කිරීම අවශ්ය"</string>
     <string name="ui_agent_runs">"නියෝජිතයා Run"</string>
@@ -141,7 +143,6 @@
     <string name="ui_could_not_load_that_image">"ඒ ඡායාරූපය තැබිය නොහැක."</string>
     <string name="ui_pages">"%1$s පිටු"</string>
     <string name="ui_could_not_attach_that_file">"ඒ ගොල්ලන් එකතු කළ නොහැක: %1$s"</string>
-    <string name="ui_file_is_larger_than">"ගොනු වඩා විශාලයි %1$s"</string>
     <string name="ui_model_selection_is_being_saved_try_sending">"ආකෘතිය තෝරා ගැනීම සුරක්ෂිත වී ඇත. මොහොතකින් නැවත යැවීමට උත්සාහ කරන්න."</string>
     <string name="ui_this_chat_s_provider_is_unavailable_choose">"මෙම චැට් සැපයුම්කරු ලබා ගත නොහැක. ආකෘතිය තෝරා ගැනීම සඳහා වෙනත් සැපයුම්කරු තෝරා ගන්න."</string>
     <string name="ui_the_selected_local_model_was_removed_download">"තෝරාගත් දේශීය ආකෘතිය ඉවත් කර ඇත. එය නැවත බාගත කරන්න හෝ පැහැදිලිව වෙනත් සැපයුම්කරුවෙකු තෝරා ගන්න."</string>
@@ -276,6 +277,13 @@
     <string name="provider_use_key">"Key භාවිතා කරන්න %1$d"</string>
     <string name="provider_remove_key">"Key එක ඉවත් කරන්න %1$d"</string>
     <string name="provider_add_key">"එක් කරන්න API Key"</string>
+    <string name="provider_test_key">Test</string>
+    <string name="provider_test_key_description">Test key %1$d</string>
+    <string name="provider_testing_key">Testing…</string>
+    <string name="provider_key_works">Key works (%1$d ms)</string>
+    <string name="provider_key_works_model">Key works with %1$s (%2$d ms)</string>
+    <string name="provider_key_failed">Key failed: %1$s</string>
+    <string name="provider_test_key_hint">Sends one short message capped at a few tokens.</string>
     <string name="provider_proxy_title">"ප්‍රොක්සි සේවාදායකය"</string>
     <string name="provider_proxy_system">"පද්ධතිය සම්බන්ධතාවය"</string>
     <string name="provider_proxy_inherit">"ගෝලීය setting භාවිතා කරන්න"</string>
@@ -545,4 +553,14 @@
     <string name="settings_voice_preview_play">Listen to %1$s</string>
     <string name="settings_voice_preview_stop">Stop the sample</string>
     <string name="settings_voice_preview_hint">Tap the speaker to hear a voice before you pick it.</string>
+    <string name="sidebar_workspace_other">"වෙනත් කතාබස්"</string>
+    <plurals name="subagents_finished_title">
+        <item quantity="one">"උපනියෝජිතයා %1$dක් අවසන්"</item>
+        <item quantity="other">"උපනියෝජිතයන් %1$dක් අවසන්"</item>
+    </plurals>
+    <string name="subagents_finished_with_failures">"%1$d අවසන්, %2$d අවසන් නැත"</string>
+    <string name="subagents_show_result">"ප්‍රතිඵලය පෙන්වන්න"</string>
+    <string name="subagents_hide_result">"ප්‍රතිඵලය සඟවන්න"</string>
+    <string name="subagents_no_output">"කිසිදු ප්‍රතිඵලයක් ලැබුණේ නැත."</string>
+    <string name="subagents_took">"%1$s ගත විය"</string>
 </resources>

@@ -19,10 +19,10 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.concurrent.TimeUnit
 
 /**
- * Web search. When the user configured a search API (Brave / Tavily key in
- * Settings) that backend is used first for higher-quality results, with the
- * keyless HTML engine chain as automatic fallback. Without a key the keyless
- * chain runs directly: an engine parameter picks one, "auto" tries them all.
+ * Web search across every provider the user has turned on and made ready (a
+ * saved key, a shared key, or the keyless public engines). The agent can name
+ * one with the provider parameter; "auto" tries them in [SearchSetup] order and
+ * falls through to the next one when a provider fails or finds nothing.
  */
 class WebSearchTool(
     private val client: OkHttpClient,
@@ -33,21 +33,28 @@ class WebSearchTool(
     /** Chat's selected research depth; null for Code and Auto. */
     private val depth: com.agent.mhamed.data.SearchDepth? = null,
     private val refreshApi: suspend () -> SearchApiConfig? = { searchApi() },
+    /** Reads the top results in parallel so one call returns passages, not just snippets. */
+    private val pageReader: SearchPageReader? = null,
+    /** Always-images chats: list pictures from the pages read, so the answer has one without another round. */
+    private val pageImages: Boolean = false,
+    /** Every provider that is on and ready, read fresh per call. */
+    private val setup: () -> SearchSetup = { SearchSetup.single(searchApi()) },
+    private val refreshSetup: suspend () -> SearchSetup = { SearchSetup.single(refreshApi()) },
+    /** Result URLs already returned this turn, for the repeat note when no budget tracks them. */
+    private val seenThisTurn: MutableSet<String>? = null,
 ) : Tool {
     override val name = "web_search"
     override val description: String get() = buildString {
         append(
-            "Search the web and return top results (title, url, date when reported, snippet). Uses the configured " +
-                "search API automatically when one is set in Settings; otherwise keyless engines " +
-                "run with automatic fallback. Choose an engine with the 'engine' parameter " +
-                "(duckduckgo, bing, brave, google; keyless mode only) or use 'auto'. " +
+            "Search the web and return top results (title, url, date when reported, snippet). " +
                 "Set freshness to day, week, month, or year for news and latest-state questions; " +
                 "check the reported date before treating a result as current.",
         )
-        searchBackendFor(searchApi())?.let {
-            append(" The user selected ${it.label} in Settings; every search uses that API with the saved key. " +
-                "The engine parameter is ignored while it is active. API authentication, quota and rate-limit failures " +
-                "are reported explicitly; do not switch to scraping or repeat unchanged requests.")
+        append(providerGuide(setup()))
+        if (pageReader != null) {
+            append(" It also reads the top result pages at the same time and returns their passages that best match the query " +
+                "(set read to choose how many pages, 0 for snippets only). Those pages count as read; answer from the passages " +
+                "when they cover the question, and use web_fetch only for a page that was not read or when you need more of one.")
         }
         sourceBudget?.let {
             append(" This turn allows at most ${it.maxSources} distinct sources; the tool stops returning new sources when the budget is used.")
@@ -57,10 +64,14 @@ class WebSearchTool(
         mapOf(
             "query" to Schema.string("The search query."),
             "count" to Schema.integer("Maximum number of results (default 8; research depth levels request a full batch of 20)."),
-            "engine" to Schema.string("duckduckgo | bing | brave | google | auto (default). Keyless mode only."),
+            "provider" to Schema.string("Which search provider to use: auto (default) or one of the ids listed in the description. " +
+                "auto tries them in order and moves on when one fails or finds nothing."),
+            "engine" to Schema.string("duckduckgo | bing | brave | google | auto (default). Only for the keyless provider."),
             "freshness" to Schema.string("Optional recency filter: day, week, month, year. Omit or use any for no filter."),
             "language" to Schema.string("Optional result language code, for example en or de."),
             "country" to Schema.string("Optional country code, for example US or DE."),
+            "read" to Schema.integer("How many top result pages to read in parallel and return passages from (0-6). " +
+                "Defaults to ${READ_DEFAULT} in Chat; 0 returns snippets only."),
         ),
         required = listOf("query"),
     )
@@ -69,32 +80,106 @@ class WebSearchTool(
     private val keyless = KeylessSearchBackend()
 
     internal suspend fun configurationNote(): String {
-        val config = refreshApi()
-        val backend = searchBackendFor(config)
+        val current = refreshSetup()
+        val ready = current.apis.filter { usable(it) }.mapNotNull { searchBackendFor(it)?.label }
+        val missing = current.apis.filterNot { usable(it) }.map { SearchProviders.name(it.provider) ?: it.provider }
         return when {
-            backend != null -> "The selected search provider is ${backend.label}; its saved API key is available. " +
-                "Use web_search normally: the harness supplies the key automatically. Do not ask the user to paste it or tell you to use this provider. " +
-                (if (config?.provider == "tavily") "web_fetch also uses Tavily Extract and cached full-page content automatically. " else "") +
+            ready.isNotEmpty() -> "Search providers ready to use (a saved API key is available for each): ${ready.joinToString(", ")}" +
+                (if (current.keyless) ", plus the keyless public engines" else "") + ". " +
+                "Use web_search normally: the harness supplies the keys automatically. Pick a provider when one fits the query better, " +
+                "otherwise leave provider on auto. Do not ask the user to paste keys. " +
+                (if (current.config("tavily")?.keys?.isNotEmpty() == true) "web_fetch also uses Tavily Extract and cached full-page content automatically. " else "") +
                 "Do not navigate to search-engine websites to bypass these tools. Search snippets are not full page reads. Report API failures and unavailable pages honestly."
-            config != null -> "${config.provider} is selected for search, but its saved API key is missing. web_search reports this explicitly; the user can fix it in Web search settings."
-            else -> "No search API is selected. web_search uses public keyless engines. Use web_fetch for pages and browser_read for JavaScript pages."
+            missing.isNotEmpty() -> "${missing.joinToString(", ")} is turned on for search, but has no saved API key. web_search reports this explicitly; the user can fix it in Web search settings."
+            current.keyless -> "No search API key is saved. web_search uses public keyless engines. Use web_fetch for pages and browser_read for JavaScript pages."
+            else -> "Every search provider is turned off in Web search settings, so web_search cannot run. Use web_fetch with known URLs."
         }
     }
 
+    private fun usable(config: SearchApiConfig): Boolean =
+        config.keys.isNotEmpty() || SearchProviders.info(config.provider)?.sharedKey != null
+
+    private fun providerGuide(current: SearchSetup): String = buildString {
+        val ids = current.providerIds
+        if (ids.isEmpty()) {
+            append(" Every search provider is turned off in Settings, so this tool cannot run.")
+            return@buildString
+        }
+        if (ids.size == 1 && current.apis.size == 1) {
+            val name = SearchProviders.name(ids[0]) ?: ids[0]
+            append(" Every search uses $name with the saved key. API authentication, quota and rate-limit failures " +
+                "are reported explicitly; do not switch to scraping or repeat unchanged requests.")
+            return@buildString
+        }
+        append(" Providers the user turned on (id: what it is good for):")
+        current.apis.forEach { config ->
+            val info = SearchProviders.info(config.provider) ?: return@forEach
+            append(" ${info.id}: ${info.strength};")
+        }
+        if (current.keyless) append(" ${SearchProviders.KEYLESS}: ${SearchProviders.KEYLESS_STRENGTH}; choose its engine with 'engine'.")
+        append(" Leave provider on auto for ordinary searches; name one when the query suits it, or to get a second, independent set of results.")
+    }
+
     /** A run-scoped copy that spends from this turn's source and read budgets. */
-    fun forDepth(depth: com.agent.mhamed.data.SearchDepth): WebSearchTool =
-        depth.maxSources?.let {
-            WebSearchTool(
-                client, searchApi,
-                SearchSourceBudget(it, researchReadLimit(depth), researchReadMinimum(depth)),
-                depth,
-                refreshApi,
-            )
-        } ?: this
+    fun forDepth(depth: com.agent.mhamed.data.SearchDepth, images: Boolean = false): WebSearchTool =
+        WebSearchTool(
+            client, searchApi,
+            depth.maxSources?.let { SearchSourceBudget(it, researchReadLimit(depth), researchReadMinimum(depth)) },
+            depth,
+            refreshApi,
+            pageReader,
+            images,
+            setup,
+            refreshSetup,
+            seenThisTurn = if (depth.maxSources == null) java.util.Collections.synchronizedSet(HashSet()) else null,
+        )
 
     internal fun budget(): SearchSourceBudget? = sourceBudget
 
     override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult {
+        val started = System.nanoTime()
+        val shown = ArrayList<WebSearchResult>()
+        val result = search(args, shown).let { found ->
+            val note = repeatNote(shown)
+            if (note.isEmpty()) found else found.copy(output = found.output + note)
+        }
+        val searchMs = (System.nanoTime() - started) / 1_000_000
+        val query = args["query"]?.jsonPrimitive?.contentOrNull?.trim().orEmpty()
+        val wanted = (args["read"]?.jsonPrimitive?.content?.toIntOrNull()
+            ?: if (depth != null) READ_DEFAULT else 0).coerceIn(0, READ_MAX)
+        val reader = pageReader
+        if (!result.ok || shown.isEmpty() || reader == null || wanted == 0 || depth == com.agent.mhamed.data.SearchDepth.OFF) {
+            researchTiming("web_search: ${searchMs}ms, ${shown.size} results, no page reads")
+            return result
+        }
+        val outcome = reader.read(query, shown, wanted, sourceBudget)
+        researchTiming("web_search: search ${searchMs}ms, total ${(System.nanoTime() - started) / 1_000_000}ms")
+        if (outcome.attempted == 0) return result
+        val passages = buildString {
+            append("\n\n")
+            if (outcome.pages.isEmpty()) {
+                append("[Read ${outcome.loaded} of ${outcome.attempted} top pages, but none had passages matching the query. " +
+                    "Use web_fetch on the strongest result if the snippets are not enough.]")
+            } else {
+                append(SearchPassages.render(outcome.pages))
+                if (outcome.unread.isNotEmpty() && outcome.loaded < wanted) {
+                    append("\n[Not read in time or blocked: ${outcome.unread.joinToString(", ")}. Use web_fetch if one of them matters.]")
+                }
+            }
+            if (pageImages) {
+                val images = outcome.pages.flatMap { WebResultCache.getPageImages(it.result.url).orEmpty() }
+                if (images.isNotEmpty()) append("\n").append(PageImageText.render(images, 4))
+            }
+            sourceBudget?.let { budget ->
+                append("\n[pages read this turn: ${budget.pagesRead}")
+                budget.maxReads?.let { append('/').append(it) }
+                append(']')
+            }
+        }
+        return result.copy(output = result.output + passages, research = sourceBudget?.receipt(backend = result.research?.backend) ?: result.research)
+    }
+
+    private suspend fun search(args: JsonObject, shown: MutableList<WebSearchResult>): ToolResult {
         val rawQuery = args["query"]?.jsonPrimitive?.content
             ?: throw ToolFailure("Missing required argument: query")
         val query = rawQuery.trim()
@@ -128,48 +213,89 @@ class WebSearchTool(
             com.agent.mhamed.data.SearchDepth.DEEP_RESEARCH,
             com.agent.mhamed.data.SearchDepth.MAX_RESEARCH,
         )
-        val options = SearchOptions(requested, freshness, language, country, deep)
+        val readCount = (args["read"]?.jsonPrimitive?.content?.toIntOrNull()
+            ?: if (depth != null && pageReader != null) READ_DEFAULT else 0).coerceIn(0, READ_MAX)
+            .let { if (pageReader == null || depth == com.agent.mhamed.data.SearchDepth.OFF) 0 else it }
+        val options = SearchOptions(requested, freshness, language, country, deep, readPages = readCount > 0)
         val searchClient = client.newBuilder()
             .readTimeout(25, TimeUnit.SECONDS)
             .build()
 
+        val current = refreshSetup()
+        val provider = args["provider"]?.jsonPrimitive?.contentOrNull?.trim()?.lowercase()?.takeIf { it.isNotEmpty() } ?: "auto"
+        val available = current.providerIds
+        if (provider != "auto" && provider !in available) {
+            val known = provider == SearchProviders.KEYLESS || SearchProviders.info(provider) != null
+            throw ToolFailure(
+                (if (known) "The $provider search provider is turned off or has no saved key." else "Unknown search provider '$provider'.") +
+                    (if (available.isEmpty()) " Every provider is turned off in Web search settings."
+                    else " Available: auto, ${available.joinToString(", ")}."),
+            )
+        }
+        // A specific keyless engine only makes sense on the keyless provider.
+        val wantsKeyless = provider == SearchProviders.KEYLESS || (provider == "auto" && requested != "auto" && current.keyless)
+        val apis = when {
+            wantsKeyless -> emptyList()
+            provider == "auto" -> current.apis
+            else -> listOfNotNull(current.config(provider)) + current.apis.filter { it.provider != provider }
+        }
+        val useKeyless = current.keyless && (provider == "auto" || wantsKeyless || apis.isNotEmpty())
         val notes = StringBuilder()
-        val apiConfig = refreshApi()
-        if (apiConfig != null && apiConfig.keys.isEmpty()) return ToolResult(false,
-            "${apiConfig.provider} search API is selected but it has no enabled saved key. Add or turn on a key in Web search settings.")
-        val apiBackend = searchBackendFor(apiConfig)
+        val unusable = apis.filterNot { usable(it) }
+        if (unusable.isNotEmpty() && apis.size == unusable.size && !useKeyless) {
+            return ToolResult(false, "${unusable.first().provider} search API is selected but it has no enabled saved key. " +
+                "Add or turn on a key in Web search settings.")
+        }
+        if (apis.isEmpty() && !useKeyless) {
+            return ToolResult(false, "Every web search provider is turned off in Web search settings. Turn one on, or use web_fetch with a known URL.")
+        }
+        val chain = apis.filter { usable(it) }.mapNotNull { config -> searchBackendFor(config)?.let { config to it } }
         val cacheKey = listOf(
-            apiBackend?.label ?: "keyless", query, count, options.engine,
-            options.freshness, options.language, options.country, options.deep,
-            apiConfig?.credentialIdentity(),
+            provider, chain.joinToString(",") { it.second.label }, useKeyless, query, count, options.engine,
+            options.freshness, options.language, options.country, options.deep, options.readPages,
+            chain.joinToString(",") { it.first.credentialIdentity() },
         ).joinToString("|")
         WebResultCache.getSearch(cacheKey)?.let { cached ->
             val suffix = (cached.via?.let { "\n[via $it]" } ?: "") + "\n[cached search; no new API request]"
-            return render(cached.results, count, "", suffix)
+            return render(cached.results, count, "", suffix, shown)
         }
-        if (apiBackend != null) {
+        val failures = ArrayList<String>()
+        val empty = ArrayList<String>()
+        for ((_, backend) in chain) {
             try {
-                val outcome = apiBackend.fetch(searchClient, query, count, options)
-                if (outcome.results.isNotEmpty()) {
-                    WebResultCache.putSearch(cacheKey, outcome)
-                    val suffix = buildString {
-                        if (requested != "auto") {
-                            // The engine selector is keyless-only; say so instead of
-                            // silently returning different results than asked for.
-                            append("\n[note: the engine parameter is ignored; ${apiBackend.label} is active]")
-                        }
-                        append("\n[via ").append(outcome.via ?: apiBackend.label).append(']')
-                    }
-                    return render(outcome.results, count, notes.toString(), suffix)
+                val outcome = backend.fetch(searchClient, query, count, options)
+                if (outcome.results.isEmpty()) {
+                    empty += backend.label
+                    continue
                 }
-                return render(emptyList(), count, "${apiBackend.label} returned no results. Try a different query.\n", "\n[via ${apiBackend.label}]")
+                WebResultCache.putSearch(cacheKey, outcome)
+                val suffix = buildString {
+                    if (requested != "auto") {
+                        // The engine selector is keyless-only; say so instead of
+                        // silently returning different results than asked for.
+                        append("\n[note: the engine parameter is ignored; ${backend.label} is active]")
+                    }
+                    append("\n[via ").append(outcome.via ?: backend.label).append(']')
+                }
+                return render(outcome.results, count, fallThroughNote(failures, empty, backend.label), suffix, shown)
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
-                return ToolResult(false, "${apiBackend.label} failed: ${SecretRedactor.redact(e.message.orEmpty())}. " +
-                    "The selected API was not replaced with anonymous scraping. Check the API key, available credits, or the reported cooldown.")
+                failures += "${backend.label} failed: ${SecretRedactor.redact(e.message.orEmpty())}"
             }
         }
+        if (!useKeyless) {
+            if (failures.isEmpty()) {
+                val names = empty.joinToString(" and ")
+                return render(emptyList(), count, "$names returned no results. Try a different query.\n", "\n[via ${empty.lastOrNull().orEmpty()}]")
+            }
+            val list = (failures + empty.map { "$it returned no results" }).joinToString("; ")
+            return ToolResult(false, "$list. " +
+                (if (chain.size == 1) "The selected API was not replaced with anonymous scraping. "
+                else "Keyless public engines are turned off, so they were not tried. ") +
+                "Check the API key, available credits, or the reported cooldown.")
+        }
+        notes.append(fallThroughNote(failures, empty, "the keyless engines"))
 
         val outcome = try {
             keyless.fetch(searchClient, query, count, options)
@@ -186,7 +312,31 @@ class WebSearchTool(
         }
         WebResultCache.putSearch(cacheKey, outcome)
         val suffix = outcome.via?.let { "\n[via $it]" } ?: ""
-        return render(outcome.results, count, notes.toString(), suffix)
+        return render(outcome.results, count, notes.toString(), suffix, shown)
+    }
+
+    /**
+     * Says how many of these results earlier searches this turn already
+     * returned. Information only: the agent still decides whether to go on.
+     */
+    internal fun repeatNote(shown: List<WebSearchResult>): String {
+        val seen = seenThisTurn ?: return ""
+        if (shown.isEmpty()) return ""
+        val keys = shown.map { canonicalResultUrl(it.url) }.filter { it.isNotEmpty() }.distinct()
+        if (keys.isEmpty()) return ""
+        val repeated = synchronized(seen) { keys.count { !seen.add(it) } }
+        return when {
+            repeated == keys.size -> "\n[All ${keys.size} results were already returned by earlier searches this turn; this query found nothing new.]"
+            repeated * 2 >= keys.size -> "\n[$repeated of ${keys.size} results were already returned by earlier searches this turn.]"
+            else -> ""
+        }
+    }
+
+    /** Tells the agent which providers were skipped on the way to the one that answered. */
+    private fun fallThroughNote(failures: List<String>, empty: List<String>, used: String): String {
+        if (failures.isEmpty() && empty.isEmpty()) return ""
+        val parts = failures + empty.map { "$it returned no results" }
+        return "[${parts.joinToString("; ")}; used $used instead]\n"
     }
 
     private fun render(
@@ -194,14 +344,17 @@ class WebSearchTool(
         count: Int,
         prefix: String,
         suffix: String,
+        shown: MutableList<WebSearchResult> = ArrayList(),
     ): ToolResult {
         val varied = diversifyResults(results)
         val budget = sourceBudget
         if (budget == null) {
+            shown += varied.take(count)
             return ToolResult(true, prefix + WebSearchText.render(varied, count) + suffix,
                 research = com.agent.mhamed.core.ResearchReceipt(backend = suffix.substringAfter("[via ", "").substringBefore(']')))
         }
         val claimed = budget.claim(varied.take(count))
+        shown += claimed
         if (claimed.isEmpty()) {
             val message = if (budget.remaining == 0) exhaustedText()
             else "[No new sources found; ${budget.remaining} of ${budget.maxSources} sources remain this turn. Try a different query angle.]"
@@ -209,7 +362,8 @@ class WebSearchTool(
         }
         val push = when (depth) {
             com.agent.mhamed.data.SearchDepth.DEEP ->
-                ". Read the strongest pages with web_fetch before answering."
+                if (pageReader != null) ". Pages read below count; use web_fetch for other strong results before answering."
+                else ". Read the strongest pages with web_fetch before answering."
             com.agent.mhamed.data.SearchDepth.DEEP_RESEARCH,
             com.agent.mhamed.data.SearchDepth.MAX_RESEARCH ->
                 ". Keep searching different angles and read the strongest pages with web_fetch until the budget is used."
@@ -227,6 +381,11 @@ class WebSearchTool(
             research = budget.receipt(backend = suffix.substringAfter("[via ", "").substringBefore(']')))
     }
 
+    private companion object {
+        const val READ_DEFAULT = 4
+        const val READ_MAX = 6
+    }
+
     private fun exhaustedText(): String {
         val budget = sourceBudget ?: return ""
         return "[Search source limit reached: ${budget.used}/${budget.maxSources} sources this turn. " +
@@ -242,6 +401,19 @@ class WebSearchTool(
  * githubusercontent.com hosts; explicit false never attaches. The token is
  * NEVER attached for any other host, whatever the arguments say.
  */
+internal val HTTP_TOOL_USER_AGENT: String =
+    "VEXORA/${com.agent.mhamed.BuildConfig.VERSION_NAME} (+https://github.com/mhamad-code/VEXORA)"
+
+internal fun httpReason(code: Int): String? = when (code) {
+    200 -> "OK"; 201 -> "Created"; 202 -> "Accepted"; 204 -> "No Content"
+    301 -> "Moved Permanently"; 302 -> "Found"; 304 -> "Not Modified"; 307 -> "Temporary Redirect"; 308 -> "Permanent Redirect"
+    400 -> "Bad Request"; 401 -> "Unauthorized"; 403 -> "Forbidden"; 404 -> "Not Found"; 405 -> "Method Not Allowed"
+    408 -> "Request Timeout"; 409 -> "Conflict"; 410 -> "Gone"; 413 -> "Content Too Large"; 415 -> "Unsupported Media Type"
+    418 -> "I'm a teapot"; 422 -> "Unprocessable Content"; 429 -> "Too Many Requests"
+    500 -> "Internal Server Error"; 501 -> "Not Implemented"; 502 -> "Bad Gateway"; 503 -> "Service Unavailable"; 504 -> "Gateway Timeout"
+    else -> null
+}
+
 internal object GithubAuthPolicy {
     fun shouldAttach(host: String?, explicit: Boolean?): Boolean {
         val h = host?.lowercase()?.trimEnd('.') ?: return false
@@ -320,7 +492,9 @@ class HttpRequestTool(
             val attachAuth = GithubAuthPolicy.shouldAttach(host, githubAuth)
             val token = if (attachAuth) githubToken() else null
 
-            val builder = Request.Builder().url(url)
+            // OkHttp's bare "okhttp/x" agent is refused by sites that ask clients to identify
+            // themselves (Wikipedia, for one). A headers argument can still replace it.
+            val builder = Request.Builder().url(url).header("User-Agent", HTTP_TOOL_USER_AGENT)
             // Attached first so an explicit user Authorization header wins.
             if (attachAuth && token != null) {
                 builder.header("Authorization", "Bearer $token")
@@ -354,7 +528,10 @@ class HttpRequestTool(
                     .build()
                 reqClient.newCall(request).execute().use { resp ->
                     val sb = StringBuilder()
-                    sb.append("HTTP ").append(resp.code).append(' ').append(resp.message).append('\n')
+                    sb.append("HTTP ").append(resp.code)
+                    // HTTP/2 has no reason phrase; fall back to the standard one instead of a trailing space.
+                    (resp.message.trim().ifEmpty { httpReason(resp.code) })?.let { sb.append(' ').append(it) }
+                    sb.append('\n')
                     val headers = (0 until minOf(resp.headers.size, 12))
                         .map { resp.headers.name(it) to resp.headers.value(it) }
                     headers.forEach { (k, v) -> sb.append(k).append(": ").append(v).append('\n') }
