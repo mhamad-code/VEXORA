@@ -111,18 +111,19 @@ class CodespacesApi(
     /**
      * Best effort: the documented API has no port visibility endpoint. The CLI
      * uses this one, so try it and report a usable instruction on failure.
+     * The devcontainer already declares port 8765 as public, so a failure here
+     * must not abort setup; the relay step verifies reachability afterwards.
      */
     suspend fun setPortPublic(token: String, name: String, port: Int) {
-        try {
-            val body = buildJsonObject { put("visibility", "public") }
-            request("PATCH", "/user/codespaces/$name/ports/$port", token, body)
-        } catch (e: Exception) {
-            if (e is kotlinx.coroutines.CancellationException) throw e
-            error(
-                "GitHub did not let the app open port $port automatically. In the Codespace, run " +
-                    "`gh codespace ports visibility $port:public` or open the Ports tab and set it to Public, then retry. " +
-                    "The relay stays reachable only with this device's random token.",
-            )
+        repeat(3) { attempt ->
+            try {
+                val body = buildJsonObject { put("visibility", "public") }
+                request("PATCH", "/user/codespaces/$name/ports/$port", token, body)
+                return
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                if (attempt < 2) kotlinx.coroutines.delay(2_000)
+            }
         }
     }
 

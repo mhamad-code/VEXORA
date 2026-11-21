@@ -112,7 +112,7 @@ class CloudSetup(
             origin = attempt(CloudSetupStep.RELAY) {
                 val relayOrigin = ops.openRelayPort(running.name)
                 check(ops.awaitRelay(relayOrigin)) {
-                    "The Codespace is running but its relay did not answer. Open the Codespace, check the Ports tab, and retry this step."
+                    "The Codespace is running but its relay did not answer. Open the Codespace, run `gh codespace ports visibility 8765:public` or set port 8765 to Public in the Ports tab, then retry this step. The relay stays reachable only with this device's random token."
                 }
                 relayOrigin
             }
