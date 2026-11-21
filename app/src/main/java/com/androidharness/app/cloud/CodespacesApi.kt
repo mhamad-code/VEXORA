@@ -81,7 +81,9 @@ class CodespacesApi(
     }
 
     suspend fun repository(token: String, fullName: String): JsonObject? =
-        get("/repos/$fullName", token).jsonObject()
+        try { get("/repos/$fullName", token).jsonObject() } catch (e: com.androidharness.app.github.GitHubHttpError) {
+            if (e.code == 404) null else throw e
+        }
 
     suspend fun createPrivateRepository(token: String, name: String): JsonObject {
         val body = buildJsonObject {

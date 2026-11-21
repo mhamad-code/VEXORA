@@ -73,6 +73,7 @@ class CloudGitHubAuth(
                     url = requireNotNull(body.string("verification_uri")),
                     expiresIn = body.seconds("expires_in") ?: 900,
                     interval = (body.seconds("interval") ?: 5).coerceAtLeast(5),
+                    verificationUriComplete = body.string("verification_uri_complete"),
                 )
                 check(code.url == "https://github.com/login/device") {
                     "GitHub returned an unexpected sign-in address."

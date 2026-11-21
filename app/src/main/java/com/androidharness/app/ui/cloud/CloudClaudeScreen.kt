@@ -117,7 +117,10 @@ fun CloudClaudeScreen(container: AppContainer, onBack: () -> Unit) {
                     auth = auth,
                     onSignIn = { cloud.signIn() },
                     onCancel = { cloud.cancelSignIn() },
-                    onOpenGithub = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/login/device"))) },
+                    onOpenGithub = {
+                        val url = auth.code?.verificationUriComplete ?: auth.code?.url ?: "https://github.com/login/device"
+                        com.androidharness.app.ui.common.openOAuthBrowser(context, Uri.parse(url))
+                    },
                     onPat = { token -> scope.launch { cloud.connectPat(token) } },
                     busy = status.busy,
                 )

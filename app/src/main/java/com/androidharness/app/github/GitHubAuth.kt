@@ -27,7 +27,7 @@ data class GitHubCredential(
 )
 
 data class GitHubDeviceCode(val deviceCode: String, val userCode: String, val url: String,
-    val expiresIn: Long, val interval: Long)
+    val expiresIn: Long, val interval: Long, val verificationUriComplete: String? = null)
 data class GitHubConnectionState(val login: String? = null, val oauth: Boolean = false,
     val busy: Boolean = false, val code: GitHubDeviceCode? = null, val message: String? = null)
 
@@ -130,7 +130,8 @@ class GitHubAuth(
                     check(body.string("error") == null) { oauthError(body.string("error"), body.string("error_description")) }
                     val code = GitHubDeviceCode(requireNotNull(body.string("device_code")),
                         requireNotNull(body.string("user_code")), requireNotNull(body.string("verification_uri")),
-                        body.seconds("expires_in") ?: 900, (body.seconds("interval") ?: 5).coerceAtLeast(5))
+                        body.seconds("expires_in") ?: 900, (body.seconds("interval") ?: 5).coerceAtLeast(5),
+                        body.string("verification_uri_complete"))
                     check(code.url == "https://github.com/login/device") { "GitHub returned an unexpected sign-in address." }
                     _state.value = _state.value.copy(code = code, message = "Enter this code on GitHub, then approve access.")
                     val deadline = now() + code.expiresIn * 1000

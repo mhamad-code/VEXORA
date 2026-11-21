@@ -64,7 +64,7 @@ internal fun GitHubIntegrationSection(container: AppContainer) {
                 Button(onClick = {
                     (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
                         .setPrimaryClip(ClipData.newPlainText(uiContext.getString(R.string.ui_github_sign_in_code), code.userCode))
-                    open(code.url)
+                    open(code.verificationUriComplete ?: code.url)
                 }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.settings_github_copy_open)) }
                 TextButton(onClick = { container.github.cancelSignIn() }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.settings_chatgpt_cancel_signin)) }
             } else if (!patForm && !state.busy) {
