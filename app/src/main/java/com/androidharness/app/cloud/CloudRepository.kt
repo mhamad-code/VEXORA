@@ -343,8 +343,12 @@ class CloudRepository(
         val plan = buildPlan() ?: return false
         val permission = CloudPermissionMode.fromSetting(settings.current().permission.name)
         val client = ensureRelay() ?: return false
+        val deadline = System.currentTimeMillis() + 20_000
+        while (_relayStatus.value != RelayConnection.OPEN && System.currentTimeMillis() < deadline) {
+            delay(500)
+        }
         if (_relayStatus.value != RelayConnection.OPEN) {
-            _status.value = _status.value.copy(error = "The cloud relay is not connected yet. Retrying…")
+            _status.value = _status.value.copy(error = "The cloud relay is not connected yet. Retry.")
             return false
         }
         if (_runState.value == CloudRunState.RUNNING) {
@@ -411,20 +415,37 @@ class CloudRepository(
         return CloudConnection(config.baseUrl, config.type, key)
     }
 
+    suspend fun connectRelay() {
+        val client = ensureRelay() ?: return
+        val deadline = System.currentTimeMillis() + 20_000
+        while (client.status.value != RelayConnection.OPEN && System.currentTimeMillis() < deadline) {
+            delay(500)
+        }
+        if (client.status.value != RelayConnection.OPEN) {
+            _status.value = _status.value.copy(error = "The cloud relay is not connected yet. Retry.")
+        }
+    }
+
     private suspend fun ensureRelay(): CloudRelayClient? {
         relayClient?.takeIf { it.status.value == RelayConnection.OPEN }?.let { return it }
+        val token = auth.token() ?: run {
+            _status.value = _status.value.copy(error = "Sign in to GitHub first.")
+            return null
+        }
         val name = _status.value.codespace?.name ?: settings.current().codespaceName.takeIf { it.isNotBlank() }
             ?: run {
                 _status.value = _status.value.copy(error = "Set up the cloud first.")
                 return null
             }
+        // Port visibility reverts after a Codespace restart; make it public again.
+        runCatching { api.setPortPublic(token, name, CodespaceInfo.RELAY_PORT) }
         disconnectRelay()
         val origin = "https://${name.lowercase()}-${CodespaceInfo.RELAY_PORT}.app.github.dev"
-        val token = keys.cloudRelaySecret() ?: run {
+        val relayToken = keys.cloudRelaySecret() ?: run {
             _status.value = _status.value.copy(error = "This device has no relay secret. Run Set up cloud again.")
             return null
         }
-        val client = CloudRelayClient(origin, token, scope).also { relayClient = it }
+        val client = CloudRelayClient(origin, relayToken, scope).also { relayClient = it }
         relayJob = scope.launch {
             client.frames.collect { frame -> handleFrame(frame) }
         }

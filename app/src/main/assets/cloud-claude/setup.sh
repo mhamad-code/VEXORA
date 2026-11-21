@@ -12,12 +12,13 @@ npm install --prefix "$STATE_DIR" --no-audit --no-fund ws@8
 
 echo "[setup] Installing Claude Code"
 if ! command -v claude >/dev/null 2>&1; then
-  npm install -g @anthropic-ai/claude-code
+  npm install -g @anthropic-ai/claude-code || echo "[setup] WARNING: Claude Code install failed."
 fi
 
 echo "[setup] Installing the Anthropic-compatible gateway (LiteLLM)"
 if ! command -v litellm >/dev/null 2>&1 && [ ! -x "$HOME/.local/bin/litellm" ]; then
-  python3 -m pip install --user --quiet "litellm[proxy]"
+  if ! command -v pip3 >/dev/null 2>&1; then python3 -m ensurepip --upgrade >/dev/null 2>&1 || true; fi
+  pip3 install --user --quiet "litellm[proxy]" || python3 -m pip install --user --quiet "litellm[proxy]" || echo "[setup] WARNING: LiteLLM install failed; the model gateway will not start."
 fi
 
 # The workspace repository must never carry secrets or generated state.

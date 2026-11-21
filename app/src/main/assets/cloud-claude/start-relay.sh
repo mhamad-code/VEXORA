@@ -14,5 +14,7 @@ fi
 export NODE_PATH="$STATE_DIR/node_modules"
 export CLOUD_REPO_DIR="$REPO_DIR"
 export PATH="$HOME/.local/bin:$PATH"
-nohup node "$REPO_DIR/.cloud-claude/relay.mjs" >> "$STATE_DIR/relay.log" 2>&1 &
+setsid nohup node "$REPO_DIR/.cloud-claude/relay.mjs" >> "$STATE_DIR/relay.log" 2>&1 < /dev/null &
+disown 2>/dev/null || true
+sleep 1
 echo "[relay] started"

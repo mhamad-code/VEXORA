@@ -136,6 +136,9 @@ fun CloudClaudeScreen(container: AppContainer, onBack: () -> Unit) {
                 )
 
                 else -> {
+                    LaunchedEffect(status.codespace?.name, status.codespace?.phase) {
+                        if (status.codespace?.phase == CodespacePhase.READY) cloud.connectRelay()
+                    }
                     CloudStatusBar(
                         status = status,
                         relay = relay,
@@ -144,6 +147,7 @@ fun CloudClaudeScreen(container: AppContainer, onBack: () -> Unit) {
                         onStop = { scope.launch { cloud.stopCloud() } },
                         onDelete = { showDelete = true },
                         onRefresh = { scope.launch { cloud.refreshStatus() } },
+                        onConnectRelay = { scope.launch { cloud.connectRelay() } },
                     )
                     if (events.isEmpty()) {
                         EmptyChatHint(modifier = Modifier.weight(1f))
@@ -429,6 +433,7 @@ private fun CloudStatusBar(
     onStop: () -> Unit,
     onDelete: () -> Unit,
     onRefresh: () -> Unit,
+    onConnectRelay: () -> Unit,
 ) {
     val phase = status.codespace?.phase ?: CodespacePhase.NONE
     Surface(color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.fillMaxWidth()) {
@@ -455,6 +460,9 @@ private fun CloudStatusBar(
                     IconButton(onClick = onStop) { Icon(Icons.Outlined.Stop, stringResource(R.string.cloud_stop)) }
                 } else {
                     IconButton(onClick = onStart) { Icon(Icons.Outlined.PlayArrow, stringResource(R.string.cloud_start)) }
+                }
+                if (relay != RelayConnection.OPEN) {
+                    IconButton(onClick = onConnectRelay) { Icon(Icons.Outlined.Refresh, stringResource(R.string.cloud_relay_connecting)) }
                 }
                 IconButton(onClick = onRefresh) { Icon(Icons.Outlined.Refresh, stringResource(R.string.cloud_refresh)) }
                 IconButton(onClick = onDelete) {

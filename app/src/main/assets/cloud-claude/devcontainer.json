@@ -1,6 +1,9 @@
 {
   "name": "Cloud coding agent",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": { "version": "3.11" }
+  },
   "postCreateCommand": "bash .cloud-claude/setup.sh",
   "postStartCommand": "bash .cloud-claude/start-relay.sh",
   "forwardPorts": [8765],
