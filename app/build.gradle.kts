@@ -24,9 +24,14 @@ val pinnedNdk = "27.2.12479018"
 val githubBuildProperties = Properties().apply {
     rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
 }
-// Load only from the ignored local build settings; never from public CI variables.
-// Device Flow never embeds an OAuth client secret or auth backend.
-val githubClientId = githubBuildProperties.getProperty("GITHUB_CLIENT_ID", "")
+// The Device Flow Client ID is a public identifier, not a secret, and every build
+// carries the same one: the ignored local.properties value wins on a developer
+// machine, then the GITHUB_CLIENT_ID environment variable CI exports, then the
+// default below. Device Flow never embeds an OAuth client secret or auth backend.
+val defaultGithubClientId = "Ov23lik1LpMyvwli13W7"
+val githubClientId = githubBuildProperties.getProperty("GITHUB_CLIENT_ID")?.trim()?.takeIf { it.isNotEmpty() }
+    ?: System.getenv("GITHUB_CLIENT_ID")?.trim()?.takeIf { it.isNotEmpty() }
+    ?: defaultGithubClientId
 val distributionChannel = providers.gradleProperty("distribution").getOrElse("github")
 require(distributionChannel in setOf("github", "play")) { "distribution must be github or play" }
 require(githubClientId.matches(Regex("[A-Za-z0-9]*"))) { "Invalid GitHub OAuth Client ID" }

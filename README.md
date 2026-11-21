@@ -193,7 +193,7 @@ If a push automation fails, open its history to see the real cause. Common ones 
 <details>
 <summary>Building with your own OAuth app</summary>
 
-Register a [GitHub OAuth app](https://github.com/settings/developers), turn on **Enable Device Flow**, and set `GITHUB_CLIENT_ID` in the ignored `local.properties` file. Local debug and release builds include that value. The Client ID is not stored in the repository source, docs or public workflows, and no client secret or auth server is used. Builds without it still support token login. Keep a token as a backup, since GitHub rate limits Device Flow for shared OAuth apps.
+Register a [GitHub OAuth app](https://github.com/settings/developers), turn on **Enable Device Flow**, and set `GITHUB_CLIENT_ID` in the ignored `local.properties` file (or export it as an environment variable). Builds fall back to the VEXORA Client ID baked into `app/build.gradle.kts`, which is a public identifier: no client secret and no auth server are involved. Keep a token as a backup, since GitHub rate limits Device Flow for shared OAuth apps.
 
 </details>
 

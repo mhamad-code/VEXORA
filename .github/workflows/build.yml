@@ -1,0 +1,242 @@
+name: VEXORA build
+
+# Produces one installable VEXORA APK, nothing else:
+#   * push to any branch  -> a single APK artifact (no .gz, no .so, no build folders)
+#   * tag v*              -> the same APK attached to a GitHub release, which is the
+#                            direct-download shape the in-app update checker reads
+#   * workflow_dispatch   -> a single APK artifact
+#
+# The release key never lives in the repository. The four signing secrets below are
+# decoded into $RUNNER_TEMP for the build and deleted afterwards; without them the
+# workflow builds a debug APK and says so instead of failing.
+
+on:
+  push:
+    branches:
+      - "**"
+    tags:
+      - "v*"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vexora-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build installable APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    # contents: write is only needed to attach the APK to a release on a v* tag.
+    permissions:
+      contents: write
+    env:
+      APP_NAME: VEXORA
+      # Public Device Flow OAuth Client ID. It is not a secret: no client secret and
+      # no auth server exist, so it is safe in the workflow and in the build.
+      GITHUB_CLIENT_ID: Ov23lik1LpMyvwli13W7
+      NDK_VERSION: "27.2.12479018"
+      BUILD_TOOLS_VERSION: "37.0.0"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # The project pins Gradle 9.7.0 and compiles to JVM 17 bytecode; its own CI
+      # (nightly.yml, pr-build.yml) uses JDK 21, so this build uses the same one.
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle (caching)
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Resolve Android SDK location
+        run: echo "SDK_ROOT=${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}" >> "$GITHUB_ENV"
+
+      # compileSdk 37, build-tools 37 (apksigner/aapt2), cmake 3.22.1 and the NDK
+      # that builds libharness_local.so. The runner image does not ship all of them.
+      - name: Install Android SDK components
+        run: |
+          set -euo pipefail
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" --install \
+            "platform-tools" \
+            "platforms;android-37.0" \
+            "build-tools;$BUILD_TOOLS_VERSION" \
+            "cmake;3.22.1" \
+            "ndk;$NDK_VERSION"
+
+      - name: Install Vulkan shader compiler
+        run: sudo apt-get update && sudo apt-get install -y glslc
+
+      # GITHUB_CLIENT_ID is read from local.properties by app/build.gradle.kts, the
+      # same file a local build uses. local.properties is gitignored, never committed.
+      - name: Write GITHUB_CLIENT_ID into local.properties
+        run: |
+          set -euo pipefail
+          touch local.properties
+          grep -q '^sdk\.dir=' local.properties || printf 'sdk.dir=%s\n' "$SDK_ROOT" >> local.properties
+          sed -i '/^GITHUB_CLIENT_ID=/d' local.properties
+          printf 'GITHUB_CLIENT_ID=%s\n' "$GITHUB_CLIENT_ID" >> local.properties
+          echo "GITHUB_CLIENT_ID is set in local.properties (${#GITHUB_CLIENT_ID} characters)"
+
+      - name: Prepare release keystore
+        id: keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -n "${KEYSTORE_BASE64:-}" ] && [ -n "${KEYSTORE_PASSWORD:-}" ] &&
+             [ -n "${KEY_ALIAS:-}" ] && [ -n "${KEY_PASSWORD:-}" ]; then
+            KEYSTORE="$RUNNER_TEMP/vexora-release.jks"
+            printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
+            chmod 600 "$KEYSTORE"
+            # Fails the build early on a wrong password or alias, instead of at signing.
+            keytool -list -keystore "$KEYSTORE" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > /dev/null
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo "Release keystore decoded and unlocked." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Signing secrets missing::KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD must all be set. Building a debug APK: its signature is not stable, so it will not install over an existing release build."
+          fi
+
+      - name: Build APK
+        id: build
+        env:
+          VEXORA_KEYSTORE_FILE: ${{ runner.temp }}/vexora-release.jks
+          VEXORA_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          VEXORA_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          VEXORA_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.keystore.outputs.configured }}" = "true" ]; then
+            echo "variant=release" >> "$GITHUB_OUTPUT"
+            ./gradlew :app:assembleRelease --no-daemon --stacktrace
+          else
+            echo "variant=debug" >> "$GITHUB_OUTPUT"
+            ./gradlew :app:assembleDebug --no-daemon --stacktrace
+          fi
+
+      # Validates the APK itself and names it after the app and its version, so the
+      # downloaded file is VEXORA-<versionName>.apk and never app-debug.apk.
+      - name: Verify APK and name it
+        id: apk
+        run: |
+          set -euo pipefail
+          VARIANT="${{ steps.build.outputs.variant }}"
+          META="app/build/outputs/apk/${VARIANT}/output-metadata.json"
+          APKSIGNER="$SDK_ROOT/build-tools/$BUILD_TOOLS_VERSION/apksigner"
+          AAPT2="$SDK_ROOT/build-tools/$BUILD_TOOLS_VERSION/aapt2"
+
+          APK="app/build/outputs/apk/${VARIANT}/$(jq -r '.elements[0].outputFile' "$META")"
+          PACKAGE=$(jq -r '.applicationId // .elements[0].applicationId' "$META")
+          VERSION_NAME=$(jq -r '.elements[0].versionName' "$META")
+          VERSION_CODE=$(jq -r '.elements[0].versionCode' "$META")
+
+          SUFFIX=""
+          if [ "$VARIANT" = "debug" ]; then SUFFIX="-debug"; fi
+          DIST="dist/${APP_NAME}-${VERSION_NAME}${SUFFIX}.apk"
+          mkdir -p dist
+          cp "$APK" "$DIST"
+
+          # The app identity must stay the upstream one: package and display name unchanged.
+          AAPT_PACKAGE=$("$AAPT2" dump badging "$DIST" | sed -n "s/^package: name='\([^']*\)'.*/\1/p")
+          AAPT_LABEL=$("$AAPT2" dump badging "$DIST" | sed -n "s/^application-label:'\([^']*\)'.*/\1/p")
+          [ "$AAPT_PACKAGE" = "$PACKAGE" ] || { echo "::error::APK package $AAPT_PACKAGE does not match $PACKAGE"; exit 1; }
+          if [ "$VARIANT" = "release" ] && [ "$PACKAGE" != "com.androidharness.app" ]; then
+            echo "::error::Release package is $PACKAGE instead of com.androidharness.app"; exit 1
+          fi
+
+          if "$APKSIGNER" verify --print-certs "$DIST" > signing.txt 2>&1; then
+            SIGNING_STATUS="verified"
+          else
+            SIGNING_STATUS="not verified"
+            cat signing.txt
+            echo "::error::apksigner could not verify $DIST"
+            exit 1
+          fi
+          SIGNER_DN=$(sed -n 's/^Signer #1 certificate DN: //p' signing.txt | head -1)
+
+          echo "path=${DIST}" >> "$GITHUB_OUTPUT"
+          echo "name=$(basename "$DIST")" >> "$GITHUB_OUTPUT"
+          echo "version_name=${VERSION_NAME}" >> "$GITHUB_OUTPUT"
+          echo "version_code=${VERSION_CODE}" >> "$GITHUB_OUTPUT"
+          echo "package=${PACKAGE}" >> "$GITHUB_OUTPUT"
+          echo "signing=${SIGNING_STATUS}" >> "$GITHUB_OUTPUT"
+          echo "signer=${SIGNER_DN}" >> "$GITHUB_OUTPUT"
+
+          SHA256=$(sha256sum "$DIST" | cut -d' ' -f1)
+          BYTES=$(stat -c %s "$DIST")
+
+          {
+            echo "## VEXORA build"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Build type | \`${VARIANT}\` |"
+            echo "| Package | \`${PACKAGE}\` |"
+            echo "| Display name | ${AAPT_LABEL:-AndroidHarness} |"
+            echo "| versionName | \`${VERSION_NAME}\` |"
+            echo "| versionCode | \`${VERSION_CODE}\` |"
+            echo "| APK file | \`$(basename "$DIST")\` |"
+            echo "| Size | $((BYTES / 1024 / 1024)) MiB (${BYTES} bytes) |"
+            echo "| SHA-256 | \`${SHA256}\` |"
+            echo "| Signature | ${SIGNING_STATUS} — \`${SIGNER_DN:-unknown}\` |"
+            echo "| Artifact | the APK above, uploaded on its own (no .gz, .so or build folders) |"
+            echo ""
+            if [ "$VARIANT" != "release" ]; then
+              echo "> **Warning:** the release keystore secrets are not configured, so this is a"
+              echo "> debug-signed build. It cannot install over an existing release install."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # archive: false uploads the APK as-is, so the downloaded artifact is the APK
+      # itself instead of a zip that also carries loose .gz/.so files.
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v7
+        with:
+          archive: false
+          path: ${{ steps.apk.outputs.path }}
+          if-no-files-found: error
+          retention-days: 30
+
+      # The in-app update checker lists releases from the API and takes the first
+      # .apk asset whose tag carries a dotted version, so a v* tag with this APK is
+      # what makes "update available" work without a zip in between.
+      - name: Publish release with the APK
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          APK_PATH: ${{ steps.apk.outputs.path }}
+          APK_NAME: ${{ steps.apk.outputs.name }}
+          VERSION_NAME: ${{ steps.apk.outputs.version_name }}
+          VERSION_CODE: ${{ steps.apk.outputs.version_code }}
+          PACKAGE: ${{ steps.apk.outputs.package }}
+          SIGNER: ${{ steps.apk.outputs.signer }}
+        run: |
+          set -euo pipefail
+          SHA256=$(sha256sum "$APK_PATH" | cut -d' ' -f1)
+          NOTES=$(printf 'VEXORA %s (versionCode %s)\n\n- Package: %s\n- SHA-256: %s\n- Signer: %s\n' \
+            "$VERSION_NAME" "$VERSION_CODE" "$PACKAGE" "$SHA256" "${SIGNER:-unknown}")
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "$TAG" "$APK_PATH" --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$TAG" "$APK_PATH" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "VEXORA $VERSION_NAME" \
+              --notes "$NOTES"
+          fi
+
+      - name: Remove the decoded keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/vexora-release.jks"
