@@ -24,6 +24,12 @@ This is the full feature reference. For a short overview, see the [README](READM
 - **Start screen and section settings.** Settings → Chat chooses Code, Chat or Last selected at launch, whether Chat opens a new or last conversation, and whether thinking stays collapsed. Code keeps its own New/Last choice, and Settings is split into Chat and Coding groups.
 - **Universal memory.** Chat and Code share the same memory, managed in Settings → Memory with global or project entries, Chat, Code and Shared sections, categories, pinning, search, edit, delete and delete-all. Each section has its own switch, the other section can be looked up only when allowed, and in-chat receipts show which facts were supplied and let you edit or forget them.
 
+## Claude Code in the cloud
+
+- **Your own Codespace, the app's providers.** The Claude Code section signs in with GitHub, creates a private workspace repository and a Codespace after a consent card, and runs Claude Code headless in the cloud. Messages, thinking, tool calls, tool results, file changes and usage arrive as the same cards as an in-app conversation, with ask-every-time, accept-edits and confirmed-bypass permission modes.
+- **Model choice stays yours.** The main and fast models come from the providers you configured; Anthropic models are hidden and no Anthropic account is used. A LiteLLM gateway inside the Codespace translates for them, records each model's real context window, and the Test model button warns when a model cannot call tools.
+- **Nothing is lost when the phone sleeps.** Every relay event is numbered, so a dropped connection or a screen lock keeps the task running and the app replays only what it missed. The section starts, stops, deletes and repairs the cloud, shows provisioning as a retryable stepper, can stop the cloud when a task finishes, and keeps provider keys out of the repository.
+
 ## Code conversations
 
 - **Telegram remote control.** Pair a private bot account in Settings → Telegram to continue real chats, choose projects and models, edit files, approve tools and answer agent questions while the app is minimized. A persistent notification offers Pause and Stop, and saved requests/replies remain recoverable after a connection failure.

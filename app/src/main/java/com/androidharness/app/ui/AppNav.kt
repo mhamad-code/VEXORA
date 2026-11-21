@@ -512,6 +512,7 @@ fun AppNav(container: AppContainer) {
             onTerminal = { navigateFromSidebar { nav.navigate("terminal?session=${encode(workspaceSessionId.orEmpty())}&project=${encode(workspaceProjectId.orEmpty())}") } },
             onAutomation = { navigateFromSidebar { nav.navigate("automation") { launchSingleTop = true } } },
             onProviders = { navigateFromSidebar { nav.navigate("providers") { launchSingleTop = true } } },
+            onCloud = { navigateFromSidebar { nav.navigate("cloud") { launchSingleTop = true } } },
             onSettings = { navigateFromSidebar { nav.navigate("settings") { launchSingleTop = true } } },
             workspaceLabel = if (chatWorkspaceContext) uiContext.getString(R.string.ui_workspaces_for_this_chat) else uiContext.getString(R.string.ui_workspace), workspaceSummary = workspaceSummary,
             onWorkspaces = { selectedChatIds = emptyList(); scope.launch { drawerState.close() }; showWorkspaceSheet = true },
@@ -1021,6 +1022,11 @@ fun AppNav(container: AppContainer) {
             }
             composable("providers") {
                 com.androidharness.app.ui.settings.SettingsExpressiveTheme { ProvidersScreen(container = container, onBack = { nav.popBackStack() }) }
+            }
+            composable("cloud") {
+                com.androidharness.app.ui.settings.SettingsExpressiveTheme {
+                    com.androidharness.app.ui.cloud.CloudClaudeScreen(container = container, onBack = { nav.popBackStack() })
+                }
             }
             composable("setup") {
                 com.androidharness.app.ui.setup.SetupScreen(

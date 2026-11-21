@@ -185,6 +185,12 @@ class AppContainer(val appContext: Context) {
         })
     val providers: ProviderRepository = ProviderRepository(appContext, keys, localModels, chatGpt, settings)
 
+    /** Claude Code running in the user's own Codespace. */
+    val cloudClaude: com.androidharness.app.cloud.CloudRepository by lazy {
+        com.androidharness.app.cloud.CloudRepository(appContext, keys, providers,
+            com.androidharness.app.cloud.CloudSettings(appContext), BuildConfig.GITHUB_CLIENT_ID)
+    }
+
     init {
         com.androidharness.app.llm.RotatingKeyProvider.pools = providers::controls
         ProviderFactory.chatGptProvider = com.androidharness.app.chatgpt.ChatGptProvider(chatGpt::accessToken,

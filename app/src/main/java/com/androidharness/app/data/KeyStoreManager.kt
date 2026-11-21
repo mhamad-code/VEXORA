@@ -17,6 +17,24 @@ class KeyStoreManager(context: Context) {
         check(prefs.edit().putString("chatgpt_accounts", value).commit()) { "Could not securely save ChatGPT connection." }
     }
 
+    /** GitHub account used only by the cloud (Codespaces) section. */
+    fun cloudGitHub(): String? = prefs.getString("cloud_github", null)
+
+    fun putCloudGitHub(value: String?) {
+        val edit = prefs.edit()
+        if (value == null) edit.remove("cloud_github") else edit.putString("cloud_github", value)
+        check(edit.commit()) { "Could not securely save the cloud GitHub connection." }
+    }
+
+    /** Random per-device relay secret; only its hash is written to the workspace repository. */
+    fun cloudRelaySecret(): String? = prefs.getString("cloud_relay_secret", null)
+
+    fun putCloudRelaySecret(value: String?) {
+        val edit = prefs.edit()
+        if (value == null) edit.remove("cloud_relay_secret") else edit.putString("cloud_relay_secret", value)
+        check(edit.commit()) { "Could not securely save the cloud relay secret." }
+    }
+
     /**
      * The prefs file is wrapped by an AndroidKeyStore master key, so keystore
      * loss (credential reset, backup restore onto another install) makes it

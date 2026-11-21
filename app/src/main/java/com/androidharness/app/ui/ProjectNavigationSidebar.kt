@@ -106,7 +106,7 @@ internal fun ProjectNavigationSidebar(
     onNewChat: () -> Unit, onChat: (String) -> Unit, onMessage: (MessageHit) -> Unit,
     onProjectChat: (WorkProjectEntity) -> Unit, onProjects: () -> Unit,
     onChatActions: (SessionEntity) -> Unit, onAction: (SessionEntity, SidebarChatAction) -> Unit,
-    onBuild: () -> Unit, onTerminal: () -> Unit, onAutomation: () -> Unit, onProviders: () -> Unit, onSettings: () -> Unit,
+    onBuild: () -> Unit, onTerminal: () -> Unit, onAutomation: () -> Unit, onProviders: () -> Unit, onCloud: () -> Unit, onSettings: () -> Unit,
     workspaceLabel: String, workspaceSummary: String, onWorkspaces: () -> Unit,
     onCollapse: () -> Unit, currentRoute: String?, projectCreationEnabled: Boolean = true,
     changesSummary: String? = null, onChanges: () -> Unit = {},
@@ -214,6 +214,9 @@ internal fun ProjectNavigationSidebar(
                             }
                             SidebarToolTile(workspaceLabel, Icons.Outlined.FolderOpen, Modifier.fillMaxWidth(),
                                 subtitle = workspaceSummary, onClick = onWorkspaces)
+                            // Cloud coding agent: its own section, opened from the same tools panel.
+                            SidebarToolTile(uiContext.getString(R.string.cloud_title), Icons.Outlined.Cloud,
+                                Modifier.fillMaxWidth(), selected = currentRoute == "cloud", onClick = onCloud)
                         }
                     }
                 }

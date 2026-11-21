@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.1 (2026-11-21)
+
+### Added
+
+- **Claude Code on your own GitHub Codespace.** A new Claude Code section signs in with GitHub (OAuth Device Flow or a personal access token), creates a private workspace repository and a Codespace in one consented step, and runs Claude Code headless there while the app renders its stream as the usual text, thinking, tool, file-change and usage cards.
+  - The remote agent uses the app providers you already configured, never Anthropic models: a LiteLLM gateway inside the Codespace translates Anthropic Messages to your OpenAI-compatible or Gemini provider, with a main and a fast model, your real context windows, and a one-tap model test that checks tool calling.
+  - The relay only accepts start, message, interrupt, permission, resume, status and stop. Every event is numbered, so locking the phone or losing the network keeps the task running and the app resumes from the last event it rendered.
+  - The section also starts, stops, deletes and repairs the cloud, shows provisioning as a retryable stepper, and offers ask-every-time, accept-edits and explicitly confirmed full bypass permissions. Provider keys stay out of the repository, in a 0600 file outside it, and only a SHA-256 hash of a per-device relay secret is committed.
+
 ## 4.0 (2026-11-19)
 
 ### Added
