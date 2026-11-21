@@ -65,9 +65,11 @@ jobs:
           STAMP=$(date -u +%Y%m%d-%H%M)
           SHA=$(git rev-parse --short HEAD)
           NAME="AndroidHarness-${STAMP}-${SHA}-debug.apk"
+          # Only the APK goes in dist/. The GPU packages are published as their own
+          # artifact below, so this artifact stays an installable APK on its own.
           mkdir dist && cp app/build/outputs/apk/debug/app-debug.apk "dist/${NAME}"
-          cp app/build/outputs/gpuRuntime/debug/*.gz dist/
           echo "name=${NAME}" >> "$GITHUB_OUTPUT"
+          echo "stamp=${STAMP}" >> "$GITHUB_OUTPUT"
 
       - name: Publish matching optional GPU packages
         env:
@@ -86,5 +88,13 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.apk.outputs.name }}
-          path: dist/*
+          path: dist/*.apk
+          retention-days: 30
+
+      - name: Upload GPU runtime packages (separate artifact)
+        uses: actions/upload-artifact@v7
+        with:
+          name: gpu-runtime-packages-${{ steps.apk.outputs.stamp }}
+          path: app/build/outputs/gpuRuntime/debug/*.gz
+          if-no-files-found: ignore
           retention-days: 30
